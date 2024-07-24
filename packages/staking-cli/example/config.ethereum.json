@@ -1,0 +1,23 @@
+{
+  "validatorAddress": "0x95d0db03d59658e1af0d977ecfe142f178930ac5",
+  "delegatorAddress": "0xa0eF7F6821aAeDA5DfC12371c91c4E875d13a87E",
+
+  "fireblocks": {
+    "apiSecretKeyPath": "./fireblocks_secret_key",
+    "apiKeyPath": "./fireblocks_api_key",
+
+    "vaultName": "ethereum-test-wallet",
+    "assetId": "ETHTEST"
+  },
+
+  "localsigner": {
+    "mnemonicPath": "./mnemonic"
+  },
+
+  "networkType": "ethereum",
+
+  "ethereum": {
+    "network": "holesky",
+    "rpcUrl": "https://ethereum-holesky-rpc.publicnode.com"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "networkType": "solana",
+  "validatorAddress": "1DadCBpbH3ihBTkehCvWRZB9nzN5BciaSS6TcFp4o8p",
+  "delegatorAddress": "3Ps2hwsgGMSuqxAwjcGJHiEpMsSTZcxrCGprHgxWkfma",
+
+  "fireblocks": {
+    "apiSecretKeyPath": "./fireblocks_secret_key",
+    "apiKeyPath": "./fireblocks_api_key",
+
+    "vaultName": "solana-test-wallet",
+    "assetId": "SOL_TEST"
+  },
+
+  "localsigner": {
+    "mnemonicPath": "./mnemonic",
+    "keyType": "ed25519",
+    "accounts": [
+      {
+        "hdPath": "m/44'/501'/0'/0'"
+      }
+    ]
+  },
+
+  "solana": {
+    "rpcUrl": "https://api.testnet.solana.com",
+    "blockExplorerUrl": "https://explorer.solana.com/tx/{tx}?cluster=testnet"
+  }
+}

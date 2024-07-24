@@ -1,0 +1,25 @@
+{
+  "validatorAddress": "NodeID-4KXitMCoE9p2BHA6VzXtaTxLoEjNDo2Pt",
+  "delegatorAddress": "0xc228ce3460002879a0FCc5093f4FeC76d96051C4",
+
+  "fireblocks": {
+    "apiSecretKeyPath": "./fireblocks_secret_key",
+    "apiKeyPath": "./fireblocks_api_key",
+
+    "vaultName": "avalanche-test-wallet",
+    "assetId": "AVAXTEST"
+  },
+
+  "localsigner": {
+    "mnemonicPath": "./mnemonic"
+  },
+
+  "networkType": "avalanche",
+
+  "avalanche": {
+    "rpcUrl": "https://api.avax-test.network",
+    "hrp": "fuji",
+    "denomMultiplier": 1000000000,
+    "blockExplorerUrl": "https://testnet.avascan.info/blockchain"
+  }
+}

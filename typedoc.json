@@ -1,0 +1,29 @@
+{
+  "entryPoints": [
+    "packages/avalanche/src/index.ts",
+    "packages/cosmos/src/index.ts",
+    "packages/ethereum/src/index.ts",
+    "packages/near/src/index.ts",
+    "packages/solana/src/index.ts",
+    "packages/substrate/src/index.ts",
+    "packages/ton/src/index.ts",
+    "packages/signer-fireblocks/src/index.ts",
+    "packages/signer-local/src/index.ts",
+    "packages/signer/src/index.ts"
+  ],
+  "readme": "none",
+  "excludePrivate": true,
+  "sort": ["kind"],
+  "plugin": ["typedoc-plugin-markdown"],
+  "groupOrder": ["Classes", "Functions", "Enumerations", "Interfaces", "Properties", "Constructors", "Methods"],
+  // "hideInPageTOC": true,
+  "hideBreadcrumbs": true,
+  "hidePageTitle": true,
+  "disableSources": true,
+  "skipErrorChecking": true,
+  // "allReflectionsHaveOwnDocument": true,
+  "theme": "markdown",
+  "media": "book/assets/",
+  "gitRemote": "private",
+  "out": "./docs"
+}

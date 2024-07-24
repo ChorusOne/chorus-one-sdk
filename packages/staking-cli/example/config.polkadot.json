@@ -1,0 +1,24 @@
+{
+  "validatorAddress": "5CAsa5uG1i3Duq5NM1g8zYjNvUCwkwADxgFQiypSLTg6Hnwm",
+  "delegatorAddress": "5CsM7oXZQmDvrskYZHeLxTwERikgZDCZL6rkNryPmhpD8FwN",
+
+  "fireblocks": {
+    "apiSecretKeyPath": "./fireblocks_secret_key",
+    "apiKeyPath": "./fireblocks_api_key",
+
+    "vaultName": "polkadot-test-wallet",
+    "assetId": "WND"
+  },
+
+  "localsigner": {
+    "mnemonicPath": "./mnemonic"
+  },
+
+  "networkType": "substrate",
+
+  "substrate": {
+    "rpcUrl": "wss://westend-rpc.polkadot.io",
+    "rewardDestination": "Stash",
+    "blockExplorerUrl": "https://westend.subscan.io/account"
+  }
+}

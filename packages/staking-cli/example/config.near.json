@@ -1,0 +1,24 @@
+{
+  "validatorAddress": "chorusone.pool.f863973.m0",
+  "delegatorAddress": "2392b857d56c6b21f4b3e2b0837fb086e57b10398e1f1c2c0060dd5cc2035919",
+
+  "fireblocks": {
+    "apiSecretKeyPath": "./fireblocks_secret_key",
+    "apiKeyPath": "./fireblocks_api_key",
+
+    "vaultName": "near-test-wallet",
+    "assetId": "NEAR_TEST"
+  },
+
+  "localsigner": {
+    "mnemonicPath": "./mnemonic"
+  },
+
+  "networkType": "near",
+
+  "near": {
+    "networkId": "testnet",
+    "rpcUrl": "https://rpc.testnet.near.org",
+    "blockExplorerUrl": "https://testnet.nearblocks.io/txns/"
+  }
+}

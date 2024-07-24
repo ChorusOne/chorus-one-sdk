@@ -1,0 +1,29 @@
+{
+  "name": "@chorus-one/utils",
+  "version": "1.0.0",
+  "description": "Utilities for Chorus One SDK",
+  "scripts": {
+    "build": "rm -fr dist/* && tsc -p tsconfig.mjs.json --outDir dist/mjs && tsc -p tsconfig.cjs.json --outDir dist/cjs && bash ../../scripts/fix-package-json"
+  },
+  "main": "dist/cjs/index.js",
+  "module": "dist/mjs/index.js",
+  "types": "dist/mjs/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/mjs/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/mjs/index.d.ts"
+    }
+  },
+  "keywords": [
+    "chorus-one",
+    "sdk",
+    "utils"
+  ],
+  "author": "Chorus One AG",
+  "license": "Apache-2.0",
+  "devDependencies": {},
+  "dependencies": {
+    "bignumber.js": "^9.1.2"
+  }
+}

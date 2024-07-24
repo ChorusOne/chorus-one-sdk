@@ -1,0 +1,34 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "baseUrl": ".",
+    "paths": {
+      "@chorus-one/avalanche": ["../avalanche/src"],
+      "@chorus-one/cosmos": ["../cosmos/src"],
+      "@chorus-one/ethereum": ["../ethereum/src"],
+      "@chorus-one/near": ["../near/src"],
+      "@chorus-one/signer-fireblocks": ["../signer-fireblocks/src"],
+      "@chorus-one/signer-local": ["../signer-local/src"],
+      "@chorus-one/signer": ["../signer/src"],
+      "@chorus-one/solana": ["../solana/src"],
+      "@chorus-one/substrate": ["../substrate/src"],
+      "@chorus-one/ton": ["../ton/src"],
+      "@chorus-one/utils": ["../utils/src"]
+    }
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"],
+  "references": [
+    { "path": "../avalanche" },
+    { "path": "../cosmos" },
+    { "path": "../ethereum" },
+    { "path": "../near" },
+    { "path": "../signer-fireblocks" },
+    { "path": "../signer-local" },
+    { "path": "../signer" },
+    { "path": "../solana" },
+    { "path": "../substrate" },
+    { "path": "../utils" }
+  ]
+}

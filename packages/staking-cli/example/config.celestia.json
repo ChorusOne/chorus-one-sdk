@@ -1,0 +1,33 @@
+{
+  "validatorAddress": "celestiavaloper1ksqfc6445yq82n3p28utpt500fyddrtlezx3pp",
+  "delegatorAddress": "celestia1fy7wc2waqkzlrzkr9umaa5fl8tcqlmv249elv9",
+
+  "fireblocks": {
+    "apiSecretKeyPath": "./fireblocks_secret_key",
+    "apiKeyPath": "./fireblocks_api_key",
+
+    "vaultName": "celestia-test-wallet",
+    "assetId": "CELESTIA_TEST"
+  },
+
+  "localsigner": {
+    "mnemonicPath": "./mnemonic",
+    "accounts": [
+      {
+        "hdPath": "m/44'/118'/0'/0/0"
+      }
+    ]
+  },
+
+  "networkType": "cosmos",
+
+  "cosmos": {
+    "rpcUrl": "http://public-celestia-mocha4-consensus.numia.xyz",
+    "lcdUrl": "https://api.celestia-mocha.com",
+    "bechPrefix": "celestia",
+    "denom": "utia",
+    "gas": 250000,
+    "gasPrice": 0.1,
+    "blockExplorerUrl": "https://testnet.celestia.explorers.guru/transaction/"
+  }
+}

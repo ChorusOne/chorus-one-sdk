@@ -1,0 +1,17 @@
+---
+
+name: Build and lint
+on: push
+jobs:
+  build_and_lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install modules
+        run: npm install
+      - name: Run linter
+        run: npm run lint
+      - name: Test build
+        run: npm run build
+      - name: Run tests
+        run: npm run test

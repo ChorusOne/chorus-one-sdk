@@ -1,0 +1,34 @@
+{
+  "name": "chorus-one",
+  "private": true,
+  "scripts": {
+    "lint": "eslint packages/**",
+    "cleanup": "prettier --write packages/** && eslint --no-error-on-unmatched-pattern --fix packages/**",
+    "build": "turbo build --cache-dir='./.turbo/cache'",
+    "test": "npx mocha"
+  },
+  "packageManager": "npm@10.2.4",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@eslint/js": "^9.4.0",
+    "@stylistic/eslint-plugin-ts": "^2.1.0",
+    "@types/chai": "^4.3.16",
+    "@types/mocha": "^10.0.7",
+    "@types/node": "^20.9.0",
+    "chai": "^4.0.0",
+    "chai-promised": "^1.0.6",
+    "chai-spies": "^1.1.0",
+    "globals": "^15.4.0",
+    "mocha": "^10.6.0",
+    "prettier": "^3.3.2",
+    "tsx": "^4.16.2",
+    "turbo": "^2.0.6",
+    "typedoc": "^0.25.3",
+    "typedoc-plugin-markdown": "^3.17.1",
+    "typescript": "^5.4.0",
+    "typescript-eslint": "^7.13.0"
+  },
+  "workspaces": [
+    "packages/*"
+  ]
+}

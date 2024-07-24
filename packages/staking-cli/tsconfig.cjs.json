@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.cjs.json",
+  "compilerOptions": {
+    "rootDir": "src"
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"],
+  "references": [
+    { "path": "../signer" },
+    { "path": "../signer-fireblocks" },
+    { "path": "../signer-local" },
+    { "path": "../cosmos" },
+    { "path": "../ethereum" },
+    { "path": "../near" },
+    { "path": "../substrate" },
+    { "path": "../solana" },
+    { "path": "../avalanche" },
+    { "path": "../utils" }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "name": "@chorus-one/staking-cli",
+  "version": "1.0.0",
+  "description": "All in one CLI for running staking operations on many blockchain networks",
+  "scripts": {
+    "build": "rm -fr dist/* && tsc -p tsconfig.cjs.json --outDir dist/cjs && chmod +x dist/cjs/index.js",
+    "staking-cli": "npx tsx src/index.ts"
+  },
+  "bin": {
+    "chorus-one-staking": "./dist/cjs/index.js"
+  },
+  "keywords": [
+    "cli",
+    "staking",
+    "chorus-one",
+    "sdk"
+  ],
+  "author": "Chorus One AG",
+  "license": "Apache-2.0",
+  "devDependencies": {},
+  "dependencies": {
+    "@chorus-one/avalanche": "^1.0.0",
+    "@chorus-one/cosmos": "^1.0.0",
+    "@chorus-one/ethereum": "^1.0.0",
+    "@chorus-one/near": "^1.0.0",
+    "@chorus-one/signer": "^1.0.0",
+    "@chorus-one/signer-fireblocks": "^1.0.0",
+    "@chorus-one/signer-local": "^1.0.0",
+    "@chorus-one/solana": "^1.0.0",
+    "@chorus-one/substrate": "^1.0.0",
+    "@chorus-one/utils": "^1.0.0",
+    "@commander-js/extra-typings": "^11.1.0",
+    "chalk": "^4.1.2"
+  }
+}

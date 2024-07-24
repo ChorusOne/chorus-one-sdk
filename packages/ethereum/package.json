@@ -1,0 +1,34 @@
+{
+  "name": "@chorus-one/ethereum",
+  "version": "1.0.0",
+  "description": "All-in-one toolkit for building staking dApps on Ethereum network",
+  "scripts": {
+    "build": "rm -fr dist/* && tsc -p tsconfig.mjs.json --outDir dist/mjs && tsc -p tsconfig.cjs.json --outDir dist/cjs && bash ../../scripts/fix-package-json"
+  },
+  "main": "dist/cjs/index.js",
+  "module": "dist/mjs/index.js",
+  "types": "dist/mjs/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/mjs/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/mjs/index.d.ts"
+    }
+  },
+  "keywords": [
+    "ethereum",
+    "staking",
+    "dApps",
+    "blockchain",
+    "chorus-one",
+    "sdk"
+  ],
+  "author": "Chorus One AG",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@chorus-one/signer": "^1.0.0",
+    "decimal.js": "^10.4.3",
+    "secp256k1": "^5.0.0",
+    "viem": "^2.17.4"
+  }
+}

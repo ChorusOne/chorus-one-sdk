@@ -1,0 +1,38 @@
+{
+  "validatorAddress": "kf9pc_aOlDpQ23GcVp6ZH-UzbLeqSdrp2sO7A4vHhzHTnm3m",
+  "delegatorAddress": "0QA4yVTHnkosbpVp_8GDyM6r9noXUXze1IgVX7P1uo5rVTws",
+
+  "fireblocks": {
+    "apiSecretKeyPath": "./fireblocks_secret_key",
+    "apiKeyPath": "./fireblocks_api_key",
+
+    "vaultName": "ton-test-wallet",
+    "assetId": "TON_TEST"
+  },
+
+  "localsigner": {
+    "mnemonicPath": "../../mnemonic",
+    "accounts": [
+      {
+        "hdPath": ""
+      }
+    ]
+  },
+
+  "networkType": "ton",
+
+  "ton": {
+    "rpcUrl": "https://testnet.toncenter.com/api/v2/jsonRPC?api_key=<your key>",
+    "allowSeamlessWalletDeployment": true,
+    "allowTransferToInactiveAccount": false,
+    "minimumExistentialBalance": "1",
+    "addressDerivationConfig": {
+      "walletContractVersion": 4,
+      "workchain": 0,
+      "bounceable": false,
+      "testOnly": true,
+      "urlSafe": true
+    },
+    "blockExplorerUrl": "https://testnet.tonviewer.com"
+  }
+}

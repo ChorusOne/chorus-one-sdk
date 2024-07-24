@@ -1,0 +1,35 @@
+{
+  "name": "@chorus-one/signer-fireblocks",
+  "version": "1.0.0",
+  "description": "Fireblocks signer for Chorus One SDK",
+  "scripts": {
+    "build": "rm -fr dist/* && tsc -p tsconfig.mjs.json --outDir dist/mjs && tsc -p tsconfig.cjs.json --outDir dist/cjs && bash ../../scripts/fix-package-json"
+  },
+  "main": "dist/cjs/index.js",
+  "module": "dist/mjs/index.js",
+  "types": "dist/mjs/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/mjs/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/mjs/index.d.ts"
+    }
+  },
+  "keywords": [
+    "chorus-one",
+    "sdk",
+    "signer",
+    "fireblocks"
+  ],
+  "author": "Chorus One AG",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/jsrsasign": "^10.5.14"
+  },
+  "dependencies": {
+    "@chorus-one/signer": "1.0.0",
+    "fireblocks-sdk": "^4.0.0",
+    "jsrsasign": "^11.1.0",
+    "uuid": "^10.0.0"
+  }
+}

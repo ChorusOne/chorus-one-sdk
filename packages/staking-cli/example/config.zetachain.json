@@ -1,0 +1,35 @@
+{
+  "validatorAddress": "zetavaloper14f3dtmvpzegj994778lxa8jryak2z0knlyu5v4",
+  "delegatorAddress": "zeta1mc0hh63357f49p07aqg3tcdvn429am5hrdg486",
+
+  "fireblocks": {
+    "apiSecretKeyPath": "./fireblocks_secret_key",
+    "apiKeyPath": "./fireblocks_api_key",
+
+    "vaultName": "zetachain-test-wallet",
+    "assetId": "ZETA_TEST"
+  },
+
+  "localsigner": {
+    "mnemonicPath": "./mnemonic",
+    "accounts": [
+      {
+        "hdPath": "m/44'/60'/0'/0/0"
+      }
+    ]
+  },
+
+  "networkType": "cosmos",
+
+  "cosmos": {
+    "rpcUrl": "https://zetachain-athens.blockpi.network/rpc/v1/public",
+    "lcdUrl": "https://zetachain-athens.blockpi.network/lcd/v1/public",
+    "bechPrefix": "zeta",
+    "denom": "azeta",
+    "denomMultiplier": "1000000000000000000",
+    "gas": 250000,
+    "gasPrice": "0.001",
+    "blockExplorerUrl": "https://athens.explorer.zetachain.com/cosmos/tx/",
+    "isEVM": true
+  }
+}

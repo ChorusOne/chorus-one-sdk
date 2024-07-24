@@ -1,0 +1,35 @@
+{
+  "name": "@chorus-one/ton",
+  "version": "1.0.0",
+  "description": "All-in-one tooling for building staking dApps on TON",
+  "scripts": {
+    "build": "rm -fr dist/* && tsc -p tsconfig.mjs.json --outDir dist/mjs && tsc -p tsconfig.cjs.json --outDir dist/cjs && bash ../../scripts/fix-package-json"
+  },
+  "main": "dist/cjs/index.js",
+  "module": "dist/mjs/index.js",
+  "types": "dist/mjs/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/mjs/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/mjs/index.d.ts"
+    }
+  },
+  "keywords": [
+    "ton",
+    "staking",
+    "dApps",
+    "blockchain",
+    "chorus-one",
+    "sdk"
+  ],
+  "author": "Chorus One AG",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@chorus-one/signer": "^1.0.0",
+    "@chorus-one/utils": "^1.0.0",
+    "@noble/curves": "^1.4.0",
+    "@ton/ton": "^13.11.2",
+    "tonweb-mnemonic": "^1.0.1"
+  }
+}

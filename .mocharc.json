@@ -1,0 +1,5 @@
+{
+  "extension": ["ts"],
+  "spec": "packages/**/test/*.spec.ts",
+  "require": ["tsx"]
+}

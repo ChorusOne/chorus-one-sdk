@@ -1,0 +1,12 @@
+node_modules
+config.json
+mnemonic
+journal.log
+docs/*
+book/docs/media
+_book/
+out
+fireblocks_api_key
+fireblocks_secret_key
+dist
+.turbo

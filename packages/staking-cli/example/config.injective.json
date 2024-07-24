@@ -1,0 +1,35 @@
+{
+  "validatorAddress": "injvaloper1h5u937etuat5hnr2s34yaaalfpkkscl587w3v6",
+  "delegatorAddress": "inj1mc0hh63357f49p07aqg3tcdvn429am5hlq3y0j",
+
+  "fireblocks": {
+    "apiSecretKeyPath": "./fireblocks_secret_key",
+    "apiKeyPath": "./fireblocks_api_key",
+
+    "vaultName": "injective-test-wallet",
+    "assetId": "INJECTIVE_TEST"
+  },
+
+  "localsigner": {
+    "mnemonicPath": "./mnemonic",
+    "accounts": [
+      {
+        "hdPath": "m/44'/60'/0'/0/0"
+      }
+    ]
+  },
+
+  "networkType": "cosmos",
+
+  "cosmos": {
+    "rpcUrl": "https://injective-testnet-rpc.publicnode.com:443",
+    "lcdUrl": "https://injective-testnet-rest.publicnode.com",
+    "bechPrefix": "inj",
+    "denom": "inj",
+    "denomMultiplier": "1000000000000000000",
+    "gas": 250000,
+    "gasPrice": "500000000",
+    "blockExplorerUrl": "https://testnet.explorer.injective.network/transaction/",
+    "isEVM": true
+  }
+}
