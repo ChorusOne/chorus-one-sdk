@@ -4,7 +4,7 @@ All-in-one toolkit for building staking dApps on Avalanche.
 
 ## Documentation
 
-For detailed instructions on how to set up and use the Chorus One SDK for Avalanche staking, please visit our [main documentation](http://example.com/todo-fix-me).
+For detailed instructions on how to set up and use the Chorus One SDK for Avalanche staking, please visit our [main documentation](https://chorus-one.gitbook.io/sdk/build-your-staking-dapp/avalanche/overview).
 
 ## Installation
 

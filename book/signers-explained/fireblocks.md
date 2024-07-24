@@ -48,4 +48,4 @@ await signer.init()
 ## Further Reading
 
 - [Fireblocks Documentation](https://developers.fireblocks.com/)
-- [FireblocksSigner API Reference](../../docs/classes/signer_fireblocks_src.FireblocksSigner.md)
+- [FireblocksSigner API Reference](../docs/classes/signer_fireblocks_src.FireblocksSigner.md)

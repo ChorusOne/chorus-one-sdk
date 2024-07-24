@@ -4,7 +4,7 @@ Signer interface for Chorus One SDK.
 
 ## Documentation
 
-For detailed instructions on how to create custom signers for the Chorus One SDK, please visit our [main documentation](http://example.com/todo-fix-me).
+For detailed instructions on how to create custom signers for the Chorus One SDK, please visit our [main documentation](https://chorus-one.gitbook.io/sdk/signers-explained/custom-signer).
 
 ## Installation
 
