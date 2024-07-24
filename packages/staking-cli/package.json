@@ -9,6 +9,12 @@
   "bin": {
     "chorus-one-staking": "./dist/cjs/index.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChorusOne/chorus-one-sdk.git",
+    "directory": "packages/staking-cli"
+  },
+  "homepage": "https://chorus-one.gitbook.io/sdk",
   "keywords": [
     "cli",
     "staking",
