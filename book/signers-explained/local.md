@@ -43,4 +43,4 @@ await signer.init()
 
 - [BIP39 Mnemonic Code](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki)
 - [BIP32 HD Wallets](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki)
-- [LocalSigner API Reference](../../docs/classes/signer_local_src.LocalSigner.md)
+- [LocalSigner API Reference](../docs/classes/signer_local_src.LocalSigner.md)

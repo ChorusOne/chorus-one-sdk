@@ -4,7 +4,7 @@ Fireblocks signer for Chorus One SDK.
 
 ## Documentation
 
-For detailed instructions on how to set up and use Fireblocks Signer with Chorus One SDK, please visit our [main documentation](http://example.com/todo-fix-me).
+For detailed instructions on how to set up and use Fireblocks Signer with Chorus One SDK, please visit our [main documentation](https://chorus-one.gitbook.io/sdk/signers-explained/fireblocks).
 
 ## Installation
 

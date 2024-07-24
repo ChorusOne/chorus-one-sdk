@@ -4,7 +4,7 @@ Local signer for Chorus One SDK that utilizes a BIP39 mnemonic for signing opera
 
 ## Documentation
 
-For detailed instructions on how to set up and use Local Signer with Chorus One SDK, please visit our [main documentation](http://example.com/todo-fix-me).
+For detailed instructions on how to set up and use Local Signer with Chorus One SDK, please visit our [main documentation](https://chorus-one.gitbook.io/sdk/signers-explained/local).
 
 ## Installation
 

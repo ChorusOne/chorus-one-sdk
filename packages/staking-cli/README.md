@@ -139,7 +139,7 @@ The most important fields in the configuration are the addresses:
 
 - [Configuration example](./example/config.ethereum.json)
 - [Network configuration properties](../ethereum/src/lib/types/ethereumConfigNetwork.ts)
-- [CLI usage](./README.ethreum.md)
+- [CLI usage](./README.ethereum.md)
 
 ## Security
 

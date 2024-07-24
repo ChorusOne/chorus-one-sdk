@@ -111,7 +111,7 @@ Additionally, you can use the Chorus One SDK to sign transactions using Firebloc
 The signature of these methods is compatible with the methods provided by popular Cosmos libraries like `@cosmjs/cosmwasm`.
 {% endhint %}
 
-For detailed information on setting up and configuring these options, refer to the [What is a Signer?](../signers-explained/what-is-a-signer.md) section.
+For detailed information on setting up and configuring these options, refer to the [What is a Signer?](../../signers-explained/what-is-a-signer.md) section.
 
 {% tabs %}
 {% tab title="Using Fireblocks for Signing" %}
@@ -141,7 +141,7 @@ const { signedTx } = await staker.sign({
 })
 ```
 
-For more information please refer to the [Signing with Fireblocks](../signers-explained/fireblocks.md)
+For more information please refer to the [Signing with Fireblocks](../../signers-explained/fireblocks.md)
 {% endtab %}
 {% endtabs %}
 
@@ -208,4 +208,4 @@ In this section you learned how to set up the Chorus One SDK for the Cosmos netw
 ## Further Reading
 
 - [CosmosStaker API Reference](../../docs/classes/cosmos_src.CosmosStaker.md)
-- [What is a Signer?](../signers-explained/what-is-a-signer.md)
+- [What is a Signer?](../../signers-explained/what-is-a-signer.md)

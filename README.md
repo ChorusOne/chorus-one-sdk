@@ -51,7 +51,7 @@ Welcome to the **Chorus One SDK** monorepo! Here you'll find all the necessary t
 
 ## Documentation
 
-For detailed instructions on how to set up and use the Chorus One SDK, please visit our [main documentation](http://example.com/todo-fix-me). There, you'll find comprehensive guides, examples, and API references to help you get started with building your staking dApp.
+For detailed instructions on how to set up and use the Chorus One SDK, please visit our [main documentation](https://chorus-one.gitbook.io/sdk). There, you'll find comprehensive guides, examples, and API references to help you get started with building your staking dApp.
 
 ## Installation
 
