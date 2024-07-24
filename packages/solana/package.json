@@ -15,6 +15,12 @@
       "types": "./dist/mjs/index.d.ts"
     }
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChorusOne/chorus-one-sdk.git",
+    "directory": "packages/solana"
+  },
+  "homepage": "https://chorus-one.gitbook.io/sdk",
   "keywords": [
     "solana",
     "staking",
