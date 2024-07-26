@@ -8,6 +8,14 @@ The Cosmos network, renowned for its interoperability and modular framework, uti
 
 The **Chorus One SDK** simplifies this process, providing developers with the tools needed to build, sign, and broadcast staking transactions.
 
+{% hint style="info" %}
+
+### Compatibility Notice
+
+The methods provided in this documentation are compatible with popular Cosmos libraries such as `@cosmjs/cosmwasm`. This compatibility ensures that you can seamlessly integrate these methods into your existing Cosmos projects.
+
+{% endhint %}
+
 This guide will walk you through the fundamentals of staking on Cosmos using the Chorus One SDK.
 
 ## Setting Up the Staker
@@ -106,10 +114,6 @@ const signedTx = TxRaw.encode(rawTx).finish()
 ```
 
 Additionally, you can use the Chorus One SDK to sign transactions using Fireblocks, mnemonic or other methods.
-
-{% hint style="info" %}
-The signature of these methods is compatible with the methods provided by popular Cosmos libraries like `@cosmjs/cosmwasm`.
-{% endhint %}
 
 For detailed information on setting up and configuring these options, refer to the [What is a Signer?](../../signers-explained/what-is-a-signer.md) section.
 
