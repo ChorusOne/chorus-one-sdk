@@ -5,7 +5,7 @@ import { keeperABI } from '../contracts/keeperAbi'
 import { getHarvestParams } from '../utils/getHarvestParams'
 import { Transaction } from '../types/transaction'
 
-export async function buildStakeTx(request: {
+export async function buildStakeTx (request: {
   connector: StakewiseConnector
   userAccount: Hex
   vault: Hex

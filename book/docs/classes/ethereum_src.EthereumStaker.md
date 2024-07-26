@@ -107,7 +107,7 @@ Builds a staking transaction.
 | `params` | `Object` | Parameters for building the transaction |
 | `params.delegatorAddress` | \`0x$\{string}\` | The delegator (wallet) address to stake from |
 | `params.validatorAddress` | \`0x$\{string}\` | The validator (vault) address to stake with |
-| `params.amount` | `string` | The amount to stake, specified in `ETH` |
+| `params.amount` | `string` | The amount to stake, specified in `ETH`. E.g. "1" - 1 ETH |
 | `params.referrer?` | \`0x$\{string}\` | (Optional) The address of the referrer. This is used to track the origin of transactions, providing insights into which sources or campaigns are driving activity. This can be useful for analytics and optimizing user acquisition strategies |
 
 ### Returns
@@ -136,7 +136,7 @@ method.
 | `params` | `Object` | Parameters for building the transaction |
 | `params.delegatorAddress` | \`0x$\{string}\` | The delegator (wallet) address that is unstaking |
 | `params.validatorAddress` | \`0x$\{string}\` | The validator (vault) address to unstake from |
-| `params.amount` | `string` | The amount to unstake, specified in `ETH` |
+| `params.amount` | `string` | The amount to unstake, specified in `ETH`. E.g. "1" - 1 ETH |
 
 ### Returns
 
@@ -186,7 +186,7 @@ Builds a mint transaction.
 | `params` | `Object` | Parameters for building the transaction |
 | `params.delegatorAddress` | \`0x$\{string}\` | The delegator (wallet) address |
 | `params.validatorAddress` | \`0x$\{string}\` | The validator (vault) address to mint shares for |
-| `params.amount` | `string` | The amount to mint, specified in `osETH` |
+| `params.amount` | `string` | The amount to mint, specified in `osETH`. E.g. "1" - 1 osETH |
 | `params.referrer?` | \`0x$\{string}\` | (Optional) The address of the referrer. This is used to track the origin of transactions, providing insights into which sources or campaigns are driving activity. This can be useful for analytics and optimizing user acquisition strategies. |
 
 ### Returns
@@ -210,7 +210,7 @@ Builds a burn transaction.
 | `params` | `Object` | Parameters for building the transaction |
 | `params.delegatorAddress` | \`0x$\{string}\` | The delegator (wallet) address |
 | `params.validatorAddress` | \`0x$\{string}\` | The validator (vault) address to burn shares from |
-| `params.amount` | `string` | The amount to burn, specified in `osETH` |
+| `params.amount` | `string` | The amount to burn, specified in `osETH`. E.g. "1" - 1 osETH |
 
 ### Returns
 
@@ -415,6 +415,9 @@ Signs a transaction using the provided signer.
 | `params.signer` | `Signer` | A signer instance. |
 | `params.signerAddress` | \`0x$\{string}\` | The address of the signer |
 | `params.tx` | [`Transaction`](../interfaces/ethereum_src.Transaction.md) | The transaction to sign |
+| `params.fees?` | `Object` | (Optional) The fees to include in the transaction |
+| `params.fees.baseFeeMultiplier?` | `number` | - |
+| `params.fees.defaultPriorityFee?` | `string` | - |
 
 ### Returns
 

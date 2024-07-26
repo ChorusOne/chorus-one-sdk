@@ -120,7 +120,6 @@ export class EthereumStaker {
     validatorAddress: Hex
     amount: string // ETH assets
   }): Promise<{ tx: Transaction }> {
-    this.validateAmount(params.amount)
     const tx = await buildUnstakeTx({
       connector: this.connector,
       userAccount: params.delegatorAddress,
@@ -181,7 +180,6 @@ export class EthereumStaker {
     amount: string // osETH shares
     referrer?: Hex
   }): Promise<{ tx: Transaction }> {
-    this.validateAmount(params.amount)
     const tx = await buildMintTx({
       connector: this.connector,
       userAccount: params.delegatorAddress,
@@ -208,7 +206,6 @@ export class EthereumStaker {
     validatorAddress: Hex
     amount: string // osETH shares
   }): Promise<{ tx: Transaction }> {
-    this.validateAmount(params.amount)
     const tx = await buildBurnTx({
       connector: this.connector,
       userAccount: params.delegatorAddress,

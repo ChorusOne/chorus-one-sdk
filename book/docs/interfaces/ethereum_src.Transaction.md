@@ -4,20 +4,11 @@ Represents an Ethereum transaction.
 
 ### Properties
 
-- [account](ethereum_src.Transaction.md#account)
 - [to](ethereum_src.Transaction.md#to)
 - [value](ethereum_src.Transaction.md#value)
 - [data](ethereum_src.Transaction.md#data)
 
 ## Properties
-
-### account
-
-• **account**: \`0x$\{string}\`
-
-The account (sender) address in hexadecimal format.
-
-___
 
 ### to
 
