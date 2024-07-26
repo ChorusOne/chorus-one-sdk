@@ -5,11 +5,6 @@ import { Hex } from 'viem'
  */
 export interface Transaction {
   /**
-   * The account (sender) address in hexadecimal format.
-   */
-  account: Hex
-
-  /**
    * The recipient (receiver) address in hexadecimal format.
    */
   to: Hex

@@ -9,7 +9,7 @@ export async function buildBurnTx (request: {
   vault: Hex
   amount: bigint
 }): Promise<Transaction> {
-  const { userAccount, vault, amount } = request
+  const { vault, amount } = request
 
   const tx = encodeFunctionData({
     abi: VaultABI,
@@ -18,7 +18,6 @@ export async function buildBurnTx (request: {
   })
 
   return {
-    account: userAccount,
     to: vault,
     data: tx
   }
