@@ -301,9 +301,9 @@ export class EthereumStaker {
    * @returns Returns a promise that resolves to the transaction history for the specified delegator.
    */
   async getTxHistory (params: { delegatorAddress: Hex; validatorAddress: Hex }) {
-    // TODO: add validatorAddress to the query
     const txHistory = await getTxHistory({
       connector: this.connector,
+      userAccount: params.delegatorAddress,
       vault: params.validatorAddress
     })
 
