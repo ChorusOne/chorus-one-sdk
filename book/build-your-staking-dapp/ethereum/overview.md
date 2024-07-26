@@ -10,6 +10,14 @@ The Ethereum blockchain, renowned for its smart contract functionality and vibra
 
 The **Chorus One SDK** simplifies the staking process on the Ethereum network, providing developers with the tools needed to build, sign, and broadcast staking transactions.
 
+{% hint style="info" %}
+
+### Compatibility Notice
+
+The methods provided in this documentation are compatible with popular Ethereum libraries such as `Ethers` and `viem`. This compatibility ensures that you can seamlessly integrate these methods into your existing Ethereum projects.
+
+{% endhint %}
+
 To enhance efficiency, the SDK leverages [Stakewise V3's](https://docs.stakewise.io/) audited and secure smart contracts. By utilizing a pooling solution, it allows multiple users to combine their stakes, making staking more accessible and beneficial for smaller stakeholders.
 
 This guide will walk you through the fundamentals of staking on Ethereum using the Chorus One SDK.
@@ -227,10 +235,6 @@ const { status, receipt } = await staker.getTxStatus({ txHash })
 
 console.log(status) // 'success'
 ```
-
-{% hint style="info" %}
-The signature of these methods is compatible with the methods provided by popular Ethereum libraries like `viem`.
-{% endhint %}
 
 ---
 

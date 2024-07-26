@@ -8,6 +8,14 @@ The NEAR blockchain, known for its scalability, low transaction fees, and develo
 
 The **Chorus One SDK** simplifies this process, providing developers with the tools needed to build, sign, and broadcast staking transactions.
 
+{% hint style="info" %}
+
+### Compatibility Notice
+
+The methods provided in this documentation are compatible with popular NEAR libraries such as `near-api-js`. This compatibility ensures that you can seamlessly integrate these methods into your existing NEAR projects.
+
+{% endhint %}
+
 This guide will walk you through the fundamentals of staking on NEAR using the Chorus One SDK.
 
 ## Setting Up the Staker
@@ -150,10 +158,6 @@ const { status, receipt } = await staker.getTxStatus({
 
 console.log(status) // 'success'
 ```
-
-{% hint style="info" %}
-The signature of these methods is compatible with the methods provided by popular NEAR libraries like `near-api-js`.
-{% endhint %}
 
 ---
 
