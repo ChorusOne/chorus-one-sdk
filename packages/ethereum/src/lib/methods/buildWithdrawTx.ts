@@ -19,7 +19,9 @@ export async function buildWithdrawTx (request: {
 
   const multicallArgs = queueItems
     .filter((item) => {
-      return !positionTickets || positionTickets.includes(item.positionTicket.toString())
+      if (!positionTickets) return item.isWithdrawable
+
+      return positionTickets.includes(item.positionTicket.toString())
     })
     .map((item) => {
       const timestamp = Math.floor(item.when.getTime() / 1000)
@@ -27,7 +29,7 @@ export async function buildWithdrawTx (request: {
         throw new Error('Exit queue index is missing')
       }
       if (!item.isWithdrawable) {
-        throw new Error('Item is not withdrawable')
+        throw new Error(`Position #${item.positionTicket} is not withdrawable`)
       }
 
       return encodeFunctionData({
