@@ -19,7 +19,6 @@ export const buildMintTx = async (request: {
   })
 
   return {
-    account: userAccount,
     to: vault,
     data: tx
   }

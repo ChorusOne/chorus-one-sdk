@@ -47,7 +47,6 @@ export async function buildUnstakeTx (request: {
   }
 
   return {
-    account: userAccount,
     to: vault,
     data: tx
   }

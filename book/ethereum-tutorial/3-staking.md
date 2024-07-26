@@ -86,7 +86,6 @@ const stake = async ({
 
   console.log(stakeTx)
   // {
-  //   account: "0x...",
   //   to: "0x...",
   //   data: "0x...",
   //   value: 10000000000000000n
@@ -111,7 +110,6 @@ The network determines the actual fee based on the current demand for block spac
 
 The `Transaction` object returned by `buildStakeTransaction` includes the following parameters:
 
-- **`account` (Hex)**: The user's Ethereum address.
 - **`to` (Hex)**: The address of the contract to interact with(the vault address).
 - **`data` (Hex)**: A contract hashed method call with encoded arguments (the transformation of the method call into this encoded and hashed form is handled by the `encodeFunctionData` method from the viem library).
 - **`value` (bigint)**: The amount of ETH being used in the transaction. In this case, it's the amount being staked.

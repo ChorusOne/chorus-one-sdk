@@ -46,7 +46,6 @@ export async function buildWithdrawTx (request: {
   })
 
   return {
-    account: userAccount,
     to: vault,
     data: tx
   }
