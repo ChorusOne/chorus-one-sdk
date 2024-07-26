@@ -1,6 +1,6 @@
 import type { Signer } from '@chorus-one/signer'
 import { publicKeyConvert } from 'secp256k1'
-import { createWalletClient, formatEther, Hex, http, keccak256, parseEther, serializeTransaction } from 'viem'
+import { Chain, createWalletClient, formatEther, Hex, http, keccak256, parseEther, serializeTransaction } from 'viem'
 import { StakewiseConnector } from './lib/connector'
 
 import {
@@ -418,13 +418,33 @@ export class EthereumStaker {
    * @param params.signer - A signer instance.
    * @param params.signerAddress - The address of the signer
    * @param params.tx - The transaction to sign
+   * @param params.fees - (Optional) The fees to include in the transaction
+   * @param params.fees.baseFeeMultiplier - (Optional) The multiplier for fees, which is used to manage fee fluctuations, is applied to the base fee per gas from the latest block to determine the final `maxFeePerGas`. The default value is 1.2.
+   * @param params.fees.defaultPriorityFee - (Optional) This overrides the the `maxPriorityFeePerGas` estimated by the RPC.
    *
    * @returns A promise that resolves to an object containing the signed transaction.
    */
-  async sign (params: { signer: Signer; signerAddress: Hex; tx: Transaction }): Promise<{ signedTx: Hex }> {
-    const { signer, signerAddress, tx: tx } = params
+  async sign (params: {
+    signer: Signer
+    signerAddress: Hex
+    tx: Transaction
+    fees?: {
+      baseFeeMultiplier?: number
+      defaultPriorityFee?: string
+    }
+  }): Promise<{ signedTx: Hex }> {
+    const { signer, signerAddress, tx: tx, fees } = params
+    const chain: Chain = {
+      ...this.connector.chain,
+      fees: fees
+        ? {
+            baseFeeMultiplier: fees.baseFeeMultiplier,
+            defaultPriorityFee: fees.defaultPriorityFee === undefined ? undefined : parseEther(fees.defaultPriorityFee)
+          }
+        : undefined
+    }
     const client = createWalletClient({
-      chain: this.connector.eth.chain,
+      chain,
       transport: http(),
       account: signerAddress
     })
