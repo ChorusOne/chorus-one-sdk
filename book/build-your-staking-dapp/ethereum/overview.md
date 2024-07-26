@@ -142,6 +142,8 @@ Once the transaction is built, you can sign that transaction using your own sign
 const signedTx = await yourWalletClient.signTransaction(tx)
 ```
 
+When using your own signer, you will need to calculate the transaction fees yourself before signing.
+
 Additionally, you can use the Chorus One SDK to sign transactions using Fireblocks, mnemonic or other methods.
 
 - For detailed information on setting up and configuring these options, please refer to the [What is a Signer?](../../signers-explained/what-is-a-signer.md) section.
@@ -167,9 +169,21 @@ await signer.init()
 const { signedTx } = await staker.sign({
   signer,
   signerAddress: '0x70aEe8a9099ebADB186C2D530F72CF5dC7FE6B30',
-  tx
+  tx,
+  fees: {
+    baseFeeMultiplier: 2, // Optional: Multiplier for the base fee per gas
+    defaultPriorityFee: '2' // Optional: Override for the maxPriorityFeePerGas
+  }
 })
 ```
+
+### Configuring Transaction Fees
+
+When signing transactions, you can optionally configure the fees to manage cost and priority. The `fees` parameter allows you to specify a `baseFeeMultiplier` and a `defaultPriorityFee`.
+
+- **`baseFeeMultiplier`**: (Optional) This multiplier helps manage fee fluctuations by adjusting the base fee per gas from the latest block. For example, if the `baseFeeMultiplier` is set to 2, the final `maxFeePerGas` will be 2 times the base fee. The default value is 1.2.
+
+- **`defaultPriorityFee`**: (Optional) This value allows you to override the `maxPriorityFeePerGas` estimated by the RPC. You can specify a fixed value to ensure that your transaction has a certain priority. By default, the `maxPriorityFeePerGas` is calculated by the RPC.
 
 For more information please refer to the [Signing with Fireblocks](../../signers-explained/fireblocks.md)
 {% endtab %}

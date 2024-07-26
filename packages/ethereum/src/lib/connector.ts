@@ -1,4 +1,4 @@
-import { createPublicClient, PublicClient, http, Hex, parseGwei } from 'viem'
+import { createPublicClient, PublicClient, http, Hex, Chain } from 'viem'
 import { holesky, mainnet } from 'viem/chains'
 import { Networks } from './types/networks'
 
@@ -13,6 +13,7 @@ export interface GraphQLRequest {
 
 // Connector abstraction, providing on-chain and GraphQL API primitives
 export class StakewiseConnector {
+  chain: Chain
   /** Base URL for Stakewise main graph API */
   baseAPI: string
   /** Base URL for Stakewise subgraph */
@@ -27,18 +28,13 @@ export class StakewiseConnector {
   mintTokenConfig: Hex
   /** Stakewise mint token controller contract address */
   mintTokenController: Hex
-  /** Gas max fee */
-  maxFeePerGas: bigint
-  /** Gas max priority fee */
-  maxPriorityFeePerGas: bigint
 
   constructor (network: Networks, rpcUrl?: string) {
     // These parameters might need to be changed for Gnosis and Mainnet
-    this.maxFeePerGas = parseGwei('1.5')
-    this.maxPriorityFeePerGas = parseGwei('1.5')
     const transport = rpcUrl ? http(rpcUrl) : http()
     switch (network) {
       case 'holesky':
+        this.chain = holesky
         this.eth = createPublicClient({
           chain: holesky,
           transport
@@ -53,6 +49,7 @@ export class StakewiseConnector {
         this.mintTokenController = '0x7BbC1733ee018f103A9a9052a18fA9273255Cf36'
         break
       case 'ethereum':
+        this.chain = mainnet
         this.eth = createPublicClient({
           chain: mainnet,
           transport
@@ -60,10 +57,6 @@ export class StakewiseConnector {
 
         this.baseAPI = 'https://mainnet-api.stakewise.io/graphql'
         this.baseGraph = 'https://mainnet-graph.stakewise.io/subgraphs/name/stakewise/stakewise'
-        this.eth = createPublicClient({
-          chain: mainnet,
-          transport: transport
-        })
         // Stakewise keeper contract
         this.keeper = '0x6B5815467da09DaA7DC83Db21c9239d98Bb487b5'
         this.priceOracle = '0x8023518b2192FB5384DAdc596765B3dD1cdFe471'

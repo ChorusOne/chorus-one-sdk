@@ -98,6 +98,7 @@ const stake = async ({
 ```
 
 {% hint style="info" %}
+**Configuring Fees**
 
 We utilize here the Ethereum Improvement Proposal 1559 (EIP-1559) transaction type. With EIP-1559, users specify two types of fees:
 
@@ -105,6 +106,8 @@ We utilize here the Ethereum Improvement Proposal 1559 (EIP-1559) transaction ty
 - **`maxPriorityFeePerGas`**: Also known as the tip, this incentivizes miners to prioritize the transaction.
 
 The network determines the actual fee based on the current demand for block space and the transaction's priority. To estimate the gas required for the transaction, we use the `prepareTransactionRequest` method from the `viem`'s wallet client.
+
+For detailed information on configuring fees, please refer to the [Viem Documentation](https://viem.sh/docs/chains/fees).
 
 {% endhint %}
 
