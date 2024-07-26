@@ -418,9 +418,8 @@ export class EthereumStaker {
    * @param params.signer - A signer instance.
    * @param params.signerAddress - The address of the signer
    * @param params.tx - The transaction to sign
-   * @param params.fees - (Optional) The fees to include in the transaction
-   * @param params.fees.baseFeeMultiplier - (Optional) The multiplier for fees, which is used to manage fee fluctuations, is applied to the base fee per gas from the latest block to determine the final `maxFeePerGas`. The default value is 1.2.
-   * @param params.fees.defaultPriorityFee - (Optional) This overrides the the `maxPriorityFeePerGas` estimated by the RPC.
+   * @param params.baseFeeMultiplier - (Optional) The multiplier for fees, which is used to manage fee fluctuations, is applied to the base fee per gas from the latest block to determine the final `maxFeePerGas`. The default value is 1.2.
+   * @param params.defaultPriorityFee - (Optional) This overrides the the `maxPriorityFeePerGas` estimated by the RPC.
    *
    * @returns A promise that resolves to an object containing the signed transaction.
    */
@@ -428,21 +427,24 @@ export class EthereumStaker {
     signer: Signer
     signerAddress: Hex
     tx: Transaction
-    fees?: {
-      baseFeeMultiplier?: number
-      defaultPriorityFee?: string
-    }
+    baseFeeMultiplier?: number
+    defaultPriorityFee?: string
   }): Promise<{ signedTx: Hex }> {
-    const { signer, signerAddress, tx: tx, fees } = params
+    const { signer, signerAddress, tx: tx, baseFeeMultiplier, defaultPriorityFee } = params
+
+    const baseChain = this.connector.chain
+
+    const baseFees = baseChain.fees ?? {}
+    const fees = {
+      ...baseFees,
+      baseFeeMultiplier: baseFeeMultiplier ?? baseFees.baseFeeMultiplier,
+      defaultPriorityFee:
+        defaultPriorityFee === undefined ? baseFees.defaultPriorityFee : this.parseEther(defaultPriorityFee)
+    }
+
     const chain: Chain = {
-      ...this.connector.chain,
-      fees: fees
-        ? {
-            baseFeeMultiplier: fees.baseFeeMultiplier,
-            defaultPriorityFee:
-              fees.defaultPriorityFee === undefined ? undefined : this.parseEther(fees.defaultPriorityFee)
-          }
-        : undefined
+      ...baseChain,
+      fees
     }
     const client = createWalletClient({
       chain,

@@ -187,6 +187,7 @@ import { useWalletClient } from 'wagmi'
 
 const { data: walletClient } = useWalletClient()
 
+// Prepare the transaction and estimate the gas fees
 const request = await walletClient.prepareTransactionRequest(tx)
 
 // Sign and send the transaction
@@ -207,12 +208,13 @@ import { BrowserProvider } from 'ethers'
 const provider = new BrowserProvider(window.ethereum)
 const signer = await provider.getSigner()
 
+// Estimate gas fees
 const feeData = await provider.getFeeData()
-const gasLimit = await provider.estimateGas(stakeTx2)
+const gasLimit = await provider.estimateGas(tx)
 
 // Sign and send the transaction
 const { hash } = await signer.sendTransaction({
-  ...stakeTx2,
+  ...tx,
   // Optional: Set the gas limit and fees
   gasLimit: gasLimit,
   maxFeePerGas: feeData.maxFeePerGas,
@@ -246,10 +248,8 @@ const { signedTx } = await staker.sign({
   signer,
   signerAddress: '0x70aEe8a9099ebADB186C2D530F72CF5dC7FE6B30',
   tx,
-  fees: {
-    baseFeeMultiplier: 2, // Optional: Multiplier for the base fee per gas
-    defaultPriorityFee: '2' // Optional: Override for the maxPriorityFeePerGas
-  }
+  baseFeeMultiplier: 2, // Optional: Multiplier for the base fee per gas
+  defaultPriorityFee: '2' // Optional: Override for the maxPriorityFeePerGas
 })
 ```
 

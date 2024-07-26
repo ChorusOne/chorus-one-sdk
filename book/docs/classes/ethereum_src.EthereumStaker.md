@@ -415,9 +415,8 @@ Signs a transaction using the provided signer.
 | `params.signer` | `Signer` | A signer instance. |
 | `params.signerAddress` | \`0x$\{string}\` | The address of the signer |
 | `params.tx` | [`Transaction`](../interfaces/ethereum_src.Transaction.md) | The transaction to sign |
-| `params.fees?` | `Object` | (Optional) The fees to include in the transaction |
-| `params.fees.baseFeeMultiplier?` | `number` | - |
-| `params.fees.defaultPriorityFee?` | `string` | - |
+| `params.baseFeeMultiplier?` | `number` | (Optional) The multiplier for fees, which is used to manage fee fluctuations, is applied to the base fee per gas from the latest block to determine the final `maxFeePerGas`. The default value is 1.2. |
+| `params.defaultPriorityFee?` | `string` | (Optional) This overrides the the `maxPriorityFeePerGas` estimated by the RPC. |
 
 ### Returns
 
