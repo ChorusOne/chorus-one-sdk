@@ -88,7 +88,7 @@ If the minting limits and health factors are within acceptable ranges, you can p
 **To illustrate this, we use the `buildMintTx` method in the following example:**
 
 ```typescript
-const mintTx = await staker.buildMintTx({
+const { tx: mintTx } = await staker.buildMintTx({
   delegatorAddress: userAddress,
   validatorAddress,
   amount: amountToMint

@@ -50,7 +50,7 @@ Once you've determined the maximum unstakeable amount, you can proceed to build 
 **The following example demonstrates how to use the `buildUnstakeTx` method:**
 
 ```typescript
-const unstakeTx = await staker.buildUnstakeTx({
+const { tx: unstakeTx } = await staker.buildUnstakeTx({
   delegatorAddress: userAddress,
   validatorAddress,
   amount: amountToUnstake
@@ -103,7 +103,7 @@ To withdraw assets, you'll need to identify which queue items are ready to be wi
 **The following example demonstrates how to prepare the withdrawal transaction:**
 
 ```typescript
-const withdrawTx = await staker.buildWithdrawTx({
+const { tx: withdrawTx } = await staker.buildWithdrawTx({
   delegatorAddress: userAddress,
   validatorAddress,
   positionTickets: unstakeQueue.filter((item) => item.isWithdrawable).map((item) => item.positionTicket)

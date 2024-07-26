@@ -34,7 +34,7 @@ After determining the maximum amount of osETH that can be burned, proceed to bui
 **Here's how you can implement this with the `buildBurnTx` method:**
 
 ```typescript
-const burnTx = await staker.buildBurnTx({
+const { tx: burnTx } = await staker.buildBurnTx({
   delegatorAddress: userAddress,
   validatorAddress,
   amount: amountToBurn

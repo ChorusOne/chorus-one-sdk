@@ -78,7 +78,7 @@ const stake = async ({
 
   const validatorAddress = CHORUS_ONE_ETHEREUM_VALIDATORS.ethereum.mevMaxVault
 
-  const stakeTx = await staker.buildStakeTx({
+  const { tx: stakeTx } = await staker.buildStakeTx({
     delegatorAddress: userAddress,
     validatorAddress,
     amount: amountToStake
