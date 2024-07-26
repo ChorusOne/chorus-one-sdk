@@ -13,15 +13,15 @@ It supports:
 - The official Nominator Pool smart contracts available for review on the official [TON Docs](https://docs.ton.org/participate/network-maintenance/nominators)
 - The official Single Nominator Pool smart contract available for review on the official [TON Docs](https://docs.ton.org/participate/network-maintenance/single-nominator)
 
+This guide will walk you through the fundamentals of staking on TON using the Chorus One SDK.
+
 {% hint style="info" %}
 
-### Compatibility Notice
+**Compatibility Notice**
 
 The methods provided in this documentation are compatible with popular TON libraries such as `@ton/ton`. This compatibility ensures that you can seamlessly integrate these methods into your existing TON projects.
 
 {% endhint %}
-
-This guide will walk you through the fundamentals of staking on TON using the Chorus One SDK.
 
 ## Setting Up the Staker
 

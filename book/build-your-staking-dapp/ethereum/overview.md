@@ -10,17 +10,17 @@ The Ethereum blockchain, renowned for its smart contract functionality and vibra
 
 The **Chorus One SDK** simplifies the staking process on the Ethereum network, providing developers with the tools needed to build, sign, and broadcast staking transactions.
 
+To enhance efficiency, the SDK leverages [Stakewise V3's](https://docs.stakewise.io/) audited and secure smart contracts. By utilizing a pooling solution, it allows multiple users to combine their stakes, making staking more accessible and beneficial for smaller stakeholders.
+
+This guide will walk you through the fundamentals of staking on Ethereum using the Chorus One SDK.
+
 {% hint style="info" %}
 
-### Compatibility Notice
+**Compatibility Notice**
 
 The methods provided in this documentation are compatible with popular Ethereum libraries such as `Ethers` and `viem`. This compatibility ensures that you can seamlessly integrate these methods into your existing Ethereum projects.
 
 {% endhint %}
-
-To enhance efficiency, the SDK leverages [Stakewise V3's](https://docs.stakewise.io/) audited and secure smart contracts. By utilizing a pooling solution, it allows multiple users to combine their stakes, making staking more accessible and beneficial for smaller stakeholders.
-
-This guide will walk you through the fundamentals of staking on Ethereum using the Chorus One SDK.
 
 ## Understanding Key Concepts
 
@@ -121,9 +121,7 @@ const { tx } = await staker.buildStakeTx({
 })
 ```
 
-{% hint style="warning" %}
-
-**Ensuring Correct Amount Format for Staking**
+### Ensuring Correct Amount Format for Staking
 
 The `amount` parameter must be a string representing the amount of ETH to deposit. For example, `'1'` represents 1 ETH.
 
@@ -139,8 +137,6 @@ console.log(amountToStake) // "0.01"
 ```
 
 This ensures the `amountToStake` parameter is in the correct format for the staking transaction function.
-
-{% endhint %}
 
 ---
 
@@ -190,7 +186,7 @@ const { data: walletClient } = useWalletClient()
 // Prepare the transaction and estimate the gas fees
 const request = await walletClient.prepareTransactionRequest(tx)
 
-// Sign and send the transaction
+// Sign and broadcast the transaction
 const hash = await walletClient.sendTransaction(request)
 ```
 
@@ -212,7 +208,7 @@ const signer = await provider.getSigner()
 const feeData = await provider.getFeeData()
 const gasLimit = await provider.estimateGas(tx)
 
-// Sign and send the transaction
+// Sign and broadcast the transaction
 const { hash } = await signer.sendTransaction({
   ...tx,
   // Optional: Set the gas limit and fees
@@ -244,6 +240,7 @@ const signer = new FireblocksSigner({
 
 await signer.init()
 
+// Just sign the transaction
 const { signedTx } = await staker.sign({
   signer,
   signerAddress: '0x70aEe8a9099ebADB186C2D530F72CF5dC7FE6B30',

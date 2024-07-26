@@ -103,9 +103,7 @@ The `Transaction` object returned by `buildStakeTransaction` includes the follow
 - **`data` (Hex)**: A contract hashed method call with encoded arguments (the transformation of the method call into this encoded and hashed form is handled by the `encodeFunctionData` method from the viem library).
 - **`value` (bigint)**: The amount of ETH being used in the transaction. In this case, it's the amount being staked.
 
-{% hint style="warning" %}
-
-**Ensuring Correct Amount Format for Staking**
+### Ensuring Correct Amount Format for Staking
 
 The `amountToStake` parameter must be a string representing the amount of ETH to deposit. For example, `'1'` represents 1 ETH.
 
@@ -121,8 +119,6 @@ console.log(amountToStake) // "0.01"
 ```
 
 This ensures the `amountToStake` parameter is in the correct format for the staking transaction function.
-
-{% endhint %}
 
 {% hint style="info" %}
 **Configuring Fees**
