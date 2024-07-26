@@ -178,7 +178,54 @@ Additionally, you can use the Chorus One SDK to sign transactions using Firebloc
 - For detailed information on setting up and configuring these options, please refer to the [What is a Signer?](../../signers-explained/what-is-a-signer.md) section.
 
 {% tabs %}
+
+{% tab title="Using wagmi/Viem for Signing" %}
+By integrating wagmi, you can take advantage of its lightweight developer-friendly wallet client capabilities to sign transactions on the Ethereum network:
+
+```javascript
+import { useWalletClient } from 'wagmi'
+
+const { data: walletClient } = useWalletClient()
+
+const request = await walletClient.prepareTransactionRequest(tx)
+
+// Sign and send the transaction
+const hash = await walletClient.sendTransaction(request)
+```
+
+For more information please refer to the [Viem Documentation](https://viem.sh/)
+
+{% endtab %}
+
+{% tab title="Using Ethers for Signing" %}
+
+By integrating Ethers, you can use its widely adopted and feature-rich library for signing transactions on the Ethereum network:
+
+```javascript
+import { BrowserProvider } from 'ethers'
+
+const provider = new BrowserProvider(window.ethereum)
+const signer = await provider.getSigner()
+
+const feeData = await provider.getFeeData()
+const gasLimit = await provider.estimateGas(stakeTx2)
+
+// Sign and send the transaction
+const { hash } = await signer.sendTransaction({
+  ...stakeTx2,
+  // Optional: Set the gas limit and fees
+  gasLimit: gasLimit,
+  maxFeePerGas: feeData.maxFeePerGas,
+  maxPriorityFeePerGas: feeData.maxPriorityFeePerGas
+})
+```
+
+For more information please refer to the [Ethers Documentation](https://docs.ethers.org/)
+
+{% endtab %}
+
 {% tab title="Using Fireblocks for Signing" %}
+
 By integrating Fireblocks, you can leverage its robust security features to sign transactions on the Ethereum network. To set up Fireblocks, you will need to provide the necessary API key, secret key, and vault ID:
 
 ```javascript
@@ -215,7 +262,9 @@ When signing transactions, you can optionally configure the fees to manage cost 
 - **`defaultPriorityFee`**: (Optional) This value allows you to override the `maxPriorityFeePerGas` estimated by the RPC. You can specify a fixed value to ensure that your transaction has a certain priority. By default, the `maxPriorityFeePerGas` is calculated by the RPC.
 
 For more information please refer to the [Signing with Fireblocks](../../signers-explained/fireblocks.md)
+
 {% endtab %}
+
 {% endtabs %}
 
 ---
