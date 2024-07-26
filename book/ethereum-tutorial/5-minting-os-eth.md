@@ -91,7 +91,7 @@ If the minting limits and health factors are within acceptable ranges, you can p
 const { tx: mintTx } = await staker.buildMintTx({
   delegatorAddress: userAddress,
   validatorAddress,
-  amount: amountToMint
+  amount: amountToMint // Passed as string, e.g. '1' - 1 ETH
 })
 
 const request = await walletClient.prepareTransactionRequest(unstakeTx)

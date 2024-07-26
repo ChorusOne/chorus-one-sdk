@@ -37,7 +37,7 @@ After determining the maximum amount of osETH that can be burned, proceed to bui
 const { tx: burnTx } = await staker.buildBurnTx({
   delegatorAddress: userAddress,
   validatorAddress,
-  amount: amountToBurn
+  amount: amountToBurn // Passed as string, e.g. '1' - 1 ETH
 })
 
 const request = await walletClient.prepareTransactionRequest(unstakeTx)

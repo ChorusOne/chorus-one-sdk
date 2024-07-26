@@ -53,7 +53,7 @@ Once you've determined the maximum unstakeable amount, you can proceed to build 
 const { tx: unstakeTx } = await staker.buildUnstakeTx({
   delegatorAddress: userAddress,
   validatorAddress,
-  amount: amountToUnstake
+  amount: amountToUnstake // Passed as string, e.g. '1' - 1 ETH
 })
 
 const request = await walletClient.prepareTransactionRequest(unstakeTx)
