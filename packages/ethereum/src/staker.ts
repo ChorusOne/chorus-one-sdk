@@ -86,7 +86,7 @@ export class EthereumStaker {
   async buildStakeTx (params: {
     delegatorAddress: Hex
     validatorAddress: Hex
-    amount: string
+    amount: string // ETH assets
     referrer?: Hex
   }): Promise<{ tx: Transaction }> {
     const tx = await buildStakeTx({
@@ -118,7 +118,7 @@ export class EthereumStaker {
   async buildUnstakeTx (params: {
     delegatorAddress: Hex
     validatorAddress: Hex
-    amount: string
+    amount: string // ETH assets
   }): Promise<{ tx: Transaction }> {
     const tx = await buildUnstakeTx({
       connector: this.connector,
@@ -177,7 +177,7 @@ export class EthereumStaker {
   async buildMintTx (params: {
     delegatorAddress: Hex
     validatorAddress: Hex
-    amount: string // shares
+    amount: string // osETH shares
     referrer?: Hex
   }): Promise<{ tx: Transaction }> {
     const tx = await buildMintTx({
@@ -204,7 +204,7 @@ export class EthereumStaker {
   async buildBurnTx (params: {
     delegatorAddress: Hex
     validatorAddress: Hex
-    amount: string
+    amount: string // osETH shares
   }): Promise<{ tx: Transaction }> {
     const tx = await buildBurnTx({
       connector: this.connector,
