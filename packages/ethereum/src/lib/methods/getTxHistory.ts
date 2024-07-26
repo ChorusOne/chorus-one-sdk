@@ -2,13 +2,18 @@ import { Hex } from 'viem'
 import { StakewiseConnector } from '../connector'
 import { VaultActionType, VaultTransaction } from '../types/transactionHistory'
 
-async function extractTransactionsHistory (connector: StakewiseConnector, vault: Hex): Promise<VaultTransaction[]> {
+async function extractTransactionsHistory (
+  connector: StakewiseConnector,
+  vault: Hex,
+  userAccount: Hex
+): Promise<VaultTransaction[]> {
   const vars_getActions = {
     where: {
       vault_: {
         id: vault.toLowerCase()
       },
-      actionType_in: Object.values(VaultActionType)
+      actionType_in: Object.values(VaultActionType),
+      address: userAccount.toLowerCase()
     },
     first: 1000,
     skip: 0
@@ -63,10 +68,10 @@ async function extractTransactionsHistory (connector: StakewiseConnector, vault:
 export async function getTxHistory (params: {
   connector: StakewiseConnector
   vault: Hex
-  // userAccount: Hex
+  userAccount: Hex
 }): Promise<Array<VaultTransaction>> {
-  const { connector, vault } = params
-  const interactions = await extractTransactionsHistory(connector, vault)
+  const { connector, vault, userAccount } = params
+  const interactions = await extractTransactionsHistory(connector, vault, userAccount)
 
   return interactions
 }
