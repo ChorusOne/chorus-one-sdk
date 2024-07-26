@@ -1,22 +1,22 @@
 # Overview
 
-Staking on the Avalanche network (AVAX) involves locking up tokens to support the network's security and operations. In return, stakers earn rewards.
-
 {% hint style="info" %}
 The Avalanche blockchain, renowned for its rapid transaction processing, low fees, and eco-friendly architecture, utilizes a unique consensus protocol known as Avalanche Consensus. This protocol enables a high degree of decentralization and security, allowing validators to participate by staking AVAX, the network's native token.
 {% endhint %}
 
+Staking on the Avalanche network (AVAX) involves locking up tokens to support the network's security and operations. In return, stakers earn rewards.
+
 The **Chorus One SDK** simplifies this process, providing developers with the tools needed to build, sign, and broadcast staking transactions.
+
+This guide will walk you through the fundamentals of staking on Avalanche using the Chorus One SDK.
 
 {% hint style="info" %}
 
-### Compatibility Notice
+**Compatibility Notice**
 
 The methods provided in this documentation are compatible with popular Avalanche libraries such as `@avalabs/avalanchejs`. This compatibility ensures that you can seamlessly integrate these methods into your existing Avalanche projects.
 
 {% endhint %}
-
-This guide will walk you through the fundamentals of staking on Avalanche using the Chorus One SDK.
 
 ## Setting Up the Staker
 
