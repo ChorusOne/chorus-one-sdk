@@ -113,6 +113,27 @@ const { tx } = await staker.buildStakeTx({
 })
 ```
 
+{% hint style="warning" %}
+
+**Ensuring Correct Amount Format for Staking**
+
+The `amount` parameter must be a string representing the amount of ETH to deposit. For example, `'1'` represents 1 ETH.
+
+If you have the amount as a `bigint`, convert it to a string using the `formatEther` function from `viem`. Example:
+
+```typescript
+import { formatEther } from 'viem'
+
+const amountBigInt = 10000000000000000n // 0.01 ETH
+const amountToStake = formatEther(amountBigInt)
+
+console.log(amountToStake) // "0.01"
+```
+
+This ensures the `amountToStake` parameter is in the correct format for the staking transaction function.
+
+{% endhint %}
+
 ---
 
 ## Getting the Validator Address provided by Chorus One

@@ -76,7 +76,7 @@ export class EthereumStaker {
    * @param params - Parameters for building the transaction
    * @param params.delegatorAddress - The delegator (wallet) address to stake from
    * @param params.validatorAddress - The validator (vault) address to stake with
-   * @param params.amount - The amount to stake, specified in `ETH`
+   * @param params.amount - The amount to stake, specified in `ETH`. E.g. "1" - 1 ETH
    * @param params.referrer - (Optional) The address of the referrer. This is used to track the origin of transactions,
    * providing insights into which sources or campaigns are driving activity. This can be useful for analytics and
    * optimizing user acquisition strategies
@@ -93,7 +93,7 @@ export class EthereumStaker {
       connector: this.connector,
       userAccount: params.delegatorAddress,
       vault: params.validatorAddress,
-      amount: parseEther(params.amount),
+      amount: this.parseEther(params.amount),
       referrer: params.referrer
     })
 
@@ -111,7 +111,7 @@ export class EthereumStaker {
    * @param params - Parameters for building the transaction
    * @param params.delegatorAddress - The delegator (wallet) address that is unstaking
    * @param params.validatorAddress - The validator (vault) address to unstake from
-   * @param params.amount - The amount to unstake, specified in `ETH`
+   * @param params.amount - The amount to unstake, specified in `ETH`. E.g. "1" - 1 ETH
    *
    * @returns Returns a promise that resolves to an Ethereum unstaking transaction.
    */
@@ -120,11 +120,12 @@ export class EthereumStaker {
     validatorAddress: Hex
     amount: string // ETH assets
   }): Promise<{ tx: Transaction }> {
+    this.validateAmount(params.amount)
     const tx = await buildUnstakeTx({
       connector: this.connector,
       userAccount: params.delegatorAddress,
       vault: params.validatorAddress,
-      amount: parseEther(params.amount)
+      amount: this.parseEther(params.amount)
     })
 
     return { tx }
@@ -167,7 +168,7 @@ export class EthereumStaker {
    * @param params - Parameters for building the transaction
    * @param params.delegatorAddress - The delegator (wallet) address
    * @param params.validatorAddress - The validator (vault) address to mint shares for
-   * @param params.amount - The amount to mint, specified in `osETH`
+   * @param params.amount - The amount to mint, specified in `osETH`. E.g. "1" - 1 osETH
    * @param params.referrer - (Optional) The address of the referrer. This is used to track the origin of
    * transactions, providing insights into which sources or campaigns are driving activity. This can be useful for
    * analytics and optimizing user acquisition strategies.
@@ -180,11 +181,12 @@ export class EthereumStaker {
     amount: string // osETH shares
     referrer?: Hex
   }): Promise<{ tx: Transaction }> {
+    this.validateAmount(params.amount)
     const tx = await buildMintTx({
       connector: this.connector,
       userAccount: params.delegatorAddress,
       vault: params.validatorAddress,
-      amount: parseEther(params.amount),
+      amount: this.parseEther(params.amount),
       referrer: params.referrer
     })
 
@@ -197,7 +199,7 @@ export class EthereumStaker {
    * @param params - Parameters for building the transaction
    * @param params.delegatorAddress - The delegator (wallet) address
    * @param params.validatorAddress - The validator (vault) address to burn shares from
-   * @param params.amount - The amount to burn, specified in `osETH`
+   * @param params.amount - The amount to burn, specified in `osETH`. E.g. "1" - 1 osETH
    *
    * @returns Returns a promise that resolves to an Ethereum burn transaction.
    */
@@ -206,11 +208,12 @@ export class EthereumStaker {
     validatorAddress: Hex
     amount: string // osETH shares
   }): Promise<{ tx: Transaction }> {
+    this.validateAmount(params.amount)
     const tx = await buildBurnTx({
       connector: this.connector,
       userAccount: params.delegatorAddress,
       vault: params.validatorAddress,
-      amount: parseEther(params.amount)
+      amount: this.parseEther(params.amount)
     })
 
     return { tx }
@@ -404,8 +407,8 @@ export class EthereumStaker {
   async getMintHealth (params: { stakeAmount: string; mintAmount: string }) {
     const health = await getMintHealth({
       connector: this.connector,
-      mintedShares: parseEther(params.mintAmount),
-      stakedAssets: parseEther(params.stakeAmount)
+      mintedShares: this.parseEther(params.mintAmount),
+      stakedAssets: this.parseEther(params.stakeAmount)
     })
 
     return { health }
@@ -439,7 +442,8 @@ export class EthereumStaker {
       fees: fees
         ? {
             baseFeeMultiplier: fees.baseFeeMultiplier,
-            defaultPriorityFee: fees.defaultPriorityFee === undefined ? undefined : parseEther(fees.defaultPriorityFee)
+            defaultPriorityFee:
+              fees.defaultPriorityFee === undefined ? undefined : this.parseEther(fees.defaultPriorityFee)
           }
         : undefined
     }
@@ -515,5 +519,23 @@ export class EthereumStaker {
         receipt: null
       }
     }
+  }
+
+  private parseEther (amount: string): bigint {
+    if (typeof amount === 'bigint')
+      throw new Error(
+        'Amount must be a string, denominated in ETH. e.g. "1.5" - 1.5 ETH. You can use `formatEther` to convert a `bigint` to a string'
+      )
+    if (typeof amount !== 'string')
+      throw new Error('Amount must be a string, denominated in ETH. e.g. "1.5" - 1.5 ETH.')
+    if (amount === '') throw new Error('Amount cannot be empty')
+    let result: bigint
+    try {
+      result = parseEther(amount)
+    } catch (e) {
+      throw new Error('Amount must be a valid number denominated in ETH. e.g. "1.5" - 1.5 ETH')
+    }
+    if (result <= 0n) throw new Error('Amount must be greater than 0')
+    return result
   }
 }
