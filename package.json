@@ -5,7 +5,8 @@
     "lint": "eslint packages/**",
     "cleanup": "prettier --write packages/** && eslint --no-error-on-unmatched-pattern --fix packages/**",
     "build": "turbo build --cache-dir='./.turbo/cache'",
-    "test": "npx mocha"
+    "test": "mocha 'packages/**/test/*.spec.ts' --ignore 'packages/ethereum/**/*.spec.ts'",
+    "test:ethereum": "cd packages/ethereum && npm test"
   },
   "packageManager": "npm@10.2.4",
   "license": "Apache-2.0",
@@ -15,18 +16,18 @@
     "@types/chai": "^4.3.16",
     "@types/mocha": "^10.0.7",
     "@types/node": "^20.9.0",
-    "chai": "^4.0.0",
     "chai-promised": "^1.0.6",
     "chai-spies": "^1.1.0",
+    "chai": "^4.0.0",
     "globals": "^15.4.0",
     "mocha": "^10.6.0",
     "prettier": "^3.3.2",
     "tsx": "^4.16.2",
     "turbo": "^2.0.6",
-    "typedoc": "^0.25.3",
     "typedoc-plugin-markdown": "^3.17.1",
-    "typescript": "^5.4.0",
-    "typescript-eslint": "^7.13.0"
+    "typedoc": "^0.25.3",
+    "typescript-eslint": "^7.13.0",
+    "typescript": "^5.4.0"
   },
   "workspaces": [
     "packages/*"

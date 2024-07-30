@@ -10,3 +10,6 @@ fireblocks_api_key
 fireblocks_secret_key
 dist
 .turbo
+
+packages/ethereum/cache
+packages/ethereum/hardhat.log
