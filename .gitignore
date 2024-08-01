@@ -13,3 +13,4 @@ dist
 
 packages/ethereum/cache
 packages/ethereum/hardhat.log
+packages/ethereum/hardhat.pid

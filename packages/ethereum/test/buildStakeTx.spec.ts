@@ -1,6 +1,6 @@
 import { EthereumStaker } from '@chorus-one/ethereum'
 import { Hex, PublicClient, WalletClient, parseEther } from 'viem'
-import { assert, assert } from 'chai'
+import { assert } from 'chai'
 import { prepareTests, stake } from './lib/utils'
 
 const amountToStake = parseEther('2')
