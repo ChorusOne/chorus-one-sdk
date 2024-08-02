@@ -1,0 +1,16 @@
+{
+  "solidity": "0.8.20",
+  "networks": {
+    "hardhat": {
+      "forking": {
+        "url": "https://ethereum-holesky.publicnode.com"
+      },
+      "accounts": [
+        {
+          "privateKey": "0x02e3323b5cbdd676319b15aa85aa06531e0d9819af258e306bb8a5e20f2d6061",
+          "balance": "10000000000000000000000"
+        }
+      ]
+    }
+  }
+}

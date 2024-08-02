@@ -3,7 +3,12 @@
   "version": "1.0.0",
   "description": "All-in-one toolkit for building staking dApps on Ethereum network",
   "scripts": {
-    "build": "rm -fr dist/* && tsc -p tsconfig.mjs.json --outDir dist/mjs && tsc -p tsconfig.cjs.json --outDir dist/cjs && bash ../../scripts/fix-package-json"
+    "build": "rm -fr dist/* && tsc -p tsconfig.mjs.json --outDir dist/mjs && tsc -p tsconfig.cjs.json --outDir dist/cjs && bash ../../scripts/fix-package-json",
+    "hardhat:start": "hardhat node & echo $! > hardhat.pid;",
+    "hardhat:stop": "kill $(cat hardhat.pid) && rm hardhat.pid",
+    "test:integration": "mocha --timeout 30000 '**/*.spec.ts'",
+    "test": "npm run hardhat:start > hardhat.log & sleep 5; npm run test:integration; status=$?; npm run hardhat:stop; exit $status"
+
   },
   "main": "dist/cjs/index.js",
   "module": "dist/mjs/index.js",
@@ -36,5 +41,8 @@
     "decimal.js": "^10.4.3",
     "secp256k1": "^5.0.0",
     "viem": "^2.17.4"
+  },
+  "devDependencies": {
+    "hardhat": "2.19.4"
   }
 }
