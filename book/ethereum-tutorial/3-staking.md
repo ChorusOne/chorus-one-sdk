@@ -45,10 +45,6 @@ export const FormComponent = ({ onSubmit }) => {
 
 This form component uses the `useAccount` and `useBalance` hooks from `wagmi` to manage user account details and balance information. The `onSubmit` prop is a function that handles the actual staking process, which you can define in your application logic.
 
-{% hint style="info" %}
-
-{% endhint %}
-
 This simple yet effective form provides the basic functionality to integrate staking into your Ethereum-based application.
 
 ![Stake form](../assets/tutorial/stake.png)
