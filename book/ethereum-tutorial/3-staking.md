@@ -96,6 +96,15 @@ const stake = async ({
   await walletClient.sendTransaction(request)
 }
 ```
+{% hint style="info" %}
+
+**Delegation Tracking**
+
+If you would like to learn how to track and attribute staking transactions to
+specific sources, such as marketing campaigns or integration partners, refer to the [Delegation Tracking](../build-your-staking-dapp/ethereum/delegation-tracking.md) section.
+
+{% endhint %}
+
 
 The `Transaction` object returned by `buildStakeTransaction` includes the following parameters:
 

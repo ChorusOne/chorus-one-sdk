@@ -13,6 +13,7 @@
 - [Ethereum](build-your-staking-dapp/ethereum/README.md)
   - [Overview](build-your-staking-dapp/ethereum/overview.md)
   - [Methods](build-your-staking-dapp/ethereum/methods.md)
+  - [Delegation Tracking](build-your-staking-dapp/ethereum/delegation-tracking.md)
 - [NEAR](build-your-staking-dapp/near/README.md)
   - [Overview](build-your-staking-dapp/near/overview.md)
   - [Methods](build-your-staking-dapp/near/methods.md)
