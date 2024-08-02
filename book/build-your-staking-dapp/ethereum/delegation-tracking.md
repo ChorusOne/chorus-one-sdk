@@ -48,13 +48,27 @@ const { tx } = await staker.buildMintTx({
 
 ## Benefits for Your Business
 
-Using delegation tracking offers many important insights for your business and staking activity such as: 
-- Ensuring accurate revenue tracking to the right partners or campaigns and providing clear revenue reports for different referral sources.
-- Evaluating partner performance by tracking staking transaction volume, value, and measuring campaign success by analyzing which referrers generate the most delegations.
+Leveraging delegation tracking via the Chorus One SDK ensures that your business remains at the forefront of industry developments and provides important benefits and insights for delegation activity such as: 
+
+**Accurate Reporting:**
+- Delegation tracking ensures accurate revenue tracking to the right partners or campaigns and provides clear revenue reports for different referral sources.
+- It allows evaluation of partner performance by tracking staking transaction volume, value, and measuring campaign success by analyzing which referrers generate the most delegations.
+- Delegation tracking also ensures that all activities are documented and accountable, facilitating smoother audits, compliance, and financial reporting.
+- Detailed delegation reports can be shared with clients as needed, providing them with insights into their holdings and fostering transparency.
+
+**Strategic Planning:** 
+- Delegation tracking provides clear and detailed insights into delegation activities, enabling businesses to maintain transparency and build trust with stakeholders.
 - Tracking customer behavior and preferences to improve engagement strategies and implement retention strategies for high-value customers based on delegation data.
+- Access to real-time delegation data allows your business to make informed decisions, optimize strategies, and respond promptly to market changes.
+- Historical delegation data can be analyzed to forecast trends and improve business strategy and long-term planning.
+
+**Performance Monitoring:**
+- By tracking delegations, businesses can identify high-performing assets and allocate resources more effectively to maximize returns.
+- Continuous tracking of delegations helps in monitoring the performance of delegated assets, ensuring you can identify and address underperforming areas swiftly.
+- Automated tracking reduces the need for manual monitoring, saving time and reducing errors.
 
 ## Conclusion
 
-Using delegation tracking in the Chorus One SDK optimizes marketing strategies and partnerships by providing accurate attribution and insights into customer staking activity while also enabling precise revenue tracking. 
+Using delegation tracking in the Chorus One SDK optimizes strategies and partnerships for your business by providing accurate attribution and insights into customer staking activity while also enabling precise revenue tracking. 
 
-This allows your business to stay competitive and allocate resources effectively as well as help maintain accurate financial records and reporting. 
+This allows your business to stay competitive and allocate resources effectively as well as maintain accurate financial records and reporting. 
