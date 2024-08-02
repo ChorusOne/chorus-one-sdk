@@ -77,9 +77,8 @@ export class EthereumStaker {
    * @param params.delegatorAddress - The delegator (wallet) address to stake from
    * @param params.validatorAddress - The validator (vault) address to stake with
    * @param params.amount - The amount to stake, specified in `ETH`. E.g. "1" - 1 ETH
-   * @param params.referrer - (Optional) The address of the referrer. This is used to track the origin of transactions,
-   * providing insights into which sources or campaigns are driving activity. This can be useful for analytics and
-   * optimizing user acquisition strategies
+   * @param params.referrer - (Optional) A unique Ethereum address representing the source of the delegation, such as a
+   * marketing campaign or integration partner. This allows precise tracking and management of transaction origins.
    *
    * @returns Returns a promise that resolves to an Ethereum staking transaction.
    */
@@ -168,9 +167,8 @@ export class EthereumStaker {
    * @param params.delegatorAddress - The delegator (wallet) address
    * @param params.validatorAddress - The validator (vault) address to mint shares for
    * @param params.amount - The amount to mint, specified in `osETH`. E.g. "1" - 1 osETH
-   * @param params.referrer - (Optional) The address of the referrer. This is used to track the origin of
-   * transactions, providing insights into which sources or campaigns are driving activity. This can be useful for
-   * analytics and optimizing user acquisition strategies.
+   * @param params.referrer - (Optional) A unique Ethereum address representing the source of the delegation, such as a
+   * marketing campaign or integration partner. This allows precise tracking and management of transaction origins.
    *
    * @returns Returns a promise that resolves to an Ethereum mint transaction.
    */

@@ -121,6 +121,14 @@ const { tx } = await staker.buildStakeTx({
 })
 ```
 
+{% hint style="info" %}
+
+**Delegation Tracking**
+
+For more information on tracking and attributing staking transactions to specific sources, such as marketing campaigns or integration partners, refer to the [Delegation Tracking](./delegation-tracking.md) section.
+
+{% endhint %}
+
 ### Ensuring Correct Amount Format for Staking
 
 The `amount` parameter must be a string representing the amount of ETH to deposit. For example, `'1'` represents 1 ETH.

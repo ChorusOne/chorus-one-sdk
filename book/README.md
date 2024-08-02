@@ -240,7 +240,9 @@ const validatorAddress = CHORUS_ONE_ETHEREUM_VALIDATORS.ethereum.mevMaxVault
 const { tx } = await staker.buildStakeTx({
   delegatorAddress,
   validatorAddress,
-  amount: '1' // 1 ETH
+  amount: '1', // 1 ETH
+  // Optional - Unique Ethereum address for tracking
+  referrer: '0xReferrerAddressHere'
 })
 
 // Signing the transaction with Fireblocks
@@ -576,11 +578,6 @@ console.log(status) // 'success'
 
 import { SubstrateStaker, RewardDestination, CHORUS_ONE_SUBSTRATE_VALIDATORS } from '@chorus-one/substrate'
 
-import { FireblocksSigner } from '@chorus-one/signer-fireblocks'
-
-const signer = new FireblocksSigner({...})
-await signer.init()
-
 const staker = new SubstrateStaker({
   rpcUrl: 'wss://rpc.polkadot.io',
   denomMultiplier: 1000000000000,
@@ -608,6 +605,11 @@ const { tx: nominateTx } = await staker.buildNominateTx({
 
 // Signing the transactions with Fireblocks
 // ----------------------------------------
+
+import { FireblocksSigner } from '@chorus-one/signer-fireblocks'
+
+const signer = new FireblocksSigner({...})
+await signer.init()
 
 const { signedTx: signedStakeTx } = await staker.sign({
   signerAddress: delegatorAddress,

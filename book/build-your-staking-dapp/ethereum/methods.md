@@ -12,13 +12,20 @@ The `buildStakeTx` method helps you create a transaction for staking tokens with
 
 To build a staking transaction, you need to specify the amount to stake, the delegator's address (your wallet), and the validator's address where you want to stake your tokens. Optionally, you can also specify a referrer address for tracking purposes.
 
+{% hint style="info" %}
+
+For more information on tracking and attributing staking transactions to specific sources, such as marketing campaigns or integration partners, refer to the [Delegation Tracking](./delegation-tracking.md) section.
+
+{% endhint %}
+
 ### Example
 
 ```javascript
 const { tx } = await staker.buildStakeTx({
   delegatorAddress: '0x70aEe8a9099ebADB186C2D530F72CF5dC7FE6B30',
   validatorAddress: '0xe6d8d8ac54461b1c5ed15740eee322043f696c08',
-  amount: '1' // 1 ETH
+  amount: '1', // 1 ETH
+  referrer: '0xReferrerAddressHere' // Unique Ethereum address for tracking
 })
 ```
 
@@ -100,13 +107,20 @@ The `buildMintTx` method helps you create a transaction for minting shares (osET
 
 To build a minting transaction, you need to specify the amount of osETH to mint, the delegator's address, and the validator's address where you want to mint your shares. Optionally, you can also specify a referrer address for tracking purposes.
 
+{% hint style="info" %}
+
+For more information on tracking and attributing minting transactions to specific sources, such as marketing campaigns or integration partners, refer to the [Delegation Tracking](./delegation-tracking.md) section.
+
+{% endhint %}
+
 ### Example
 
 ```javascript
 const { tx } = await staker.buildMintTx({
   delegatorAddress: '0x70aEe8a9099ebADB186C2D530F72CF5dC7FE6B30',
   validatorAddress: '0xe6d8d8ac54461b1c5ed15740eee322043f696c08',
-  amount: '1' // 1 osETH
+  amount: '1', // 1 osETH
+  referrer: '0xReferrerAddressHere' // Unique Ethereum address for tracking
 })
 ```
 
