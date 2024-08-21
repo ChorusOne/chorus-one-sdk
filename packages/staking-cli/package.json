@@ -33,7 +33,7 @@
     "@chorus-one/signer-fireblocks": "^1.0.0",
     "@chorus-one/signer-local": "^1.0.0",
     "@chorus-one/solana": "^1.0.0",
-    "@chorus-one/substrate": "^1.0.0",
+    "@chorus-one/substrate": "^1.0.1",
     "@chorus-one/ton": "^1.0.0",
     "@chorus-one/utils": "^1.0.0",
     "@commander-js/extra-typings": "^11.1.0",
