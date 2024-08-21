@@ -344,6 +344,9 @@ export class SubstrateStaker {
       throw new Error(`unable to find method ${txCall.section}.${txCall.method}`)
     }
 
+    if (params.length === 1) {
+      return { tx: api.tx[txCall.section][txCall.method](params) }
+    }
     return { tx: api.tx[txCall.section][txCall.method](...params) }
   }
 
