@@ -103,3 +103,6 @@ https://testnet.avascan.info/blockchain/p/tx/TD2Qc6WHwnQ9fiaLBqr61KkiWUCkDKotA6G
 ```
 
 NOTE: In Avalanche, there is no undelegation concept. Instead, users stake tokens for a specific period, usually starting from 14 days.
+
+## Demo
+[![asciicast](https://asciinema.org/a/F45uaKU8hfTt8q8RDfBeXMfXT.svg)](https://asciinema.org/a/F45uaKU8hfTt8q8RDfBeXMfXT)
