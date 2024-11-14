@@ -2,12 +2,11 @@ import type { Signer } from '@chorus-one/signer'
 import type {
   TonNetworkConfig,
   TonSigningData,
-  NominatorInfo,
-  PoolData,
   AddressDerivationConfig,
   UnsignedTx,
   SignedTx,
-  TonTxStatus
+  TonTxStatus,
+  PoolData
 } from './types'
 import {
   toNano,
@@ -16,13 +15,9 @@ import {
   WalletContractV4,
   internal,
   MessageRelaxed,
-  TupleReader,
-  TupleItem,
   SendMode,
   Address,
-  TransactionDescriptionGeneric,
-  beginCell,
-  Cell
+  TransactionDescriptionGeneric
 } from '@ton/ton'
 import { createWalletTransferV4, externalMessage, sign } from './tx'
 import * as tonMnemonic from 'tonweb-mnemonic'
@@ -33,10 +28,10 @@ import { ed25519 } from '@noble/curves/ed25519'
  *
  * It also provides the ability to retrieve staking information and rewards for a delegator.
  */
-export class TonStaker {
-  private readonly networkConfig: Required<TonNetworkConfig>
-  private readonly addressDerivationConfig: AddressDerivationConfig
-  private client?: TonClient
+export class TonBaseStaker {
+  protected readonly networkConfig: Required<TonNetworkConfig>
+  protected readonly addressDerivationConfig: AddressDerivationConfig
+  protected client?: TonClient
 
   /**
    * This **static** method is used to derive an address from a public key.
@@ -137,265 +132,6 @@ export class TonStaker {
   }
 
   /**
-   * Builds a staking (delegation) transaction for Nominator Pool contract.
-   * For more information see: https://github.com/ton-blockchain/nominator-pool
-   *
-   * @param params - Parameters for building the transaction
-   * @param params.delegatorAddress - The delegator address to stake from
-   * @param params.validatorAddress - The validator address to stake to
-   * @param params.amount - The amount to stake, specified in `TON`
-   * @param params.validUntil - (Optional) The Unix timestamp when the transaction expires
-   *
-   * @returns Returns a promise that resolves to a TON nominator pool staking transaction.
-   */
-  async buildStakeNominatorPoolTx (params: {
-    delegatorAddress: string
-    validatorAddress: string
-    amount: string
-    validUntil?: number
-  }): Promise<{ tx: UnsignedTx }> {
-    const { delegatorAddress, validatorAddress, amount, validUntil } = params
-
-    // ensure the address is for the right network
-    this.checkIfAddressTestnetFlagMatches(validatorAddress)
-
-    // ensure the validator address is bounceable.
-    // NOTE: TEP-002 specifies that the address bounceable flag should match both the internal message and the address.
-    // This has no effect as we force the bounce flag anyway. However it is a good practice to be consistent
-    if (!Address.parseFriendly(validatorAddress).isBounceable) {
-      throw new Error(
-        'validator address is not bounceable! It is required for nominator pool contract operations to use bounceable addresses'
-      )
-    }
-
-    // this is also a somewhat okay way to check the contract is indeed a staking pool contract
-    const data = await this.getContractPoolData(validatorAddress)
-    if (data.nominators_count >= data.max_nominators_count) {
-      throw new Error('validator has reached the maximum number of nominators')
-    }
-
-    // ensure we stake at least the minimum required amount
-    const nominators = (await this.getPoolContractNominators({ validatorAddress })).nominators
-    const ourNominator = nominators.find((n) => Address.parseRaw(n.address).equals(Address.parse(delegatorAddress)))
-    const amountStaked = ourNominator ? toNano(ourNominator.amount) : BigInt(0)
-    const amountToStake = toNano(amount)
-
-    if (amountToStake + amountStaked < data.min_nominator_stake) {
-      throw new Error(
-        `amount to stake (${fromNano(amountToStake)}) is less than the minimum stake required (${fromNano(data.min_nominator_stake)})`
-      )
-    }
-
-    const tx = {
-      validUntil: defaultValidUntil(validUntil),
-      message: {
-        address: validatorAddress,
-        // to stake tokens we need to send a large amount of tokens
-        // it is critical that the transaction is bounceable
-        // otherwise in the case of contract failure we may loose tokens!
-        bounceable: true,
-        amount: toNano(amount),
-        payload: 'd' // 'd' for deposit / delegation
-      }
-    }
-
-    return { tx }
-  }
-
-  /**
-   * Builds an unstaking (withdraw nominator) transaction for Nominator Pool contract.
-   * For more information see: https://github.com/ton-blockchain/nominator-pool
-   *
-   * @param params - Parameters for building the transaction
-   * @param params.delegatorAddress - The delegator address
-   * @param params.validatorAddress - The validator address to unstake from
-   * @param params.validUntil - (Optional) The Unix timestamp when the transaction expires
-   *
-   * @returns Returns a promise that resolves to a TON nominator pool unstaking transaction.
-   */
-  async buildUnstakeNominatorPoolTx (params: {
-    delegatorAddress: string
-    validatorAddress: string
-    validUntil?: number
-  }): Promise<{ tx: UnsignedTx }> {
-    const { delegatorAddress, validatorAddress, validUntil } = params
-
-    // "In order for the nominator to make a withdrawal, he needs to send message to nominator-pool smart contract with text comment "w"
-    // and some Toncoins for network fee (1 TON is enough). Unspent TONs attached to message will be returned except in very rare cases."
-    //
-    // source: https://github.com/ton-blockchain/nominator-pool?tab=readme-ov-file#nominators-withdrawal
-    const amount = '1' // 1 TON
-
-    // ensure the address is for the right network
-    this.checkIfAddressTestnetFlagMatches(validatorAddress)
-
-    // ensure the validator address is bounceable.
-    // NOTE: TEP-002 specifies that the address bounceable flag should match both the internal message and the address.
-    // This has no effect as we force the bounce flag anyway. However it is a good practice to be consistent
-    if (!Address.parseFriendly(validatorAddress).isBounceable) {
-      throw new Error(
-        'validator address is not bounceable! It is required for nominator pool contract operations to use bounceable addresses'
-      )
-    }
-
-    // this is also a somewhat okay way to check the contract is indeed a staking pool contract
-    const data = await this.getContractPoolData(validatorAddress)
-    if (data.nominators_count === 0) {
-      throw new Error('there is no nominators currently staking to the nominator pool contract')
-    }
-
-    // ensure that the delegator has staked to the validator
-    const nominators = (await this.getPoolContractNominators({ validatorAddress })).nominators
-    const ourNominator = nominators.find((n) => Address.parseRaw(n.address).equals(Address.parse(delegatorAddress)))
-    if (!ourNominator) {
-      throw new Error('delegator is not staking to the nominator pool contract')
-    }
-
-    const tx = {
-      validUntil: defaultValidUntil(validUntil),
-      message: {
-        address: validatorAddress,
-        // to unstake tokens we need to send a some tokens that should
-        // be returned to us in case of error
-        bounceable: true,
-        amount: toNano(amount),
-        payload: 'w' // 'w' for withdraw
-      }
-    }
-
-    return { tx }
-  }
-
-  /**
-   * Builds a staking (delegation) transaction for Single Nominator Pool contract.
-   * For more information see: https://github.com/orbs-network/single-nominator/tree/main
-   *
-   * @param params - Parameters for building the transaction
-   * @param params.delegatorAddress - The delegator address to stake from
-   * @param params.validatorAddress - The validator address to stake to
-   * @param params.amount - The amount to stake, specified in `TON`
-   * @param params.validUntil - (Optional) The Unix timestamp when the transaction expires
-   *
-   * @returns Returns a promise that resolves to a TON nominator pool staking transaction.
-   */
-  async buildStakeSingleNominatorPoolTx (params: {
-    delegatorAddress: string
-    validatorAddress: string
-    amount: string
-    validUntil?: number
-  }): Promise<{ tx: UnsignedTx }> {
-    const { delegatorAddress, validatorAddress, amount, validUntil } = params
-
-    // ensure the address is for the right network
-    this.checkIfAddressTestnetFlagMatches(validatorAddress)
-
-    // ensure the validator address is bounceable.
-    // NOTE: TEP-002 specifies that the address bounceable flag should match both the internal message and the address.
-    // This has no effect as we force the bounce flag anyway. However it is a good practice to be consistent
-    if (!Address.parseFriendly(validatorAddress).isBounceable) {
-      throw new Error(
-        'validator address is not bounceable! It is required for nominator pool contract operations to use bounceable addresses'
-      )
-    }
-
-    // be sure the delegator is the owner of the contract otherwise we can't withdraw the funds back
-    const roles = await this.getContractRoles(validatorAddress)
-    if (!roles.ownerAddress.equals(Address.parse(delegatorAddress))) {
-      throw new Error('delegator is not the owner of the single nominator pool contract')
-    }
-
-    // this serves purely as a sanity check
-    const data = await this.getContractPoolData(validatorAddress)
-    if (data.nominators_count !== 1) {
-      throw new Error('the single nominator pool contract is expected to have exactly one nominator')
-    }
-
-    const tx = {
-      validUntil: defaultValidUntil(validUntil),
-      message: {
-        address: validatorAddress,
-        // to stake tokens we need to send a large amount of tokens
-        // it is critical that the transaction is bounceable
-        // otherwise in the case of contract failure we may loose tokens!
-        bounceable: true,
-        amount: toNano(amount),
-        payload: Cell.EMPTY
-      }
-    }
-
-    return { tx }
-  }
-
-  /**
-   * Builds a unstaking (withdraw nominator) transaction for Single Nominator Pool contract.
-   * For more information see: https://github.com/orbs-network/single-nominator/tree/main
-   *
-   * @param params - Parameters for building the transaction
-   * @param params.delegatorAddress - The delegator address
-   * @param params.validatorAddress - The validator address to unstake from
-   * @param params.amount - The amount to unstake, specified in `TON`
-   * @param params.validUntil - (Optional) The Unix timestamp when the transaction expires
-   *
-   * @returns Returns a promise that resolves to a TON nominator pool unstaking transaction.
-   */
-  async buildUnstakeSingleNominatorPoolTx (params: {
-    delegatorAddress: string
-    validatorAddress: string
-    amount: string
-    validUntil?: number
-  }): Promise<{ tx: UnsignedTx }> {
-    const { delegatorAddress, validatorAddress, amount, validUntil } = params
-
-    // ensure the address is for the right network
-    this.checkIfAddressTestnetFlagMatches(validatorAddress)
-
-    // ensure the validator address is bounceable.
-    // NOTE: TEP-002 specifies that the address bounceable flag should match both the internal message and the address.
-    // This has no effect as we force the bounce flag anyway. However it is a good practice to be consistent
-    if (!Address.parseFriendly(validatorAddress).isBounceable) {
-      throw new Error(
-        'validator address is not bounceable! It is required for nominator pool contract operations to use bounceable addresses'
-      )
-    }
-
-    // only onwer can withdraw the funds
-    const roles = await this.getContractRoles(validatorAddress)
-    if (!roles.ownerAddress.equals(Address.parse(delegatorAddress))) {
-      throw new Error('delegator is not the owner of the single nominator pool contract')
-    }
-
-    // this serves purely as a sanity check
-    const data = await this.getContractPoolData(validatorAddress)
-    if (data.nominators_count !== 1) {
-      throw new Error('the single nominator pool contract is expected to have exactly one nominator')
-    }
-
-    // source: https://github.com/orbs-network/single-nominator/tree/main?tab=readme-ov-file#1-withdraw
-    //         https://github.com/orbs-network/single-nominator/blob/main/scripts/ts/withdraw-deeplink.ts#L7C5-L7C137
-    const payload = beginCell().storeUint(0x1000, 32).storeUint(1, 64).storeCoins(toNano(amount)).endCell()
-
-    // 1 TON should be enough to cover the transaction fees (similar to nominator pool contract)
-    const amountToCoverTxFees = '1'
-
-    // ensure we don't drain the validator wallet by accident
-    this.checkMinimumExistentialBalance(validatorAddress, amount)
-
-    const tx = {
-      validUntil: defaultValidUntil(validUntil),
-      message: {
-        address: validatorAddress,
-        // to unstake tokens we need to send a some tokens that should
-        // be returned to us in case of error
-        bounceable: true,
-        amount: toNano(amountToCoverTxFees),
-        payload
-      }
-    }
-
-    return { tx }
-  }
-
-  /**
    * Builds a token transfer transaction
    *
    * @param params - Parameters for building the transaction
@@ -490,47 +226,6 @@ export class TonStaker {
   }
 
   /**
-   * Retrieves the active nominators for a Nominator Pool contract.
-   * For more information see: https://github.com/ton-blockchain/nominator-pool
-   *
-   * @param params - Parameters for the request
-   * @param params.validatorAddress - The validator address to gather rewards data from
-   *
-   * @returns Returns a promise that resolves to the nominator data for the validator address.
-   */
-  async getPoolContractNominators (params: { validatorAddress: string }): Promise<{ nominators: NominatorInfo[] }> {
-    const client = this.getClient()
-    const { validatorAddress } = params
-
-    // ensure the address is for the right network
-    this.checkIfAddressTestnetFlagMatches(validatorAddress)
-
-    const response = await client.runMethod(Address.parse(validatorAddress), 'list_nominators', [])
-
-    // @ts-expect-error the library does not handle 'list' type well. This is a workaround to get the data out of the 'list' type
-    const reader = new TupleReader(response.stack.pop().items as TupleItem[])
-
-    // extract nominators from contract response
-    const nominators: NominatorInfo[] = []
-
-    if (reader.remaining > 0) {
-      do {
-        const x = reader.readTuple()
-        nominators.push({
-          // The nominator pool contract allows only the basechain addresses (`0:`)
-          // https://github.com/ton-blockchain/nominator-pool/blob/main/func/pool.fc#L618
-          address: `0:${BigInt(x.readBigNumber()).toString(16)}`,
-          amount: fromNano(x.readBigNumber()),
-          pending_deposit_amount: fromNano(x.readBigNumber()),
-          withdraw_requested: fromNano(x.readBigNumber())
-        })
-      } while (reader.remaining)
-    }
-
-    return { nominators }
-  }
-
-  /**
    * Retrieves the account balance
    *
    * @param params - Parameters for the request
@@ -547,48 +242,6 @@ export class TonStaker {
 
     const amount = await client.getBalance(Address.parse(address))
     return { amount: fromNano(amount) }
-  }
-
-  /**
-   * Retrieves the staking information for a specified delegator.
-   *
-   * @param params - Parameters for the request
-   * @param params.delegatorAddress - The delegator (wallet) address
-   * @param params.validatorAddress - The validator address to gather rewards data from
-   * @param params.contractType - The validator contract type (single-nominator-pool or nominator-pool)
-   *
-   * @returns Returns a promise that resolves to the staking information for the specified delegator.
-   */
-  async getStake (params: {
-    delegatorAddress: string
-    validatorAddress: string
-    contractType: 'single-nominator-pool' | 'nominator-pool'
-  }): Promise<{ balance: string }> {
-    const { delegatorAddress, validatorAddress, contractType } = params
-
-    if (contractType === 'nominator-pool') {
-      const { nominators } = await this.getPoolContractNominators({ validatorAddress })
-      if (nominators.length === 0) {
-        return { balance: '0' }
-      }
-
-      const nominator = nominators.find((n) => Address.parse(n.address).equals(Address.parse(delegatorAddress)))
-      if (nominator === undefined) {
-        return { balance: '0' }
-      }
-
-      return { balance: nominator.amount }
-    }
-
-    // otherise it is a single nominator pool contract
-    const roles = await this.getContractRoles(validatorAddress)
-    if (!roles.ownerAddress.equals(Address.parse(delegatorAddress))) {
-      throw new Error('delegator is not the owner of the single nominator pool contract')
-    }
-
-    const balance = await this.getBalance({ address: validatorAddress })
-
-    return { balance: balance.amount }
   }
 
   /**
@@ -776,7 +429,7 @@ export class TonStaker {
     return { status: 'success', receipt: transaction }
   }
 
-  private getClient (): TonClient {
+  protected getClient (): TonClient {
     if (!this.client) {
       throw new Error('TonStaker not initialized. Did you forget to call init()?')
     }
@@ -784,27 +437,31 @@ export class TonStaker {
     return this.client
   }
 
-  private async getContractRoles (
-    contractAddress: string
-  ): Promise<{ ownerAddress: Address; validatorAddress: Address }> {
-    const client = this.getClient()
-    const response = await client.runMethod(Address.parse(contractAddress), 'get_roles', [])
+  protected checkIfAddressTestnetFlagMatches (address: string): void {
+    const addr = Address.parseFriendly(address)
 
-    // reference: https://github.com/orbs-network/single-nominator/blob/main/contracts/single-nominator.fc#L186
-    if (response.stack.remaining !== 2) {
-      throw new Error('invalid get_pool_data response, expected 17 fields got ' + response.stack.remaining)
-    }
-
-    const ownerAddress = response.stack.readAddress()
-    const validatorAddress = response.stack.readAddress()
-
-    return {
-      ownerAddress,
-      validatorAddress
+    if (addr.isTestOnly !== this.addressDerivationConfig.testOnly) {
+      if (addr.isTestOnly) {
+        throw new Error(`address ${address} is a testnet address but the configuration is for mainnet`)
+      } else {
+        throw new Error(`address ${address} is a mainnet address but the configuration is for testnet`)
+      }
     }
   }
 
-  private async getContractPoolData (contractAddress: string): Promise<PoolData> {
+  protected async checkMinimumExistentialBalance (address: string, amount: string): Promise<void> {
+    const balance = await this.getBalance({ address })
+    const minBalance = this.networkConfig.minimumExistentialBalance
+
+    if (toNano(balance.amount) - toNano(amount) < toNano(minBalance)) {
+      throw new Error(
+        `sending ${amount} would result in balance below the minimum existential balance of ${minBalance} for address ${address}`
+      )
+    }
+  }
+
+  // NOTE: this method is used only by Nominator and SingleNominator stakers, not by Pool
+  protected async getNominatorContractPoolData (contractAddress: string): Promise<PoolData> {
     const client = this.getClient()
     const response = await client.runMethod(Address.parse(contractAddress), 'get_pool_data', [])
 
@@ -832,45 +489,6 @@ export class TonStaker {
       min_nominator_stake
     }
   }
-
-  private async getSinglePoolContractRoles (
-    contractAddress: string
-  ): Promise<{ ownerAddress: Address; validatorAddress: Address }> {
-    const client = this.getClient()
-    const response = await client.runMethod(Address.parse(contractAddress), 'get_roles', [])
-
-    if (response.stack.remaining !== 2) {
-      throw new Error('invalid get_roles response, expected 2 fields got ' + response.stack.remaining)
-    }
-
-    return {
-      ownerAddress: response.stack.readAddress(),
-      validatorAddress: response.stack.readAddress()
-    }
-  }
-
-  private checkIfAddressTestnetFlagMatches (address: string): void {
-    const addr = Address.parseFriendly(address)
-
-    if (addr.isTestOnly !== this.addressDerivationConfig.testOnly) {
-      if (addr.isTestOnly) {
-        throw new Error(`address ${address} is a testnet address but the configuration is for mainnet`)
-      } else {
-        throw new Error(`address ${address} is a mainnet address but the configuration is for testnet`)
-      }
-    }
-  }
-
-  private async checkMinimumExistentialBalance (address: string, amount: string): Promise<void> {
-    const balance = await this.getBalance({ address })
-    const minBalance = this.networkConfig.minimumExistentialBalance
-
-    if (toNano(balance.amount) - toNano(amount) < toNano(minBalance)) {
-      throw new Error(
-        `sending ${amount} would result in balance below the minimum existential balance of ${minBalance} for address ${address}`
-      )
-    }
-  }
 }
 
 function defaultAddressDerivationConfig (): AddressDerivationConfig {
@@ -893,6 +511,14 @@ function getWalletContract (version: number, workchain: number, publicKey: Buffe
   }
 }
 
-function defaultValidUntil (validUntil?: number): number {
+export function defaultValidUntil (validUntil?: number): number {
   return validUntil ?? Math.floor(Date.now() / 1000) + 180 // 3 minutes
+}
+
+export function getRandomQueryId () {
+  return Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)
+}
+
+export function getDefaultGas () {
+  return 100000
 }
