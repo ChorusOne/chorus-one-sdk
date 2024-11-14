@@ -1,4 +1,4 @@
-import { TonStaker } from '@chorus-one/ton'
+import { TonNominatorPoolStaker } from '@chorus-one/ton'
 import { Address, TupleItem, TupleReader } from '@ton/core'
 import { describe, it } from 'mocha'
 import { use, assert, expect, spy } from 'chai'
@@ -12,7 +12,7 @@ use(spies)
 describe('TonStaker', () => {
   const delegatorAddress = '0QDsF87nkTYgkvu1z5xveCEGTRnZmEVaVT0gdxoeyaNvmoCr'
   const validatorAddress = 'kf8SWCvzf6eJK4Q0ZOe14PqDdsT5wk0_Ni0wAThL0cVorNVU'
-  const staker = new TonStaker({
+  const staker = new TonNominatorPoolStaker({
     rpcUrl: 'https://ton.fake.website',
     addressDerivationConfig: {
       walletContractVersion: 4,
@@ -75,7 +75,7 @@ describe('TonStaker', () => {
   })
 
   it('should generate correct unsigned delegate tx', async () => {
-    const { tx } = await staker.buildStakeNominatorPoolTx({
+    const { tx } = await staker.buildStakeTx({
       delegatorAddress,
       validatorAddress,
       amount: '0.5'
@@ -103,7 +103,7 @@ describe('TonStaker', () => {
         const [amount, expectedAmount, expectedError] = testData
 
         const runTest = async (amount: string): Promise<bigint> => {
-          const { tx } = await staker.buildStakeNominatorPoolTx({
+          const { tx } = await staker.buildStakeTx({
             delegatorAddress,
             validatorAddress,
             amount
