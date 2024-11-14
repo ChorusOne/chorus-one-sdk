@@ -34,9 +34,17 @@ function makeTxCommand (): Command {
     .argument('<amount>', 'amount of tokens to stake expressed in TON denom e.g 0.1')
     .action(getDelegatePoolTx)
 
+  const validateIndex = (value: string): '1' | '2' => {
+    if (value !== '1' && value !== '2') {
+      throw new Error('validator index must be 1 or 2')
+    }
+    return value
+  }
+
   tx.command('unstake-pool')
     .description('generate a unstake funds to TON pool contract transaction')
     .argument('<amount>', 'amount of tokens to unstake expressed in TON denom e.g 0.1')
+    .requiredOption('-I, --validator-index <value>', 'validator index to unstake from (1 or 2)', validateIndex)
     .action(getUnstakePoolTx)
 
   tx.command('delegate-nominator-pool')
@@ -95,7 +103,7 @@ async function init (
 
 async function runTx (
   msgType: string,
-  _options: any,
+  options: { validatorIndex: '1' | '2' } | undefined,
   cmd: Command<[string]> | Command<[string, string]> | Command<[string, string, string]> | Command<[]>,
   arg: string[]
 ): Promise<void> {
@@ -132,10 +140,20 @@ async function runTx (
         tonStaker = new TonPoolStaker({ ...networkConfig })
         await tonStaker.init()
 
+        if (!config.validatorAddress2) {
+          cmd.error('second validator address is required for TON Pool', { exitCode: 1, code: `${msgType}.tx.abort` })
+        }
+        const validatorAddressPair: [string, string] = [config.validatorAddress, config.validatorAddress2]
+
+        const validatorToDelegate = await tonStaker.getPoolAddressForStake({ validatorAddressPair })
+        const validatorIndex = validatorToDelegate === config.validatorAddress ? 1 : 2
+
+        console.log('Delegating to validator #' + validatorIndex + ': ' + validatorToDelegate)
+
         unsignedTx = (
           await tonStaker.buildStakeTx({
             delegatorAddress: config.delegatorAddress,
-            validatorAddress: config.validatorAddress,
+            validatorAddressPair,
             amount: arg[0] // amount
           })
         ).tx
@@ -145,10 +163,25 @@ async function runTx (
         tonStaker = new TonPoolStaker({ ...networkConfig })
         await tonStaker.init()
 
+        if (!config.validatorAddress2) {
+          cmd.error('second validator address is required for TON Pool', { exitCode: 1, code: `${msgType}.tx.abort` })
+        }
+
+        if (!options?.validatorIndex) {
+          cmd.error('validator index is required for TON Pool', { exitCode: 1, code: `${msgType}.tx.abort` })
+        }
+        const validatorAddressPair: [string, string] = [config.validatorAddress, config.validatorAddress2]
+
+        const validatorIndex = parseInt(options.validatorIndex)
+
+        const validatorAddress = validatorAddressPair[validatorIndex - 1]
+
+        console.log('Unstaking from validator #' + validatorIndex + ': ' + validatorAddress)
+
         unsignedTx = (
           await tonStaker.buildUnstakeTx({
             delegatorAddress: config.delegatorAddress,
-            validatorAddress: config.validatorAddress,
+            validatorAddress,
             amount: arg[0] // amount
           })
         ).tx
@@ -233,7 +266,7 @@ async function runTx (
       }
     }
   } catch (e: any) {
-    cmd.error(e, { exitCode: 1, code: msgType + '.tx.sign' })
+    cmd.error(e, { exitCode: 1, code: msgType + '.tx.abort' })
   }
 
   if (unsignedTx === undefined) {
@@ -284,7 +317,11 @@ async function getDelegatePoolTx (amount: string, options: any, cmd: Command<[st
   await runTx('delegate-pool', options, cmd, [amount])
 }
 
-async function getUnstakePoolTx (amount: string, options: any, cmd: Command<[string]>): Promise<void> {
+async function getUnstakePoolTx (
+  amount: string,
+  options: { validatorIndex: '1' | '2' },
+  cmd: Command<[string]>
+): Promise<void> {
   await runTx('unstake-pool', options, cmd, [amount])
 }
 

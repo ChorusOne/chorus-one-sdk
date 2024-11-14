@@ -17,11 +17,12 @@ export class TonPoolStaker extends TonBaseStaker {
    */
   async buildStakeTx (params: {
     delegatorAddress: string
-    validatorAddress: string
+    validatorAddressPair: [string, string]
     amount: string
     validUntil?: number
   }): Promise<{ tx: UnsignedTx }> {
-    const { delegatorAddress, validatorAddress, amount, validUntil } = params
+    const { delegatorAddress, validatorAddressPair, amount, validUntil } = params
+    const validatorAddress = await this.getPoolAddressForStake({ validatorAddressPair })
 
     const payload = beginCell()
       .storeUint(2077040623, 32)
@@ -122,5 +123,13 @@ export class TonPoolStaker extends TonBaseStaker {
       poolFee: result.poolFee,
       receiptPrice: result.receiptPrice
     }
+  }
+
+  /** @ignore */
+  async getPoolAddressForStake (params: { validatorAddressPair: [string, string] }) {
+    const { validatorAddressPair } = params
+    // The logic to be implemented, we return the first address for now
+
+    return validatorAddressPair[0]
   }
 }
