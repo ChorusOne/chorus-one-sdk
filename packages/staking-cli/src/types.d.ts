@@ -22,6 +22,9 @@ export interface Config {
   // define validator address to interact with (delegate, undelegate etc)
   validatorAddress: string
 
+  // second validator address, used only for TON Pool
+  validatorAddress2?: string
+
   // define the expected delegator account
   delegatorAddress: string
 
