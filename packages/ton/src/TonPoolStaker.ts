@@ -1,4 +1,4 @@
-import { Address, beginCell, toNano } from '@ton/ton'
+import { Address, beginCell, fromNano, toNano } from '@ton/ton'
 import { defaultValidUntil, getDefaultGas, getRandomQueryId, TonBaseStaker } from './TonBaseStaker'
 import { UnsignedTx } from './types'
 
@@ -8,7 +8,6 @@ export class TonPoolStaker extends TonBaseStaker {
    * For more information see: https://github.com/ton-blockchain/nominator-pool
    *
    * @param params - Parameters for building the transaction
-   * @param params.delegatorAddress - The delegator address to stake from
    * @param params.validatorAddress - The validator address to stake to
    * @param params.amount - The amount to stake, specified in `TON`
    * @param params.validUntil - (Optional) The Unix timestamp when the transaction expires
@@ -16,13 +15,24 @@ export class TonPoolStaker extends TonBaseStaker {
    * @returns Returns a promise that resolves to a TON nominator pool staking transaction.
    */
   async buildStakeTx (params: {
-    delegatorAddress: string
     validatorAddressPair: [string, string]
     amount: string
     validUntil?: number
   }): Promise<{ tx: UnsignedTx }> {
-    const { delegatorAddress, validatorAddressPair, amount, validUntil } = params
+    const { validatorAddressPair, amount, validUntil } = params
     const validatorAddress = await this.getPoolAddressForStake({ validatorAddressPair })
+
+    // ensure the address is for the right network
+    this.checkIfAddressTestnetFlagMatches(validatorAddress)
+
+    // ensure the validator address is bounceable.
+    // NOTE: TEP-002 specifies that the address bounceable flag should match both the internal message and the address.
+    // This has no effect as we force the bounce flag anyway. However it is a good practice to be consistent
+    if (!Address.parseFriendly(validatorAddress).isBounceable) {
+      throw new Error(
+        'validator address is not bounceable! It is required for nominator pool contract operations to use bounceable addresses'
+      )
+    }
 
     const payload = beginCell()
       .storeUint(2077040623, 32)
@@ -56,14 +66,25 @@ export class TonPoolStaker extends TonBaseStaker {
    * @returns Returns a promise that resolves to a TON nominator pool staking transaction.
    */
   async buildUnstakeTx (params: {
-    delegatorAddress: string
     validatorAddress: string
     amount: string
     validUntil?: number
   }): Promise<{ tx: UnsignedTx }> {
-    const { delegatorAddress, validatorAddress, amount, validUntil } = params
+    const { validatorAddress, amount, validUntil } = params
 
-    const data = await this.getOnePoolParams({ validatorAddress })
+    // ensure the address is for the right network
+    this.checkIfAddressTestnetFlagMatches(validatorAddress)
+
+    // ensure the validator address is bounceable.
+    // NOTE: TEP-002 specifies that the address bounceable flag should match both the internal message and the address.
+    // This has no effect as we force the bounce flag anyway. However it is a good practice to be consistent
+    if (!Address.parseFriendly(validatorAddress).isBounceable) {
+      throw new Error(
+        'validator address is not bounceable! It is required for nominator pool contract operations to use bounceable addresses'
+      )
+    }
+
+    const data = await this.getPoolParamsUnformatted({ validatorAddress })
 
     const payload = beginCell()
       .storeUint(3665837821, 32)
@@ -85,7 +106,7 @@ export class TonPoolStaker extends TonBaseStaker {
     return { tx }
   }
 
-  private async getOnePoolStake (params: { delegatorAddress: string; validatorAddress: string }) {
+  async getStake (params: { delegatorAddress: string; validatorAddress: string }) {
     const { delegatorAddress, validatorAddress } = params
     const client = this.getClient()
 
@@ -94,19 +115,31 @@ export class TonPoolStaker extends TonBaseStaker {
     ])
 
     return {
-      balance: response.stack.readBigNumber(),
-      pendingDeposit: response.stack.readBigNumber(),
-      pendingWithdraw: response.stack.readBigNumber(),
-      withdraw: response.stack.readBigNumber()
+      balance: fromNano(response.stack.readBigNumber()),
+      pendingDeposit: fromNano(response.stack.readBigNumber()),
+      pendingWithdraw: fromNano(response.stack.readBigNumber()),
+      withdraw: fromNano(response.stack.readBigNumber())
     }
   }
 
-  private async getOnePoolParams (params: { validatorAddress: string }) {
+  async getPoolParams (params: { validatorAddress: string }) {
+    const result = await this.getPoolParamsUnformatted(params)
+
+    return {
+      minStake: fromNano(result.minStake),
+      depositFee: fromNano(result.depositFee),
+      withdrawFee: fromNano(result.withdrawFee),
+      poolFee: fromNano(result.poolFee),
+      receiptPrice: fromNano(result.receiptPrice)
+    }
+  }
+
+  private async getPoolParamsUnformatted (params: { validatorAddress: string }) {
     const { validatorAddress } = params
     const client = this.getClient()
     const response = await client.runMethod(Address.parse(validatorAddress), 'get_params', [])
 
-    const result = {
+    return {
       enabled: response.stack.readBoolean(),
       updatesEnables: response.stack.readBoolean(),
       minStake: response.stack.readBigNumber(),
@@ -114,14 +147,6 @@ export class TonPoolStaker extends TonBaseStaker {
       withdrawFee: response.stack.readBigNumber(),
       poolFee: response.stack.readBigNumber(),
       receiptPrice: response.stack.readBigNumber()
-    }
-
-    return {
-      minStake: result.minStake,
-      depositFee: result.depositFee,
-      withdrawFee: result.withdrawFee,
-      poolFee: result.poolFee,
-      receiptPrice: result.receiptPrice
     }
   }
 

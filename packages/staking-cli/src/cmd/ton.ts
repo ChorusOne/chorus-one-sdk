@@ -152,7 +152,6 @@ async function runTx (
 
         unsignedTx = (
           await tonStaker.buildStakeTx({
-            delegatorAddress: config.delegatorAddress,
             validatorAddressPair,
             amount: arg[0] // amount
           })
@@ -180,7 +179,6 @@ async function runTx (
 
         unsignedTx = (
           await tonStaker.buildUnstakeTx({
-            delegatorAddress: config.delegatorAddress,
             validatorAddress,
             amount: arg[0] // amount
           })
