@@ -7,7 +7,7 @@ import type { SignerType } from '../enums'
 import { prompt, readConfig, getNetworkConfig, log, defaultLogger } from '../util'
 import { SafeJSONStringify } from '@chorus-one/utils'
 import { newSigner } from '../signer'
-import { TonStaker } from '@chorus-one/ton'
+import { TonPoolStaker, TonNominatorPoolStaker, TonSingleNominatorPoolStaker } from '@chorus-one/ton'
 
 export interface CLINetworkConfig extends TonNetworkConfig {
   // block explorer URL to display Transaction ID via Web UI. Example:
@@ -28,6 +28,16 @@ function makeTxCommand (): Command {
     .description('generate a signed transaction')
     .option('-b, --broadcast', 'broadcast generated transaction', false)
     .option('-j, --journal <value>', "write TX'es to the local journal log", 'true')
+
+  tx.command('delegate-pool')
+    .description('generate a delegate funds to TON pool contract transaction')
+    .argument('<amount>', 'amount of tokens to stake expressed in TON denom e.g 0.1')
+    .action(getDelegatePoolTx)
+
+  tx.command('unstake-pool')
+    .description('generate a unstake funds to TON pool contract transaction')
+    .argument('<amount>', 'amount of tokens to unstake expressed in TON denom e.g 0.1')
+    .action(getUnstakePoolTx)
 
   tx.command('delegate-nominator-pool')
     .description('generate a delegate funds to TON nominator pool contract transaction')
@@ -70,11 +80,11 @@ async function init (
 
   const networkConfig = getNetworkConfig<CLINetworkConfig>(config)
   const signer = await newSigner(config, signerType as SignerType, {
-    addressDerivationFn: TonStaker.getAddressDerivationFn({
+    addressDerivationFn: TonNominatorPoolStaker.getAddressDerivationFn({
       addressDerivationConfig: networkConfig.addressDerivationConfig
     }),
-    mnemonicToSeedFn: TonStaker.getMnemonicToSeedFn(),
-    seedToKeypairFn: TonStaker.getSeedToKeypairFn(),
+    mnemonicToSeedFn: TonNominatorPoolStaker.getMnemonicToSeedFn(),
+    seedToKeypairFn: TonNominatorPoolStaker.getSeedToKeypairFn(),
     keyType: KeyType.ED25519,
     logger: defaultLogger
   })
@@ -95,9 +105,6 @@ async function runTx (
   const [config, signer] = await init(cmd)
 
   const networkConfig = getNetworkConfig<CLINetworkConfig>(config)
-  const tonStaker: TonStaker = new TonStaker({ ...networkConfig })
-  await tonStaker.init()
-
   const logger = defaultLogger
 
   logger.info(0, 3, 'inspect input data')
@@ -117,11 +124,42 @@ async function runTx (
 
   let unsignedTx: UnsignedTx | undefined
 
+  let tonStaker: TonPoolStaker | TonNominatorPoolStaker | TonSingleNominatorPoolStaker
+
   try {
     switch (msgType) {
-      case 'delegate-nominator-pool': {
+      case 'delegate-pool': {
+        tonStaker = new TonPoolStaker({ ...networkConfig })
+        await tonStaker.init()
+
         unsignedTx = (
-          await tonStaker.buildStakeNominatorPoolTx({
+          await tonStaker.buildStakeTx({
+            delegatorAddress: config.delegatorAddress,
+            validatorAddress: config.validatorAddress,
+            amount: arg[0] // amount
+          })
+        ).tx
+        break
+      }
+      case 'unstake-pool': {
+        tonStaker = new TonPoolStaker({ ...networkConfig })
+        await tonStaker.init()
+
+        unsignedTx = (
+          await tonStaker.buildUnstakeTx({
+            delegatorAddress: config.delegatorAddress,
+            validatorAddress: config.validatorAddress,
+            amount: arg[0] // amount
+          })
+        ).tx
+        break
+      }
+      case 'delegate-nominator-pool': {
+        tonStaker = new TonNominatorPoolStaker({ ...networkConfig })
+        await tonStaker.init()
+
+        unsignedTx = (
+          await tonStaker.buildStakeTx({
             delegatorAddress: config.delegatorAddress,
             validatorAddress: config.validatorAddress,
             amount: arg[0] // amount
@@ -130,8 +168,11 @@ async function runTx (
         break
       }
       case 'unstake-nominator-pool': {
+        tonStaker = new TonNominatorPoolStaker({ ...networkConfig })
+        await tonStaker.init()
+
         unsignedTx = (
-          await tonStaker.buildUnstakeNominatorPoolTx({
+          await tonStaker.buildUnstakeTx({
             delegatorAddress: config.delegatorAddress,
             validatorAddress: config.validatorAddress
           })
@@ -139,8 +180,11 @@ async function runTx (
         break
       }
       case 'delegate-single-nominator-pool': {
+        tonStaker = new TonSingleNominatorPoolStaker({ ...networkConfig })
+        await tonStaker.init()
+
         unsignedTx = (
-          await tonStaker.buildStakeSingleNominatorPoolTx({
+          await tonStaker.buildStakeTx({
             delegatorAddress: config.delegatorAddress,
             validatorAddress: config.validatorAddress,
             amount: arg[0] // amount
@@ -149,8 +193,11 @@ async function runTx (
         break
       }
       case 'unstake-single-nominator-pool': {
+        tonStaker = new TonSingleNominatorPoolStaker({ ...networkConfig })
+        await tonStaker.init()
+
         unsignedTx = (
-          await tonStaker.buildUnstakeSingleNominatorPoolTx({
+          await tonStaker.buildUnstakeTx({
             delegatorAddress: config.delegatorAddress,
             validatorAddress: config.validatorAddress,
             amount: arg[0] // amount
@@ -159,6 +206,9 @@ async function runTx (
         break
       }
       case 'transfer': {
+        tonStaker = new TonNominatorPoolStaker({ ...networkConfig })
+        await tonStaker.init()
+
         unsignedTx = (
           await tonStaker.buildTransferTx({
             destinationAddress: config.validatorAddress,
@@ -168,12 +218,18 @@ async function runTx (
         break
       }
       case 'deploy-wallet': {
+        tonStaker = new TonNominatorPoolStaker({ ...networkConfig })
+        await tonStaker.init()
+
         unsignedTx = (
           await tonStaker.buildDeployWalletTx({
             address: config.delegatorAddress
           })
         ).tx
         break
+      }
+      default: {
+        cmd.error('unsupported message type', { exitCode: 1, code: `${msgType}.tx.unsupported` })
       }
     }
   } catch (e: any) {
@@ -222,6 +278,14 @@ async function runTx (
       console.log('\nCheck TX status here: ' + networkConfig.blockExplorerUrl + '/transaction/' + txHash)
     }
   }
+}
+
+async function getDelegatePoolTx (amount: string, options: any, cmd: Command<[string]>): Promise<void> {
+  await runTx('delegate-pool', options, cmd, [amount])
+}
+
+async function getUnstakePoolTx (amount: string, options: any, cmd: Command<[string]>): Promise<void> {
+  await runTx('unstake-pool', options, cmd, [amount])
 }
 
 async function getDelegateNominatorPoolTx (amount: string, options: any, cmd: Command<[string]>): Promise<void> {

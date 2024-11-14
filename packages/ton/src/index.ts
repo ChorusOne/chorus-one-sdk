@@ -1,4 +1,7 @@
-export { TonStaker } from './staker'
+export { TonSingleNominatorPoolStaker } from './TonSingleNominatorPoolStaker'
+export { TonNominatorPoolStaker } from './TonNominatorPoolStaker'
+export { TonPoolStaker } from './TonPoolStaker'
+
 export {
   TonNetworkConfig,
   TonSigningData,
