@@ -1,4 +1,4 @@
-import { Address, toNano, Cell, beginCell, fromNano } from '@ton/ton'
+import { Address, toNano, Cell, beginCell, fromNano, TupleReader } from '@ton/ton'
 import { defaultValidUntil, TonBaseStaker } from './TonBaseStaker'
 import { NominatorInfo, UnsignedTx } from './types'
 
