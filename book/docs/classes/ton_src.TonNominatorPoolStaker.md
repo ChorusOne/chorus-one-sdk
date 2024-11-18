@@ -1,37 +1,35 @@
-This class provides the functionality to stake assets on the Ton network.
+# Hierarchy
 
-It also provides the ability to retrieve staking information and rewards for a delegator.
+- `TonBaseStaker`
+
+  ↳ **`TonNominatorPoolStaker`**
 
 # Table of contents
 
 ## Constructors
 
-- [constructor](ton_src.TonStaker.md#constructor)
+- [constructor](ton_src.TonNominatorPoolStaker.md#constructor)
 
 ## Methods
 
-- [getAddressDerivationFn](ton_src.TonStaker.md#getaddressderivationfn)
-- [getMnemonicToSeedFn](ton_src.TonStaker.md#getmnemonictoseedfn)
-- [getSeedToKeypairFn](ton_src.TonStaker.md#getseedtokeypairfn)
-- [init](ton_src.TonStaker.md#init)
-- [buildStakeNominatorPoolTx](ton_src.TonStaker.md#buildstakenominatorpooltx)
-- [buildUnstakeNominatorPoolTx](ton_src.TonStaker.md#buildunstakenominatorpooltx)
-- [buildStakeSingleNominatorPoolTx](ton_src.TonStaker.md#buildstakesinglenominatorpooltx)
-- [buildUnstakeSingleNominatorPoolTx](ton_src.TonStaker.md#buildunstakesinglenominatorpooltx)
-- [buildTransferTx](ton_src.TonStaker.md#buildtransfertx)
-- [buildDeployWalletTx](ton_src.TonStaker.md#builddeploywallettx)
-- [getPoolContractNominators](ton_src.TonStaker.md#getpoolcontractnominators)
-- [getBalance](ton_src.TonStaker.md#getbalance)
-- [getStake](ton_src.TonStaker.md#getstake)
-- [sign](ton_src.TonStaker.md#sign)
-- [broadcast](ton_src.TonStaker.md#broadcast)
-- [getTxStatus](ton_src.TonStaker.md#gettxstatus)
+- [getAddressDerivationFn](ton_src.TonNominatorPoolStaker.md#getaddressderivationfn)
+- [getMnemonicToSeedFn](ton_src.TonNominatorPoolStaker.md#getmnemonictoseedfn)
+- [getSeedToKeypairFn](ton_src.TonNominatorPoolStaker.md#getseedtokeypairfn)
+- [buildStakeTx](ton_src.TonNominatorPoolStaker.md#buildstaketx)
+- [buildUnstakeTx](ton_src.TonNominatorPoolStaker.md#buildunstaketx)
+- [getStake](ton_src.TonNominatorPoolStaker.md#getstake)
+- [getPoolContractNominators](ton_src.TonNominatorPoolStaker.md#getpoolcontractnominators)
+- [init](ton_src.TonNominatorPoolStaker.md#init)
+- [buildDeployWalletTx](ton_src.TonNominatorPoolStaker.md#builddeploywallettx)
+- [sign](ton_src.TonNominatorPoolStaker.md#sign)
+- [broadcast](ton_src.TonNominatorPoolStaker.md#broadcast)
+- [getTxStatus](ton_src.TonNominatorPoolStaker.md#gettxstatus)
 
 # Constructors
 
 ## constructor
 
-• **new TonStaker**(`params`): [`TonStaker`](ton_src.TonStaker.md)
+• **new TonNominatorPoolStaker**(`params`): [`TonNominatorPoolStaker`](ton_src.TonNominatorPoolStaker.md)
 
 This creates a new TonStaker instance.
 
@@ -48,9 +46,13 @@ This creates a new TonStaker instance.
 
 ### Returns
 
-[`TonStaker`](ton_src.TonStaker.md)
+[`TonNominatorPoolStaker`](ton_src.TonNominatorPoolStaker.md)
 
 An instance of TonStaker.
+
+### Inherited from
+
+TonBaseStaker.constructor
 
 # Methods
 
@@ -88,6 +90,10 @@ Returns a single address derived from the public key
 
 `Promise`\<`string`[]\>
 
+### Inherited from
+
+TonBaseStaker.getAddressDerivationFn
+
 ___
 
 ## getMnemonicToSeedFn
@@ -96,6 +102,8 @@ ___
 
 This **static** method is used to convert BIP39 mnemonic to seed. In TON
 network the seed is used as a private key.
+
+It can be used for signer initialization, e.g. `FireblocksSigner` or `LocalSigner`.
 
 ### Returns
 
@@ -116,6 +124,10 @@ Returns a seed derived from the mnemonic
 
 `Promise`\<`Uint8Array`\>
 
+### Inherited from
+
+TonBaseStaker.getMnemonicToSeedFn
+
 ___
 
 ## getSeedToKeypairFn
@@ -124,6 +136,8 @@ ___
 
 This **static** method is used to convert a seed to a keypair. Note that
 TON network doesn't use BIP44 HD Path for address derivation.
+
+It can be used for signer initialization, e.g. `FireblocksSigner` or `LocalSigner`.
 
 ### Returns
 
@@ -144,25 +158,15 @@ Returns a public and private keypair derived from the seed
 
 `Promise`\<\{ `publicKey`: `Uint8Array` ; `privateKey`: `Uint8Array`  }\>
 
-___
+### Inherited from
 
-## init
-
-▸ **init**(): `Promise`\<`void`\>
-
-Initializes the TonStaker instance and connects to the blockchain.
-
-### Returns
-
-`Promise`\<`void`\>
-
-A promise which resolves once the TonStaker instance has been initialized.
+TonBaseStaker.getSeedToKeypairFn
 
 ___
 
-## buildStakeNominatorPoolTx
+## buildStakeTx
 
-▸ **buildStakeNominatorPoolTx**(`params`): `Promise`\<\{ `tx`: [`UnsignedTx`](../interfaces/ton_src.UnsignedTx.md)  }\>
+▸ **buildStakeTx**(`params`): `Promise`\<\{ `tx`: [`UnsignedTx`](../interfaces/ton_src.UnsignedTx.md)  }\>
 
 Builds a staking (delegation) transaction for Nominator Pool contract.
 For more information see: https://github.com/ton-blockchain/nominator-pool
@@ -185,9 +189,9 @@ Returns a promise that resolves to a TON nominator pool staking transaction.
 
 ___
 
-## buildUnstakeNominatorPoolTx
+## buildUnstakeTx
 
-▸ **buildUnstakeNominatorPoolTx**(`params`): `Promise`\<\{ `tx`: [`UnsignedTx`](../interfaces/ton_src.UnsignedTx.md)  }\>
+▸ **buildUnstakeTx**(`params`): `Promise`\<\{ `tx`: [`UnsignedTx`](../interfaces/ton_src.UnsignedTx.md)  }\>
 
 Builds an unstaking (withdraw nominator) transaction for Nominator Pool contract.
 For more information see: https://github.com/ton-blockchain/nominator-pool
@@ -209,99 +213,25 @@ Returns a promise that resolves to a TON nominator pool unstaking transaction.
 
 ___
 
-## buildStakeSingleNominatorPoolTx
+## getStake
 
-▸ **buildStakeSingleNominatorPoolTx**(`params`): `Promise`\<\{ `tx`: [`UnsignedTx`](../interfaces/ton_src.UnsignedTx.md)  }\>
+▸ **getStake**(`params`): `Promise`\<\{ `balance`: `string`  }\>
 
-Builds a staking (delegation) transaction for Single Nominator Pool contract.
-For more information see: https://github.com/orbs-network/single-nominator/tree/main
-
-### Parameters
-
-| Name | Type | Description |
-| :------ | :------ | :------ |
-| `params` | `Object` | Parameters for building the transaction |
-| `params.delegatorAddress` | `string` | The delegator address to stake from |
-| `params.validatorAddress` | `string` | The validator address to stake to |
-| `params.amount` | `string` | The amount to stake, specified in `TON` |
-| `params.validUntil?` | `number` | (Optional) The Unix timestamp when the transaction expires |
-
-### Returns
-
-`Promise`\<\{ `tx`: [`UnsignedTx`](../interfaces/ton_src.UnsignedTx.md)  }\>
-
-Returns a promise that resolves to a TON nominator pool staking transaction.
-
-___
-
-## buildUnstakeSingleNominatorPoolTx
-
-▸ **buildUnstakeSingleNominatorPoolTx**(`params`): `Promise`\<\{ `tx`: [`UnsignedTx`](../interfaces/ton_src.UnsignedTx.md)  }\>
-
-Builds a unstaking (withdraw nominator) transaction for Single Nominator Pool contract.
-For more information see: https://github.com/orbs-network/single-nominator/tree/main
+Retrieves the staking information for a specified delegator.
 
 ### Parameters
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
-| `params` | `Object` | Parameters for building the transaction |
-| `params.delegatorAddress` | `string` | The delegator address |
-| `params.validatorAddress` | `string` | The validator address to unstake from |
-| `params.amount` | `string` | The amount to unstake, specified in `TON` |
-| `params.validUntil?` | `number` | (Optional) The Unix timestamp when the transaction expires |
+| `params` | `Object` | Parameters for the request |
+| `params.delegatorAddress` | `string` | The delegator (wallet) address |
+| `params.validatorAddress` | `string` | The validator address to gather rewards data from |
 
 ### Returns
 
-`Promise`\<\{ `tx`: [`UnsignedTx`](../interfaces/ton_src.UnsignedTx.md)  }\>
+`Promise`\<\{ `balance`: `string`  }\>
 
-Returns a promise that resolves to a TON nominator pool unstaking transaction.
-
-___
-
-## buildTransferTx
-
-▸ **buildTransferTx**(`params`): `Promise`\<\{ `tx`: [`UnsignedTx`](../interfaces/ton_src.UnsignedTx.md)  }\>
-
-Builds a token transfer transaction
-
-### Parameters
-
-| Name | Type | Description |
-| :------ | :------ | :------ |
-| `params` | `Object` | Parameters for building the transaction |
-| `params.destinationAddress` | `string` | Where to send the tokens |
-| `params.amount` | `string` | The amount to stake, specified in `TON` |
-| `params.validUntil?` | `number` | (Optional) The Unix timestamp when the transaction expires |
-| `params.memo?` | `string` | (Optional) A short note to include with the transaction |
-
-### Returns
-
-`Promise`\<\{ `tx`: [`UnsignedTx`](../interfaces/ton_src.UnsignedTx.md)  }\>
-
-Returns a promise that resolves to a TON token transfer transaction.
-
-___
-
-## buildDeployWalletTx
-
-▸ **buildDeployWalletTx**(`params`): `Promise`\<\{ `tx`: [`UnsignedTx`](../interfaces/ton_src.UnsignedTx.md)  }\>
-
-Builds a wallet deployment transaction
-
-### Parameters
-
-| Name | Type | Description |
-| :------ | :------ | :------ |
-| `params` | `Object` | Parameters for building the transaction |
-| `params.address` | `string` | The address to deploy the wallet contract to |
-| `params.validUntil?` | `number` | (Optional) The Unix timestamp when the transaction expires |
-
-### Returns
-
-`Promise`\<\{ `tx`: [`UnsignedTx`](../interfaces/ton_src.UnsignedTx.md)  }\>
-
-Returns a promise that resolves to a TON wallet deployment transaction.
+Returns a promise that resolves to the staking information for the specified delegator.
 
 ___
 
@@ -327,47 +257,47 @@ Returns a promise that resolves to the nominator data for the validator address.
 
 ___
 
-## getBalance
+## init
 
-▸ **getBalance**(`params`): `Promise`\<\{ `amount`: `string`  }\>
+▸ **init**(): `Promise`\<`void`\>
 
-Retrieves the account balance
-
-### Parameters
-
-| Name | Type | Description |
-| :------ | :------ | :------ |
-| `params` | `Object` | Parameters for the request |
-| `params.address` | `string` | The account address to gather balance data from |
+Initializes the TonStaker instance and connects to the blockchain.
 
 ### Returns
 
-`Promise`\<\{ `amount`: `string`  }\>
+`Promise`\<`void`\>
 
-Returns a promise that resolves to the account balance
+A promise which resolves once the TonStaker instance has been initialized.
+
+### Inherited from
+
+TonBaseStaker.init
 
 ___
 
-## getStake
+## buildDeployWalletTx
 
-▸ **getStake**(`params`): `Promise`\<\{ `balance`: `string`  }\>
+▸ **buildDeployWalletTx**(`params`): `Promise`\<\{ `tx`: [`UnsignedTx`](../interfaces/ton_src.UnsignedTx.md)  }\>
 
-Retrieves the staking information for a specified delegator.
+Builds a wallet deployment transaction
 
 ### Parameters
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
-| `params` | `Object` | Parameters for the request |
-| `params.delegatorAddress` | `string` | The delegator (wallet) address |
-| `params.validatorAddress` | `string` | The validator address to gather rewards data from |
-| `params.contractType` | ``"single-nominator-pool"`` \| ``"nominator-pool"`` | The validator contract type (single-nominator-pool or nominator-pool) |
+| `params` | `Object` | Parameters for building the transaction |
+| `params.address` | `string` | The address to deploy the wallet contract to |
+| `params.validUntil?` | `number` | (Optional) The Unix timestamp when the transaction expires |
 
 ### Returns
 
-`Promise`\<\{ `balance`: `string`  }\>
+`Promise`\<\{ `tx`: [`UnsignedTx`](../interfaces/ton_src.UnsignedTx.md)  }\>
 
-Returns a promise that resolves to the staking information for the specified delegator.
+Returns a promise that resolves to a TON wallet deployment transaction.
+
+### Inherited from
+
+TonBaseStaker.buildDeployWalletTx
 
 ___
 
@@ -392,6 +322,10 @@ Signs a transaction using the provided signer.
 
 A promise that resolves to an object containing the signed transaction.
 
+### Inherited from
+
+TonBaseStaker.sign
+
 ___
 
 ## broadcast
@@ -412,6 +346,10 @@ This method is used to broadcast a signed transaction to the TON network.
 `Promise`\<`string`\>
 
 Returns a promise that resolves to the response of the transaction that was broadcast to the network.
+
+### Inherited from
+
+TonBaseStaker.broadcast
 
 ___
 
@@ -437,3 +375,7 @@ This method is intended to check for transactions made recently (within limit) a
 `Promise`\<`TonTxStatus`\>
 
 A promise that resolves to an object containing the transaction status.
+
+### Inherited from
+
+TonBaseStaker.getTxStatus
