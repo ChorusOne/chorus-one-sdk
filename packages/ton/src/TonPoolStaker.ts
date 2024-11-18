@@ -4,11 +4,11 @@ import { UnsignedTx } from './types'
 
 export class TonPoolStaker extends TonBaseStaker {
   /**
-   * Builds a staking (delegation) transaction for Nominator Pool contract.
-   * For more information see: https://github.com/ton-blockchain/nominator-pool
+   * Builds a staking transaction for TON Pool contract. It uses 2 pool solution, and picks the best pool
+   * to stake to automatically.
    *
    * @param params - Parameters for building the transaction
-   * @param params.validatorAddress - The validator address to stake to
+   * @param params.validatorAddressPair - The validator address pair to stake to
    * @param params.amount - The amount to stake, specified in `TON`
    * @param params.validUntil - (Optional) The Unix timestamp when the transaction expires
    *
@@ -54,12 +54,10 @@ export class TonPoolStaker extends TonBaseStaker {
   }
 
   /**
-   * Builds a staking (delegation) transaction for Nominator Pool contract.
-   * For more information see: https://github.com/ton-blockchain/nominator-pool
+   * Builds an unstaking transaction for TON Pool contract.
    *
    * @param params - Parameters for building the transaction
-   * @param params.delegatorAddress - The delegator address to stake from
-   * @param params.validatorAddress - The validator address to stake to
+   * @param params.validatorAddress - The validator address to unstake from
    * @param params.amount - The amount to stake, specified in `TON`
    * @param params.validUntil - (Optional) The Unix timestamp when the transaction expires
    *
@@ -106,6 +104,15 @@ export class TonPoolStaker extends TonBaseStaker {
     return { tx }
   }
 
+  /**
+   * Retrieves the staking information for a specified delegator.
+   *
+   * @param params - Parameters for the request
+   * @param params.delegatorAddress - The delegator (wallet) address
+   * @param params.validatorAddress - (Optional) The validator address to gather staking information from
+   *
+   * @returns Returns a promise that resolves to the staking information for the specified delegator.
+   */
   async getStake (params: { delegatorAddress: string; validatorAddress: string }) {
     const { delegatorAddress, validatorAddress } = params
     const client = this.getClient()
@@ -122,6 +129,14 @@ export class TonPoolStaker extends TonBaseStaker {
     }
   }
 
+  /**
+   * Retrieves the staking information for a specified pool, including minStake and fees information.
+   *
+   * @param params - Parameters for the request
+   * @param params.validatorAddress - The validator (vault) address
+   *
+   * @returns Returns a promise that resolves to the staking information for the specified pool.
+   */
   async getPoolParams (params: { validatorAddress: string }) {
     const result = await this.getPoolParamsUnformatted(params)
 

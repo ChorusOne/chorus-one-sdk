@@ -187,7 +187,7 @@ Builds a mint transaction.
 | `params.delegatorAddress` | \`0x$\{string}\` | The delegator (wallet) address |
 | `params.validatorAddress` | \`0x$\{string}\` | The validator (vault) address to mint shares for |
 | `params.amount` | `string` | The amount to mint, specified in `osETH`. E.g. "1" - 1 osETH |
-| `params.referrer?` | \`0x$\{string}\` | (Optional) The address of the referrer. This is used to track the origin of transactions, providing insights into which sources or campaigns are driving activity. This can be useful for analytics and optimizing user acquisition strategies. |
+| `params.referrer?` | \`0x$\{string}\` | (Optional) The address of the referrer. This is used to track the origin of transactions, providing insights into which sources or campaigns are driving activity. This can be useful for analytics and optimizing user acquisition strategies |
 
 ### Returns
 

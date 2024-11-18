@@ -29,8 +29,11 @@ import { ed25519 } from '@noble/curves/ed25519'
  * It also provides the ability to retrieve staking information and rewards for a delegator.
  */
 export class TonBaseStaker {
+  /** @ignore */
   protected readonly networkConfig: Required<TonNetworkConfig>
+  /** @ignore */
   protected readonly addressDerivationConfig: AddressDerivationConfig
+  /** @ignore */
   protected client?: TonClient
 
   /**
@@ -59,6 +62,8 @@ export class TonBaseStaker {
    * This **static** method is used to convert BIP39 mnemonic to seed. In TON
    * network the seed is used as a private key.
    *
+   * It can be used for signer initialization, e.g. `FireblocksSigner` or `LocalSigner`.
+   *
    * @returns Returns a seed derived from the mnemonic
    */
   static getMnemonicToSeedFn =
@@ -70,6 +75,8 @@ export class TonBaseStaker {
   /**
    * This **static** method is used to convert a seed to a keypair. Note that
    * TON network doesn't use BIP44 HD Path for address derivation.
+   *
+   * It can be used for signer initialization, e.g. `FireblocksSigner` or `LocalSigner`.
    *
    * @returns Returns a public and private keypair derived from the seed
    */
@@ -131,17 +138,7 @@ export class TonBaseStaker {
     })
   }
 
-  /**
-   * Builds a token transfer transaction
-   *
-   * @param params - Parameters for building the transaction
-   * @param params.destinationAddress - Where to send the tokens
-   * @param params.amount - The amount to stake, specified in `TON`
-   * @param params.validUntil - (Optional) The Unix timestamp when the transaction expires
-   * @param params.memo - (Optional) A short note to include with the transaction
-   *
-   * @returns Returns a promise that resolves to a TON token transfer transaction.
-   */
+  /** @ignore */
   async buildTransferTx (params: {
     destinationAddress: string
     amount: string
@@ -225,14 +222,7 @@ export class TonBaseStaker {
     return { tx }
   }
 
-  /**
-   * Retrieves the account balance
-   *
-   * @param params - Parameters for the request
-   * @param params.address - The account address to gather balance data from
-   *
-   * @returns Returns a promise that resolves to the account balance
-   */
+  /** @ignore */
   async getBalance (params: { address: string }): Promise<{ amount: string }> {
     const client = this.getClient()
     const { address } = params
@@ -429,6 +419,7 @@ export class TonBaseStaker {
     return { status: 'success', receipt: transaction }
   }
 
+  /** @ignore */
   protected getClient (): TonClient {
     if (!this.client) {
       throw new Error('TonStaker not initialized. Did you forget to call init()?')
@@ -437,6 +428,7 @@ export class TonBaseStaker {
     return this.client
   }
 
+  /** @ignore */
   protected checkIfAddressTestnetFlagMatches (address: string): void {
     const addr = Address.parseFriendly(address)
 
@@ -449,6 +441,7 @@ export class TonBaseStaker {
     }
   }
 
+  /** @ignore */
   protected async checkMinimumExistentialBalance (address: string, amount: string): Promise<void> {
     const balance = await this.getBalance({ address })
     const minBalance = this.networkConfig.minimumExistentialBalance
@@ -461,6 +454,7 @@ export class TonBaseStaker {
   }
 
   // NOTE: this method is used only by Nominator and SingleNominator stakers, not by Pool
+  /** @ignore */
   protected async getNominatorContractPoolData (contractAddress: string): Promise<PoolData> {
     const client = this.getClient()
     const response = await client.runMethod(Address.parse(contractAddress), 'get_pool_data', [])
