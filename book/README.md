@@ -337,9 +337,9 @@ console.log(status) // 'success'
 // Configuration
 // -------------
 
-import { TonStaker } from '@chorus-one/ton'
+import { TonPoolStaker } from '@chorus-one/ton'
 
-const staker = new TonStaker({
+const staker = new TonPoolStaker({
   rpcUrl: 'https://toncenter.com/api/v2/jsonRPC'
 })
 
@@ -351,11 +351,13 @@ await staker.init()
 const delegatorAddress = '0QDsF87nkTYgkvu1z5xveCEGTRnZmEVaVT0gdxoeyaNvmoCr'
 
 // You can use the Chorus One validator address or specify your own
-const validatorAddress = '<validator-contract-address>'
+const validatorAddressPair = [
+  'kQAHBakDk_E7qLlNQZxJDsqj_ruyAFpqarw85tO-c03fK26F',
+  'kQCltujow9Sq3ZVPPU6CYGfqwDxYwjlmFGZ1Wt0bAYebio4o'
+]
 
 const { tx } = await staker.buildStakeTx({
-  delegatorAddress,
-  validatorAddress,
+  validatorAddressPair,
   amount: '1' // 1 TON
 })
 
