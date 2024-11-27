@@ -1,4 +1,4 @@
-# Methods
+# Nominator Pool: Methods
 
 This section provides an overview of the key methods available in the **Chorus One SDK** for staking on the TON Network via the **Nominator Pool** contract.
 
