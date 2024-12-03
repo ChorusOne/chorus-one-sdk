@@ -19,6 +19,18 @@ The methods provided in this documentation are compatible with popular TON libra
 
 The **TON Pool** is powered by [TON Whales contracts](https://tonwhales.com/), a robust and proven technology that has operated reliably in the TON ecosystem for several years. These contracts have been tested extensively in real-world conditions, providing a solid foundation for secure and efficient staking operations.
 
+![](../../../assets/ton-pool-architecture/ton-whales-contract-first-iteration.png)
+
+
+{% hint style="info" %}
+
+**Architecture Overview**
+
+To learn more about the architecture of the TON Pool and the underlying TON Whales contracts, refer to the [Architecture](architecture.md) section.
+
+{% endhint %}
+
+
 ## Two Validator Pool Addresses
 
 To ensure uninterrupted network participation, TON Pool utilizes two validator pool addresses: one for odd cycles and another for even cycles. These pools alternate between cycles to enable seamless staking and validation without downtime. This design ensures continuous operation and smooth participation in the TON blockchain’s validation process.
@@ -174,6 +186,6 @@ In this section you learned how to set up the Chorus One SDK for the TON network
 - To learn more about the available methods on `TonPoolStaker`, continue to the [Methods](methods.md) section.
 
 ## Further Reading
-
+- [TON Pool Architecture](architecture.md)
 - [TonPoolStaker API Reference](../../../docs/classes/ton_src.TonPoolStaker.md)
 - [What is a Signer?](../../../signers-explained/what-is-a-signer.md)

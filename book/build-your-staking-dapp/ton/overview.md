@@ -18,7 +18,7 @@ Before you start developing your staking application, you need to decide which p
 | - | - | - |- |
 | Recommended | ✅ | | |
 | Best for | Most use cases | Large delegators | Single delegators |
-| Delegators  | ∞  | 40 Max | 1  |
+| Delegators  | Unlimited  | 40 Max | 1  |
 | Minimal Stake  | 10 TON  |  10,000 TON | 400,000 TON |
 | Partial Withdrawal | ✅ | ❌ Must withdraw all funds | ✅|
 | Pool creation | ✅ Not needed | ❌ Per request | ❌ Per request |
