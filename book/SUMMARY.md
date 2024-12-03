@@ -28,6 +28,7 @@
   - [TON Pool](build-your-staking-dapp/ton/ton-pool/README.md)
     - [Overview](build-your-staking-dapp/ton/ton-pool/overview.md)
     - [Methods](build-your-staking-dapp/ton/ton-pool/methods.md)
+    - [Architecture](build-your-staking-dapp/ton/ton-pool/architecture.md)
   - [Nominator](build-your-staking-dapp/ton/nominator/README.md)
     - [Overview](build-your-staking-dapp/ton/nominator/overview.md)
     - [Methods](build-your-staking-dapp/ton/nominator/methods.md) 
