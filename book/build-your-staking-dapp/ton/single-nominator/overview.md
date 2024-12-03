@@ -85,7 +85,7 @@ const signedTx = await yourWallet.signTransaction(tx)
 
 Additionally, you can use the Chorus One SDK to sign transactions using Fireblocks, mnemonic or other methods.
 
-- For detailed information on setting up and configuring these options, please refer to the [What is a Signer?](../../signers-explained/what-is-a-signer.md) section.
+- For detailed information on setting up and configuring these options, please refer to the [What is a Signer?](../../../signers-explained/what-is-a-signer.md) section.
 
 {% tabs %}
 {% tab title="Using Fireblocks for Signing" %}

@@ -34,8 +34,9 @@ export class TonPoolStaker extends TonBaseStaker {
       )
     }
 
+    // https://github.com/tonwhales/ton-nominators/blob/0553e1b6ddfc5c0b60505957505ce58d01bec3e7/compiled/nominators.fc#L18
     const payload = beginCell()
-      .storeUint(2077040623, 32)
+      .storeUint(2077040623, 32) // stake_deposit method const
       .storeUint(getRandomQueryId(), 64) // Query ID
       .storeCoins(getDefaultGas()) // Gas
       .endCell()
@@ -84,8 +85,9 @@ export class TonPoolStaker extends TonBaseStaker {
 
     const data = await this.getPoolParamsUnformatted({ validatorAddress })
 
+    // https://github.com/tonwhales/ton-nominators/blob/0553e1b6ddfc5c0b60505957505ce58d01bec3e7/compiled/nominators.fc#L20
     const payload = beginCell()
-      .storeUint(3665837821, 32)
+      .storeUint(3665837821, 32) // stake_withdraw method const
       .storeUint(getRandomQueryId(), 64) // Query ID
       .storeCoins(getDefaultGas()) // Gas
       .storeCoins(toNano(amount)) // Amount
