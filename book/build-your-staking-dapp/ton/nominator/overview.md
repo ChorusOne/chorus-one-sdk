@@ -115,7 +115,7 @@ const { signedTx } = await staker.sign({
 })
 ```
 
-For more information please refer to the [Signing with Fireblocks](../../signers-explained/fireblocks.md)
+For more information please refer to the [Signing with Fireblocks](../../../signers-explained/fireblocks.md)
 {% endtab %}
 {% endtabs %}
 
