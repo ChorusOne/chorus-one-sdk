@@ -10,6 +10,9 @@ export class TonPoolStaker extends TonBaseStaker {
    * @param params - Parameters for building the transaction
    * @param params.validatorAddressPair - The validator address pair to stake to
    * @param params.amount - The amount to stake, specified in `TON`
+   * @param params.referrer - (Optional) The address of the referrer. This is used to track the origin of transactions,
+   * providing insights into which sources or campaigns are driving activity. This can be useful for analytics and
+   * optimizing user acquisition strategies
    * @param params.validUntil - (Optional) The Unix timestamp when the transaction expires
    *
    * @returns Returns a promise that resolves to a TON nominator pool staking transaction.
@@ -17,9 +20,10 @@ export class TonPoolStaker extends TonBaseStaker {
   async buildStakeTx (params: {
     validatorAddressPair: [string, string]
     amount: string
+    referrer?: string
     validUntil?: number
   }): Promise<{ tx: UnsignedTx }> {
-    const { validatorAddressPair, amount, validUntil } = params
+    const { validatorAddressPair, amount, validUntil, referrer } = params
     const validatorAddress = await this.getPoolAddressForStake({ validatorAddressPair })
 
     // ensure the address is for the right network
@@ -35,11 +39,16 @@ export class TonPoolStaker extends TonBaseStaker {
     }
 
     // https://github.com/tonwhales/ton-nominators/blob/0553e1b6ddfc5c0b60505957505ce58d01bec3e7/compiled/nominators.fc#L18
-    const payload = beginCell()
+    let basePayload = beginCell()
       .storeUint(2077040623, 32) // stake_deposit method const
       .storeUint(getRandomQueryId(), 64) // Query ID
       .storeCoins(getDefaultGas()) // Gas
-      .endCell()
+
+    if (referrer) {
+      basePayload = basePayload.storeStringTail(referrer)
+    }
+
+    const payload = basePayload.endCell()
 
     const tx = {
       validUntil: defaultValidUntil(validUntil),

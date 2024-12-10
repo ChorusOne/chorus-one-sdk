@@ -178,6 +178,7 @@ to stake to automatically.
 | `params` | `Object` | Parameters for building the transaction |
 | `params.validatorAddressPair` | [`string`, `string`] | The validator address pair to stake to |
 | `params.amount` | `string` | The amount to stake, specified in `TON` |
+| `params.referrer?` | `string` | (Optional) The address of the referrer. This is used to track the origin of transactions, providing insights into which sources or campaigns are driving activity. This can be useful for analytics and optimizing user acquisition strategies |
 | `params.validUntil?` | `number` | (Optional) The Unix timestamp when the transaction expires |
 
 ### Returns
