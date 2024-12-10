@@ -18,7 +18,7 @@ Staking tokens supports the network's operations and earns rewards for the deleg
 
 ### How to Use
 
-To build a staking transaction, you need to provide the validator address pair, the staking amount (in TON), and optionally, a Unix timestamp indicating when the transaction expires.
+To build a staking transaction, you need to provide the validator address pair, and the staking amount (in TON). Optionally, you can also specify a referrer address for tracking purposes, and a Unix timestamp indicating when the transaction expires.
 
 ### Example
 
@@ -29,7 +29,8 @@ const { tx } = await staker.buildStakeTx({
     'kQCltujow9Sq3ZVPPU6CYGfqwDxYwjlmFGZ1Wt0bAYebio4o'
   ],
   amount: '2', // 2 TON
-  validUntil: Math.floor(Date.now() / 1000) + 3600 // Optional, expires in 1 hour
+  validUntil: Math.floor(Date.now() / 1000) + 3600, // Optional, expires in 1 hour
+  referrer: 'Telegram' // Optional, unique referrer string for tracking
 })
 ```
 
