@@ -29,6 +29,7 @@
     { "path": "../signer" },
     { "path": "../solana" },
     { "path": "../substrate" },
+    { "path": "../ton" },
     { "path": "../utils" }
   ]
 }
