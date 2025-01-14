@@ -36,6 +36,7 @@
     "@chorus-one/utils": "^1.0.0",
     "@noble/curves": "^1.4.0",
     "@ton/ton": "^13.11.2",
+    "axios": "^1.7.2",
     "tonweb-mnemonic": "^1.0.1"
   }
 }
