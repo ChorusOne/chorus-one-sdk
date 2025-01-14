@@ -1,3 +1,4 @@
+import axios, { AxiosAdapter, AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import type { Signer } from '@chorus-one/signer'
 import type {
   TonNetworkConfig,
@@ -17,7 +18,9 @@ import {
   MessageRelaxed,
   SendMode,
   Address,
-  TransactionDescriptionGeneric
+  TransactionDescriptionGeneric,
+  beginCell,
+  storeMessage
 } from '@ton/ton'
 import { createWalletTransferV4, externalMessage, sign } from './tx'
 import * as tonMnemonic from 'tonweb-mnemonic'
@@ -133,8 +136,45 @@ export class TonBaseStaker {
    * @returns A promise which resolves once the TonStaker instance has been initialized.
    */
   async init (): Promise<void> {
+    const rateLimitRetryAdapter: AxiosAdapter = async (config: InternalAxiosRequestConfig): Promise<AxiosResponse> => {
+      const maxRetries = 3
+      const retryDelay = 1000
+
+      let retries = 0
+
+      const defaultAdapter = axios.getAdapter(axios.defaults.adapter)
+      if (!defaultAdapter) {
+        throw new Error('Axios default adapter is not available')
+      }
+
+      while (retries <= maxRetries) {
+        try {
+          // Send the request using the default adapter
+          return await defaultAdapter(config)
+        } catch (err) {
+          const error = err as AxiosError
+
+          const status = error.response?.status
+
+          // If rate limit hit (429), wait and retry
+          if (status === 429 && retries < maxRetries) {
+            retries += 1
+            console.log(`Rate limit hit, try ${retries}/${maxRetries}`)
+
+            await new Promise((resolve) => setTimeout(resolve, retryDelay))
+          } else {
+            throw error
+          }
+        }
+      }
+
+      // Should never reach this point
+      throw new Error(`Rate limit exceeded after ${maxRetries} retries.`)
+    }
+
     this.client = new TonClient({
-      endpoint: this.networkConfig.rpcUrl
+      endpoint: this.networkConfig.rpcUrl,
+      httpAdapter: rateLimitRetryAdapter
     })
   }
 
@@ -381,8 +421,16 @@ export class TonBaseStaker {
     const { address, txHash, limit } = params
 
     const transactions = await client.getTransactions(Address.parse(address), { limit: limit ?? 10 })
-    const transaction = transactions.find((tx) => tx.hash().toString('hex') === txHash)
+    const transaction = transactions.find((tx) => {
+      // Check tx hash
+      if (tx.hash().toString('hex') === txHash) return true
 
+      // Check inMessage tx hash(that is the one we get from broadcast method)
+      if (tx.inMessage && beginCell().store(storeMessage(tx.inMessage)).endCell().hash().toString('hex') === txHash)
+        return true
+
+      return false
+    })
     if (transaction === undefined) {
       return { status: 'unknown', receipt: null }
     }
