@@ -1,6 +1,6 @@
 import { Address, beginCell, fromNano, toNano, Slice, Builder, DictionaryValue, Dictionary, Cell, configParse17 } from '@ton/ton'
 import { defaultValidUntil, getDefaultGas, getRandomQueryId, TonBaseStaker } from './TonBaseStaker'
-import { UnsignedTx, Election, FrozenSet, PoolStatus } from './types'
+import { UnsignedTx, Election, FrozenSet, PoolStatus, GetPoolAddressForStakeResponse } from './types'
 
 export class TonPoolStaker extends TonBaseStaker {
   /**
@@ -24,7 +24,7 @@ export class TonPoolStaker extends TonBaseStaker {
     validUntil?: number
   }): Promise<{ tx: UnsignedTx }> {
     const { validatorAddressPair, amount, validUntil, referrer } = params
-    const validatorAddress = await this.getPoolAddressForStake({ validatorAddressPair })
+    const validatorAddress = (await this.getPoolAddressForStake({ validatorAddressPair })).SelectedPoolAddress
 
     // ensure the address is for the right network
     this.checkIfAddressTestnetFlagMatches(validatorAddress)
@@ -177,7 +177,7 @@ export class TonPoolStaker extends TonBaseStaker {
   }
 
   /** @ignore */
-  async getPoolAddressForStake (params: { validatorAddressPair: [string, string] }) {
+  async getPoolAddressForStake (params: { validatorAddressPair: [string, string] }): Promise<GetPoolAddressForStakeResponse> {
     const { validatorAddressPair } = params
     const client = this.getClient()
 
@@ -216,7 +216,12 @@ export class TonPoolStaker extends TonBaseStaker {
 
     const selectedPoolIndex = TonPoolStaker.selectPool(minStake, maxStake, [poolOneBalance, poolTwoBalance])
 
-    return validatorAddressPair[selectedPoolIndex]
+    return {
+        SelectedPoolAddress: validatorAddressPair[selectedPoolIndex],
+        MinStake: minStake,
+        MaxStake: maxStake,
+        PoolStakes: [poolOneBalance, poolTwoBalance]
+    }
   }
 
   async getPoolStatus (validatorAddress: string): Promise<PoolStatus> {
@@ -278,7 +283,7 @@ export class TonPoolStaker extends TonBaseStaker {
   }
 
   /** @ignore */
-  public static selectPool (
+  static selectPool (
       minStake: bigint, // minimum stake for participation (to be in the set)
       maxStake: bigint, // maximum allowes stake per validator
       currentBalances: [bigint, bigint] // current stake balances of the pools
