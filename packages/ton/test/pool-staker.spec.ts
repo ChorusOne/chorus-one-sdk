@@ -24,6 +24,6 @@ describe('TonPoolStaker', () => {
   })
 
   it('should throw an error if both pools have reached maxStake', () => {
-      expect(() => TonPoolStaker.selectPool(200n, 1000n, [1000n, 1000n])).to.throw("Both pools have reached their maximum stake limits.");
+      expect(() => TonPoolStaker.selectPool(200n, 1000n, [1000n, 1000n])).to.throw("Both pools have reached their maximum stake limits");
   })
 })
