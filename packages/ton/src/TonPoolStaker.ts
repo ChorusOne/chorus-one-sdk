@@ -289,7 +289,7 @@ export class TonPoolStaker extends TonBaseStaker {
           return 1; // fill pool 2 to meet minStake
       }
 
-      // both pools have reached minStake, so allocae to the one with the lower balance
+      // both pools have reached minStake, so allocate to the one with the lower balance
       return balancePool1 <= balancePool2 ? 0 : 1;
   }
 }
