@@ -1,4 +1,4 @@
-import { Address, beginCell, fromNano, toNano, Slice, Builder, DictionaryValue, Dictionary, Cell, configParse17 } from '@ton/ton'
+import { Address, beginCell, fromNano, toNano, Slice, Builder, DictionaryValue, Dictionary, Cell } from '@ton/ton'
 import { defaultValidUntil, getDefaultGas, getRandomQueryId, TonBaseStaker } from './TonBaseStaker'
 import { UnsignedTx, Election, FrozenSet, PoolStatus, GetPoolAddressForStakeResponse } from './types'
 
@@ -24,15 +24,15 @@ export class TonPoolStaker extends TonBaseStaker {
     validUntil?: number
   }): Promise<{ tx: UnsignedTx }> {
     const { validatorAddressPair, amount, validUntil, referrer } = params
-    const validatorAddress = (await this.getPoolAddressForStake({ validatorAddressPair })).SelectedPoolAddress
+    const poolAddress = (await this.getPoolAddressForStake({ validatorAddressPair })).SelectedPoolAddress
 
     // ensure the address is for the right network
-    this.checkIfAddressTestnetFlagMatches(validatorAddress)
+    this.checkIfAddressTestnetFlagMatches(poolAddress)
 
     // ensure the validator address is bounceable.
     // NOTE: TEP-002 specifies that the address bounceable flag should match both the internal message and the address.
     // This has no effect as we force the bounce flag anyway. However it is a good practice to be consistent
-    if (!Address.parseFriendly(validatorAddress).isBounceable) {
+    if (!Address.parseFriendly(poolAddress).isBounceable) {
       throw new Error(
         'validator address is not bounceable! It is required for nominator pool contract operations to use bounceable addresses'
       )
@@ -53,7 +53,7 @@ export class TonPoolStaker extends TonBaseStaker {
     const tx = {
       validUntil: defaultValidUntil(validUntil),
       message: {
-        address: validatorAddress,
+        address: poolAddress,
         bounceable: true,
         amount: toNano(amount),
         payload
@@ -179,34 +179,23 @@ export class TonPoolStaker extends TonBaseStaker {
   /** @ignore */
   async getPoolAddressForStake (params: { validatorAddressPair: [string, string] }): Promise<GetPoolAddressForStakeResponse> {
     const { validatorAddressPair } = params
-    const client = this.getClient()
 
     // fetch required data:
     // 1. stake balance for both pools
-    // 2. stake limits from the onchain config
-    // 3. last election data to get the minimum stake for participation
-    const [ poolOneStatus, poolTwoStatus, elections, stakeLimitsCfgCell ] = await Promise.all([
+    // 2. last election data to get the minimum stake for participation
+    const [ poolOneStatus, poolTwoStatus, elections ] = await Promise.all([
         this.getPoolStatus(validatorAddressPair[0]),
         this.getPoolStatus(validatorAddressPair[1]),
 
         // elector contract address
         this.getPastElections('Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF'),
-
-        // see full config: https://tonviewer.com/config#17
-        client.getConfigParam(17)
     ])
 
     const [ poolOneBalance, poolTwoBalance ] = [poolOneStatus.Balance, poolTwoStatus.Balance]
-    const stakeLimitsCfg = configParse17(stakeLimitsCfgCell.beginParse())
-    const maxStake = stakeLimitsCfg.maxStake
 
     // simple sanity validation
     if (elections.length == 0) {
         throw new Error('No elections found')
-    }
-
-    if (stakeLimitsCfg.minStake == BigInt(0)) {
-        throw new Error('Minimum stake is 0, that is not expected')
     }
 
     // iterate lastElection.frozen and find the lowest validator stake
@@ -214,12 +203,11 @@ export class TonPoolStaker extends TonBaseStaker {
     const values = Array.from(lastElection.frozen.values())
     const minStake = values.reduce((min, p) => p.stake < min ? p.stake : min, values[0].stake)
 
-    const selectedPoolIndex = TonPoolStaker.selectPool(minStake, maxStake, [poolOneBalance, poolTwoBalance])
+    const selectedPoolIndex = TonPoolStaker.selectPool(minStake, [poolOneBalance, poolTwoBalance])
 
     return {
         SelectedPoolAddress: validatorAddressPair[selectedPoolIndex],
         MinStake: minStake,
-        MaxStake: maxStake,
         PoolStakes: [poolOneBalance, poolTwoBalance]
     }
   }
@@ -285,13 +273,11 @@ export class TonPoolStaker extends TonBaseStaker {
   /** @ignore */
   static selectPool (
       minStake: bigint, // minimum stake for participation (to be in the set)
-      maxStake: bigint, // maximum allowes stake per validator
       currentBalances: [bigint, bigint] // current stake balances of the pools
   ): number {
       const [balancePool1, balancePool2] = currentBalances;
 
       const hasReachedMinStake = (balance: bigint): boolean => balance >= minStake;
-      const hasReachedMaxStake = (balance: bigint): boolean => balance >= maxStake;
 
       // prioritize filling a pool that hasn't reached the minStake
       if (!hasReachedMinStake(balancePool1) && !hasReachedMinStake(balancePool2)) {
@@ -304,16 +290,6 @@ export class TonPoolStaker extends TonBaseStaker {
       }
 
       // both pools have reached minStake, balance them until they reach maxStake
-      if (!hasReachedMaxStake(balancePool1) && !hasReachedMaxStake(balancePool2)) {
-          // distribute to balance the pools
-          return balancePool1 <= balancePool2 ? 0 : 1;
-      } else if (!hasReachedMaxStake(balancePool1)) {
-          return 0; // add to pool 1 until it reaches maxStake
-      } else if (!hasReachedMaxStake(balancePool2)) {
-          return 1; // add to pool 2 until it reaches maxStake
-      }
-
-      // if both pools have reached maxStake, no more staking is allowed
-      throw new Error("Both pools have reached their maximum stake limits");
+      return balancePool1 <= balancePool2 ? 0 : 1;
   }
 }

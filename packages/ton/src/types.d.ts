@@ -77,7 +77,6 @@ export interface PoolStatus {
 export interface GetPoolAddressForStakeResponse {
     SelectedPoolAddress: string;
     MinStake: bigint;
-    MaxStake: bigint;
     PoolStakes: [biginy, bigint];
 }
 

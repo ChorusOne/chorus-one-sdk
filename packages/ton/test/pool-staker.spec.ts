@@ -4,26 +4,17 @@ import { expect } from 'chai'
 
 describe('TonPoolStaker', () => {
   it('should prioritize the pool that has not reached minStake', () => {
-      const result = TonPoolStaker.selectPool(200n, 1000n, [100n, 300n]);
+      const result = TonPoolStaker.selectPool(200n, [100n, 300n]);
       expect(result).to.equal(0); // Pool 1 needs to reach minStake
   })
 
   it('should prioritize the pool with a higher balance if both are below minStake', () => {
-      const result = TonPoolStaker.selectPool(200n, 1000n, [100n, 150n]);
+      const result = TonPoolStaker.selectPool(200n, [100n, 150n]);
       expect(result).to.equal(1); // Pool 2 has a higher balance
   })
 
-  it('should balance the pools if both have reached minStake but are below maxStake', () => {
-      const result = TonPoolStaker.selectPool(200n, 1000n, [400n, 300n]);
+  it('should balance the pools if both have reached minStake', () => {
+      const result = TonPoolStaker.selectPool(200n, [400n, 300n]);
       expect(result).to.equal(1); // Pool 2 has a smaller balance
-  })
-
-  it('should add to the pool that has not reached maxStake', () => {
-      const result = TonPoolStaker.selectPool(200n, 1000n, [1000n, 800n]);
-      expect(result).to.equal(1); // Pool 2 has not reached maxStake
-  })
-
-  it('should throw an error if both pools have reached maxStake', () => {
-      expect(() => TonPoolStaker.selectPool(200n, 1000n, [1000n, 1000n])).to.throw("Both pools have reached their maximum stake limits");
   })
 })

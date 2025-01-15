@@ -144,18 +144,18 @@ async function runTx (
         if (!config.validatorAddress2) {
           cmd.error('second validator address is required for TON Pool', { exitCode: 1, code: `${msgType}.tx.abort` })
         }
-        const validatorAddressPair: [string, string] = [config.validatorAddress, config.validatorAddress2]
-        const poolsInfo = await tonStaker.getPoolAddressForStake({ validatorAddressPair })
-        const validatorIndex = validatorAddressPair.findIndex((addr: string) => addr === poolsInfo.SelectedPoolAddress)
-        if (validatorIndex === -1) {
+        const stakingPoolAddressPair: [string, string] = [config.validatorAddress, config.validatorAddress2]
+        const poolsInfo = await tonStaker.getPoolAddressForStake({ validatorAddressPair: stakingPoolAddressPair })
+        const poolIndex = stakingPoolAddressPair.findIndex((addr: string) => addr === poolsInfo.SelectedPoolAddress)
+        if (poolIndex === -1) {
           cmd.error('validator address not found in the pool', { exitCode: 1, code: `${msgType}.tx.abort` })
         }
 
-        console.log('Delegating to validator #' + (validatorIndex+1) + ': ' + validatorAddressPair[validatorIndex])
+        console.log('Delegating to pool #' + (poolIndex+1) + ': ' + stakingPoolAddressPair[poolIndex])
 
         unsignedTx = (
           await tonStaker.buildStakeTx({
-            validatorAddressPair,
+            validatorAddressPair: stakingPoolAddressPair,
             amount: arg[0] // amount
           })
         ).tx
