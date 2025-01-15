@@ -1,6 +1,6 @@
-import { Address, beginCell, fromNano, toNano } from '@ton/ton'
+import { Address, beginCell, fromNano, toNano, Slice, Builder, DictionaryValue, Dictionary, Cell, configParse17 } from '@ton/ton'
 import { defaultValidUntil, getDefaultGas, getRandomQueryId, TonBaseStaker } from './TonBaseStaker'
-import { UnsignedTx } from './types'
+import { UnsignedTx, Election, FrozenSet, PoolStatus } from './types'
 
 export class TonPoolStaker extends TonBaseStaker {
   /**
@@ -179,8 +179,136 @@ export class TonPoolStaker extends TonBaseStaker {
   /** @ignore */
   async getPoolAddressForStake (params: { validatorAddressPair: [string, string] }) {
     const { validatorAddressPair } = params
-    // The logic to be implemented, we return the first address for now
+    const client = this.getClient()
 
-    return validatorAddressPair[0]
+    // fetch required data:
+    // 1. stake balance for both pools
+    // 2. stake limits from the onchain config
+    // 3. last election data to get the minimum stake for participation
+    const [ poolOneStatus, poolTwoStatus, elections, stakeLimitsCfgCell ] = await Promise.all([
+        this.getPoolStatus(validatorAddressPair[0]),
+        this.getPoolStatus(validatorAddressPair[1]),
+
+        // elector contract address
+        this.getPastElections('Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF'),
+
+        // see full config: https://tonviewer.com/config#17
+        client.getConfigParam(17)
+    ])
+
+    const [ poolOneBalance, poolTwoBalance ] = [poolOneStatus.Balance, poolTwoStatus.Balance]
+    const stakeLimitsCfg = configParse17(stakeLimitsCfgCell.beginParse())
+    const maxStake = stakeLimitsCfg.maxStake
+
+    // simple sanity validation
+    if (elections.length == 0) {
+        throw new Error('No elections found')
+    }
+
+    if (stakeLimitsCfg.minStake == BigInt(0)) {
+        throw new Error('Minimum stake is 0, that is not expected')
+    }
+
+    // iterate lastElection.frozen and find the lowest validator stake
+    const lastElection = elections[0]
+    const values = Array.from(lastElection.frozen.values())
+    const minStake = values.reduce((min, p) => p.stake < min ? p.stake : min, values[0].stake)
+
+    const selectedPoolIndex = TonPoolStaker.selectPool(minStake, maxStake, [poolOneBalance, poolTwoBalance])
+
+    return validatorAddressPair[selectedPoolIndex]
+  }
+
+  async getPoolStatus (validatorAddress: string): Promise<PoolStatus> {
+    const client = this.getClient()
+    const provider = client.provider(Address.parse(validatorAddress))
+    const res = await provider.get('get_pool_status', []);
+
+    return {
+      Balance: res.stack.readBigNumber(),
+      BalanceSent: res.stack.readBigNumber(),
+      BalancePendingDeposits: res.stack.readBigNumber(),
+      BalancePendingWithdrawals: res.stack.readBigNumber(),
+      BalanceWithdraw: res.stack.readBigNumber()
+    }
+  }
+
+  async getPastElections (electorContractAddress: string): Promise<Election[]> {
+    const client = this.getClient()
+    const provider = client.provider(Address.parse(electorContractAddress))
+    const res = await provider.get('past_elections', []);
+
+    const FrozenDictValue: DictionaryValue<FrozenSet> = {
+        serialize (_src: FrozenSet, _builder: Builder) {
+            throw Error("not implemented");
+        },
+        parse (src: Slice): FrozenSet {
+            const address = new Address(-1, src.loadBuffer(32));
+            const weight = src.loadUintBig(64);
+            const stake = src.loadCoins();
+            return { address, weight, stake };
+        }
+    };
+
+    // NOTE: In ideal case we would call `res.stack.readLispList()` however the library does not handle 'list' type well
+    // and exits with an error. This is alternative way to get election data out of the 'list' type.
+    const root = res.stack.readTuple()
+    const elections: Election[] = [];
+
+    while (root.remaining > 0) {
+        const electionsEntry = root.pop()
+        const id = electionsEntry[0]
+        const unfreezeAt = electionsEntry[1]
+        const stakeHeld = electionsEntry[2]
+        const validatorSetHash = electionsEntry[3]
+        const frozenDict: Cell = electionsEntry[4]
+        const totalStake = electionsEntry[5]
+        const bonuses = electionsEntry[6]
+        const frozen: Map<string, FrozenSet> = new Map();
+
+        const frozenData = frozenDict.beginParse().loadDictDirect(Dictionary.Keys.Buffer(32), FrozenDictValue);
+        for (const [key, value] of frozenData) {
+            frozen.set(BigInt("0x" + key.toString("hex")).toString(10), { address: value["address"], weight: value["weight"], stake: value["stake"] });
+        }
+        elections.push({ id, unfreezeAt, stakeHeld, validatorSetHash, totalStake, bonuses, frozen });
+    }
+
+    // return elections sorted by id (bigint) in descending order
+    return elections.sort((a, b) => (a > b ? 1 : -1));
+  }
+
+  /** @ignore */
+  public static selectPool (
+      minStake: bigint, // minimum stake for participation (to be in the set)
+      maxStake: bigint, // maximum allowes stake per validator
+      currentBalances: [bigint, bigint] // current stake balances of the pools
+  ): number {
+      const [balancePool1, balancePool2] = currentBalances;
+
+      const hasReachedMinStake = (balance: bigint): boolean => balance >= minStake;
+      const hasReachedMaxStake = (balance: bigint): boolean => balance >= maxStake;
+
+      // prioritize filling a pool that hasn't reached the minStake
+      if (!hasReachedMinStake(balancePool1) && !hasReachedMinStake(balancePool2)) {
+          // if neither pool has reached minStake, prioritize the one with the smaller balance
+          return balancePool1 <= balancePool2 ? 0 : 1;
+      } else if (!hasReachedMinStake(balancePool1)) {
+          return 0; // fill pool 1 to meet minStake
+      } else if (!hasReachedMinStake(balancePool2)) {
+          return 1; // fill pool 2 to meet minStake
+      }
+
+      // both pools have reached minStake, balance them until they reach maxStake
+      if (!hasReachedMaxStake(balancePool1) && !hasReachedMaxStake(balancePool2)) {
+          // distribute to balance the pools
+          return balancePool1 <= balancePool2 ? 0 : 1;
+      } else if (!hasReachedMaxStake(balancePool1)) {
+          return 0; // add to pool 1 until it reaches maxStake
+      } else if (!hasReachedMaxStake(balancePool2)) {
+          return 1; // add to pool 2 until it reaches maxStake
+      }
+
+      // if both pools have reached maxStake, no more staking is allowed
+      throw new Error("Both pools have reached their maximum stake limits");
   }
 }
