@@ -279,7 +279,7 @@ export class TonPoolStaker extends TonBaseStaker {
     }
 
     // return elections sorted by id (bigint) in descending order
-    return elections.sort((a, b) => (a > b ? 1 : -1));
+    return elections.sort((a, b) => (a.id > b.id ? -1 : 1));
   }
 
   /** @ignore */
