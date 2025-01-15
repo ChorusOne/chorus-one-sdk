@@ -295,8 +295,8 @@ export class TonPoolStaker extends TonBaseStaker {
 
       // prioritize filling a pool that hasn't reached the minStake
       if (!hasReachedMinStake(balancePool1) && !hasReachedMinStake(balancePool2)) {
-          // if neither pool has reached minStake, prioritize the one with the smaller balance
-          return balancePool1 <= balancePool2 ? 0 : 1;
+          // if neither pool has reached minStake, prioritize the one with the higher balance
+          return balancePool1 >= balancePool2 ? 0 : 1;
       } else if (!hasReachedMinStake(balancePool1)) {
           return 0; // fill pool 1 to meet minStake
       } else if (!hasReachedMinStake(balancePool2)) {

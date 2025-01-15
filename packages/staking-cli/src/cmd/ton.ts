@@ -121,6 +121,7 @@ async function runTx (
       {
         delegator: config.delegatorAddress,
         validatorAddress: config.validatorAddress,
+        validatorAddress2: config.validatorAddress2,
         messageType: msgType,
         args: arg,
         broadcast: broadcastEnabled

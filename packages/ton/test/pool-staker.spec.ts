@@ -8,9 +8,9 @@ describe('TonPoolStaker', () => {
       expect(result).to.equal(0); // Pool 1 needs to reach minStake
   })
 
-  it('should prioritize the pool with a smaller balance if both are below minStake', () => {
+  it('should prioritize the pool with a higher balance if both are below minStake', () => {
       const result = TonPoolStaker.selectPool(200n, 1000n, [100n, 150n]);
-      expect(result).to.equal(0); // Pool 1 has a smaller balance
+      expect(result).to.equal(1); // Pool 2 has a higher balance
   })
 
   it('should balance the pools if both have reached minStake but are below maxStake', () => {
