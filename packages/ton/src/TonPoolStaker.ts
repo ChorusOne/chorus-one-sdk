@@ -24,7 +24,7 @@ export class TonPoolStaker extends TonBaseStaker {
     validUntil?: number
   }): Promise<{ tx: UnsignedTx }> {
     const { validatorAddressPair, amount, validUntil, referrer } = params
-    const poolAddress = (await this.getPoolAddressForStake({ validatorAddressPair })).SelectedPoolAddress
+    const poolAddress = (await this.getPoolAddressForStake({ validatorAddressPair })).selectedPoolAddress
 
     // ensure the address is for the right network
     this.checkIfAddressTestnetFlagMatches(poolAddress)
@@ -191,7 +191,7 @@ export class TonPoolStaker extends TonBaseStaker {
         this.getPastElections('Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF'),
     ])
 
-    const [ poolOneBalance, poolTwoBalance ] = [poolOneStatus.Balance, poolTwoStatus.Balance]
+    const [ poolOneBalance, poolTwoBalance ] = [poolOneStatus.balance, poolTwoStatus.balance]
 
     // simple sanity validation
     if (elections.length == 0) {
@@ -206,9 +206,9 @@ export class TonPoolStaker extends TonBaseStaker {
     const selectedPoolIndex = TonPoolStaker.selectPool(minStake, [poolOneBalance, poolTwoBalance])
 
     return {
-        SelectedPoolAddress: validatorAddressPair[selectedPoolIndex],
-        MinStake: minStake,
-        PoolStakes: [poolOneBalance, poolTwoBalance]
+        selectedPoolAddress: validatorAddressPair[selectedPoolIndex],
+        minStake: minStake,
+        poolStakes: [poolOneBalance, poolTwoBalance]
     }
   }
 
@@ -218,11 +218,11 @@ export class TonPoolStaker extends TonBaseStaker {
     const res = await provider.get('get_pool_status', []);
 
     return {
-      Balance: res.stack.readBigNumber(),
-      BalanceSent: res.stack.readBigNumber(),
-      BalancePendingDeposits: res.stack.readBigNumber(),
-      BalancePendingWithdrawals: res.stack.readBigNumber(),
-      BalanceWithdraw: res.stack.readBigNumber()
+      balance: res.stack.readBigNumber(),
+      balanceSent: res.stack.readBigNumber(),
+      balancePendingDeposits: res.stack.readBigNumber(),
+      balancePendingWithdrawals: res.stack.readBigNumber(),
+      balanceWithdraw: res.stack.readBigNumber()
     }
   }
 

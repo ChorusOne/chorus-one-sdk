@@ -67,17 +67,17 @@ export interface FrozenSet {
 }
 
 export interface PoolStatus {
-    Balance: bigint;
-    BalanceSent: bigint;
-    BalancePendingDeposits: bigint;
-    BalancePendingWithdrawals: bigint;
-    BalanceWithdraw: bigint;
+    balance: bigint;
+    balanceSent: bigint;
+    balancePendingDeposits: bigint;
+    balancePendingWithdrawals: bigint;
+    balanceWithdraw: bigint;
 }
 
 export interface GetPoolAddressForStakeResponse {
-    SelectedPoolAddress: string;
-    MinStake: bigint;
-    PoolStakes: [biginy, bigint];
+    selectedPoolAddress: string;
+    minStake: bigint;
+    poolStakes: [biginy, bigint];
 }
 
 export interface AddressDerivationConfig {

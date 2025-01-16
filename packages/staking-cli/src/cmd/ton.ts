@@ -146,7 +146,7 @@ async function runTx (
         }
         const stakingPoolAddressPair: [string, string] = [config.validatorAddress, config.validatorAddress2]
         const poolsInfo = await tonStaker.getPoolAddressForStake({ validatorAddressPair: stakingPoolAddressPair })
-        const poolIndex = stakingPoolAddressPair.findIndex((addr: string) => addr === poolsInfo.SelectedPoolAddress)
+        const poolIndex = stakingPoolAddressPair.findIndex((addr: string) => addr === poolsInfo.selectedPoolAddress)
         if (poolIndex === -1) {
           cmd.error('validator address not found in the pool', { exitCode: 1, code: `${msgType}.tx.abort` })
         }
