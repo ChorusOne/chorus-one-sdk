@@ -49,6 +49,37 @@ export interface PoolData {
   min_nominator_stake: bigint
 }
 
+// reference: https://github.com/ton-core/ton/blob/55c576dfc5976e1881180ee271ba8ec62d3f13d4/src/elector/ElectorContract.ts#L70C11-L70C27
+export interface Election {
+    id: number;
+    unfreezeAt: number;
+    stakeHeld: number;
+    validatorSetHash: bigint;
+    totalStake: bigint;
+    bonuses: bigint;
+    frozen: Map<string, FrozenSet>;
+}
+
+export interface FrozenSet {
+    address: Address;
+    weight: bigint;
+    stake: bigint;
+}
+
+export interface PoolStatus {
+    balance: bigint;
+    balanceSent: bigint;
+    balancePendingDeposits: bigint;
+    balancePendingWithdrawals: bigint;
+    balanceWithdraw: bigint;
+}
+
+export interface GetPoolAddressForStakeResponse {
+    selectedPoolAddress: string;
+    minStake: bigint;
+    poolStakes: [biginy, bigint];
+}
+
 export interface AddressDerivationConfig {
   walletContractVersion: number
   workchain: number

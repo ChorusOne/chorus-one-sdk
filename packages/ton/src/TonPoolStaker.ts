@@ -1,6 +1,6 @@
-import { Address, beginCell, fromNano, toNano } from '@ton/ton'
+import { Address, beginCell, fromNano, toNano, Slice, Builder, DictionaryValue, Dictionary, Cell } from '@ton/ton'
 import { defaultValidUntil, getDefaultGas, getRandomQueryId, TonBaseStaker } from './TonBaseStaker'
-import { UnsignedTx } from './types'
+import { UnsignedTx, Election, FrozenSet, PoolStatus, GetPoolAddressForStakeResponse } from './types'
 
 export class TonPoolStaker extends TonBaseStaker {
   /**
@@ -24,15 +24,15 @@ export class TonPoolStaker extends TonBaseStaker {
     validUntil?: number
   }): Promise<{ tx: UnsignedTx }> {
     const { validatorAddressPair, amount, validUntil, referrer } = params
-    const validatorAddress = await this.getPoolAddressForStake({ validatorAddressPair })
+    const poolAddress = (await this.getPoolAddressForStake({ validatorAddressPair })).selectedPoolAddress
 
     // ensure the address is for the right network
-    this.checkIfAddressTestnetFlagMatches(validatorAddress)
+    this.checkIfAddressTestnetFlagMatches(poolAddress)
 
     // ensure the validator address is bounceable.
     // NOTE: TEP-002 specifies that the address bounceable flag should match both the internal message and the address.
     // This has no effect as we force the bounce flag anyway. However it is a good practice to be consistent
-    if (!Address.parseFriendly(validatorAddress).isBounceable) {
+    if (!Address.parseFriendly(poolAddress).isBounceable) {
       throw new Error(
         'validator address is not bounceable! It is required for nominator pool contract operations to use bounceable addresses'
       )
@@ -53,7 +53,7 @@ export class TonPoolStaker extends TonBaseStaker {
     const tx = {
       validUntil: defaultValidUntil(validUntil),
       message: {
-        address: validatorAddress,
+        address: poolAddress,
         bounceable: true,
         amount: toNano(amount),
         payload
@@ -177,10 +177,119 @@ export class TonPoolStaker extends TonBaseStaker {
   }
 
   /** @ignore */
-  async getPoolAddressForStake (params: { validatorAddressPair: [string, string] }) {
+  async getPoolAddressForStake (params: { validatorAddressPair: [string, string] }): Promise<GetPoolAddressForStakeResponse> {
     const { validatorAddressPair } = params
-    // The logic to be implemented, we return the first address for now
 
-    return validatorAddressPair[0]
+    // fetch required data:
+    // 1. stake balance for both pools
+    // 2. last election data to get the minimum stake for participation
+    const [ poolOneStatus, poolTwoStatus, elections ] = await Promise.all([
+        this.getPoolStatus(validatorAddressPair[0]),
+        this.getPoolStatus(validatorAddressPair[1]),
+
+        // elector contract address
+        this.getPastElections('Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF'),
+    ])
+
+    const [ poolOneBalance, poolTwoBalance ] = [poolOneStatus.balance, poolTwoStatus.balance]
+
+    // simple sanity validation
+    if (elections.length == 0) {
+        throw new Error('No elections found')
+    }
+
+    // iterate lastElection.frozen and find the lowest validator stake
+    const lastElection = elections[0]
+    const values = Array.from(lastElection.frozen.values())
+    const minStake = values.reduce((min, p) => p.stake < min ? p.stake : min, values[0].stake)
+
+    const selectedPoolIndex = TonPoolStaker.selectPool(minStake, [poolOneBalance, poolTwoBalance])
+
+    return {
+        selectedPoolAddress: validatorAddressPair[selectedPoolIndex],
+        minStake: minStake,
+        poolStakes: [poolOneBalance, poolTwoBalance]
+    }
+  }
+
+  async getPoolStatus (validatorAddress: string): Promise<PoolStatus> {
+    const client = this.getClient()
+    const provider = client.provider(Address.parse(validatorAddress))
+    const res = await provider.get('get_pool_status', []);
+
+    return {
+      balance: res.stack.readBigNumber(),
+      balanceSent: res.stack.readBigNumber(),
+      balancePendingDeposits: res.stack.readBigNumber(),
+      balancePendingWithdrawals: res.stack.readBigNumber(),
+      balanceWithdraw: res.stack.readBigNumber()
+    }
+  }
+
+  async getPastElections (electorContractAddress: string): Promise<Election[]> {
+    const client = this.getClient()
+    const provider = client.provider(Address.parse(electorContractAddress))
+    const res = await provider.get('past_elections', []);
+
+    const FrozenDictValue: DictionaryValue<FrozenSet> = {
+        serialize (_src: FrozenSet, _builder: Builder) {
+            throw Error("not implemented");
+        },
+        parse (src: Slice): FrozenSet {
+            const address = new Address(-1, src.loadBuffer(32));
+            const weight = src.loadUintBig(64);
+            const stake = src.loadCoins();
+            return { address, weight, stake };
+        }
+    };
+
+    // NOTE: In ideal case we would call `res.stack.readLispList()` however the library does not handle 'list' type well
+    // and exits with an error. This is alternative way to get election data out of the 'list' type.
+    const root = res.stack.readTuple()
+    const elections: Election[] = [];
+
+    while (root.remaining > 0) {
+        const electionsEntry = root.pop()
+        const id = electionsEntry[0]
+        const unfreezeAt = electionsEntry[1]
+        const stakeHeld = electionsEntry[2]
+        const validatorSetHash = electionsEntry[3]
+        const frozenDict: Cell = electionsEntry[4]
+        const totalStake = electionsEntry[5]
+        const bonuses = electionsEntry[6]
+        const frozen: Map<string, FrozenSet> = new Map();
+
+        const frozenData = frozenDict.beginParse().loadDictDirect(Dictionary.Keys.Buffer(32), FrozenDictValue);
+        for (const [key, value] of frozenData) {
+            frozen.set(BigInt("0x" + key.toString("hex")).toString(10), { address: value["address"], weight: value["weight"], stake: value["stake"] });
+        }
+        elections.push({ id, unfreezeAt, stakeHeld, validatorSetHash, totalStake, bonuses, frozen });
+    }
+
+    // return elections sorted by id (bigint) in descending order
+    return elections.sort((a, b) => (a.id > b.id ? -1 : 1));
+  }
+
+  /** @ignore */
+  static selectPool (
+      minStake: bigint, // minimum stake for participation (to be in the set)
+      currentBalances: [bigint, bigint] // current stake balances of the pools
+  ): number {
+      const [balancePool1, balancePool2] = currentBalances;
+
+      const hasReachedMinStake = (balance: bigint): boolean => balance >= minStake;
+
+      // prioritize filling a pool that hasn't reached the minStake
+      if (!hasReachedMinStake(balancePool1) && !hasReachedMinStake(balancePool2)) {
+          // if neither pool has reached minStake, prioritize the one with the higher balance
+          return balancePool1 >= balancePool2 ? 0 : 1;
+      } else if (!hasReachedMinStake(balancePool1)) {
+          return 0; // fill pool 1 to meet minStake
+      } else if (!hasReachedMinStake(balancePool2)) {
+          return 1; // fill pool 2 to meet minStake
+      }
+
+      // both pools have reached minStake, so allocate to the one with the lower balance
+      return balancePool1 <= balancePool2 ? 0 : 1;
   }
 }

@@ -12,7 +12,6 @@ import type {
 import {
   toNano,
   fromNano,
-  TonClient,
   WalletContractV4,
   internal,
   MessageRelaxed,
@@ -22,6 +21,7 @@ import {
   beginCell,
   storeMessage
 } from '@ton/ton'
+import { TonClient } from './TonClient'
 import { createWalletTransferV4, externalMessage, sign } from './tx'
 import * as tonMnemonic from 'tonweb-mnemonic'
 import { ed25519 } from '@noble/curves/ed25519'
