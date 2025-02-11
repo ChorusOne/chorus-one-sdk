@@ -88,9 +88,7 @@ export interface AddressDerivationConfig {
   urlSafe: boolean
 }
 
-export declare interface UnsignedTx {
-  // messages to send
-  message?: {
+export interface Message {
     // destination address
     address: string
 
@@ -105,7 +103,11 @@ export declare interface UnsignedTx {
 
     // contract specific data to be included in the transaction
     payload?: Cell | string
-  }
+}
+
+export declare interface UnsignedTx {
+  // messages to send
+  messages?: Message[]
 
   // transaction deadline in unix epoch seconds
   validUntil?: number
