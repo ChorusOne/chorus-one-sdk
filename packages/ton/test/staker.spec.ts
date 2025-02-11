@@ -81,10 +81,10 @@ describe('TonStaker', () => {
       amount: '0.5'
     })
 
-    assert.equal(tx.message?.amount, BigInt('500000000'))
-    assert.equal(tx.message?.bounceable, true)
-    assert.equal(tx.message?.payload, 'd')
-    assert.equal(tx.message?.address, 'kf8SWCvzf6eJK4Q0ZOe14PqDdsT5wk0_Ni0wAThL0cVorNVU')
+    assert.equal(tx.messages[0]?.amount, BigInt('500000000'))
+    assert.equal(tx.messages[0]?.bounceable, true)
+    assert.equal(tx.messages[0]?.payload, 'd')
+    assert.equal(tx.messages[0]?.address, 'kf8SWCvzf6eJK4Q0ZOe14PqDdsT5wk0_Ni0wAThL0cVorNVU')
   })
 
   it('should handle amount fuzzing correctly', async () => {
@@ -109,10 +109,10 @@ describe('TonStaker', () => {
             amount
           })
 
-          if (tx.message === undefined) {
+          if (tx.messages === undefined) {
             throw new Error('tx.message is undefined')
           }
-          return tx.message?.amount
+          return tx.messages[0]?.amount
         }
 
         if (expectedError) {

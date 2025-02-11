@@ -169,20 +169,18 @@ async function runTx (
           cmd.error('second validator address is required for TON Pool', { exitCode: 1, code: `${msgType}.tx.abort` })
         }
 
-        if (!options?.validatorIndex) {
-          cmd.error('validator index is required for TON Pool', { exitCode: 1, code: `${msgType}.tx.abort` })
+        let validatorAddressPair: [string, string] = [config.validatorAddress, config.validatorAddress2]
+        if (options?.validatorIndex !== undefined) {
+            const validatorIndex = parseInt(options.validatorIndex)
+            validatorAddressPair = [validatorAddressPair[validatorIndex - 1], ""]
         }
-        const validatorAddressPair: [string, string] = [config.validatorAddress, config.validatorAddress2]
 
-        const validatorIndex = parseInt(options.validatorIndex)
-
-        const validatorAddress = validatorAddressPair[validatorIndex - 1]
-
-        console.log('Unstaking from validator #' + validatorIndex + ': ' + validatorAddress)
+        console.log('Unstaking from contracts #' + validatorAddressPair)
 
         unsignedTx = (
           await tonStaker.buildUnstakeTx({
-            validatorAddress,
+            delegatorAddress: config.delegatorAddress,
+            validatorAddressPair,
             amount: arg[0] // amount
           })
         ).tx

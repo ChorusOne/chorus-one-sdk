@@ -1,6 +1,6 @@
 import { Address, beginCell, fromNano, toNano, Slice, Builder, DictionaryValue, Dictionary, Cell } from '@ton/ton'
 import { defaultValidUntil, getDefaultGas, getRandomQueryId, TonBaseStaker } from './TonBaseStaker'
-import { UnsignedTx, Election, FrozenSet, PoolStatus, GetPoolAddressForStakeResponse } from './types'
+import { UnsignedTx, Election, FrozenSet, PoolStatus, GetPoolAddressForStakeResponse, Message} from './types'
 
 export class TonPoolStaker extends TonBaseStaker {
   /**
@@ -52,12 +52,12 @@ export class TonPoolStaker extends TonBaseStaker {
 
     const tx = {
       validUntil: defaultValidUntil(validUntil),
-      message: {
+      messages: [{
         address: poolAddress,
         bounceable: true,
         amount: toNano(amount),
         payload
-      }
+      }]
     }
 
     return { tx }
@@ -67,49 +67,89 @@ export class TonPoolStaker extends TonBaseStaker {
    * Builds an unstaking transaction for TON Pool contract.
    *
    * @param params - Parameters for building the transaction
-   * @param params.validatorAddress - The validator address to unstake from
+   * @param params.validatorAddressPair - The validator address pair to unstake from
    * @param params.amount - The amount to stake, specified in `TON`
    * @param params.validUntil - (Optional) The Unix timestamp when the transaction expires
    *
    * @returns Returns a promise that resolves to a TON nominator pool staking transaction.
    */
   async buildUnstakeTx (params: {
-    validatorAddress: string
+    delegatorAddress: string
+    validatorAddressPair: [string, string]
     amount: string
     validUntil?: number
   }): Promise<{ tx: UnsignedTx }> {
-    const { validatorAddress, amount, validUntil } = params
+    const { delegatorAddress, validatorAddressPair, amount, validUntil } = params
 
-    // ensure the address is for the right network
-    this.checkIfAddressTestnetFlagMatches(validatorAddress)
-
-    // ensure the validator address is bounceable.
-    // NOTE: TEP-002 specifies that the address bounceable flag should match both the internal message and the address.
-    // This has no effect as we force the bounce flag anyway. However it is a good practice to be consistent
-    if (!Address.parseFriendly(validatorAddress).isBounceable) {
-      throw new Error(
-        'validator address is not bounceable! It is required for nominator pool contract operations to use bounceable addresses'
-      )
+    // allow unstaking from a single pool
+    const validatorAddresses = validatorAddressPair.filter((address) => address.length > 0)
+    if (validatorAddresses.length == 0) {
+      throw new Error('At least one validator address is required')
     }
 
-    const data = await this.getPoolParamsUnformatted({ validatorAddress })
+    validatorAddresses.forEach((validatorAddress) => {
+        // ensure the address is for the right network
+        this.checkIfAddressTestnetFlagMatches(validatorAddress)
 
-    // https://github.com/tonwhales/ton-nominators/blob/0553e1b6ddfc5c0b60505957505ce58d01bec3e7/compiled/nominators.fc#L20
-    const payload = beginCell()
-      .storeUint(3665837821, 32) // stake_withdraw method const
-      .storeUint(getRandomQueryId(), 64) // Query ID
-      .storeCoins(getDefaultGas()) // Gas
-      .storeCoins(toNano(amount)) // Amount
-      .endCell()
+        // ensure the validator address is bounceable.
+        // NOTE: TEP-002 specifies that the address bounceable flag should match both the internal message and the address.
+        // This has no effect as we force the bounce flag anyway. However it is a good practice to be consistent
+        if (!Address.parseFriendly(validatorAddress).isBounceable) {
+          throw new Error(
+            'validator address is not bounceable! It is required for nominator pool contract operations to use bounceable addresses'
+          )
+        }
+    })
+
+    const [poolParamsData, poolStatus, userStake, minStake] = await Promise.all([
+        Promise.all(validatorAddresses.map((validatorAddress) => this.getPoolParamsUnformatted({ validatorAddress }))),
+        Promise.all(validatorAddresses.map((validatorAddress) => this.getPoolStatus(validatorAddress))),
+        Promise.all(validatorAddresses.map((validatorAddress) => this.getStake({ delegatorAddress, validatorAddress }))),
+        this.getMinStake()
+    ])
+
+    const currentPoolBalances: [bigint, bigint] = (validatorAddresses.length === 2) ? [poolStatus[0].balance, poolStatus[1].balance] : [poolStatus[0].balance, 0n]
+    const currentUserStakes: [bigint, bigint] = (validatorAddresses.length === 2) ? [toNano(userStake[0].balance), toNano(userStake[1].balance)] : [toNano(userStake[0].balance), 0n]
+
+    const unstakeAmountPerPool = TonPoolStaker.calculateUnstakePoolAmount(
+        toNano(amount),
+        minStake,
+        currentPoolBalances,
+        currentUserStakes,
+    )
+
+    const msgs: Message[] = []
+
+    validatorAddresses.forEach((validatorAddress, index) => {
+        const data = poolParamsData[index]
+        const amount = unstakeAmountPerPool[index]
+
+        // skip if no amount to unstake
+        if (amount === 0n) {
+          return null
+        }
+
+        // https://github.com/tonwhales/ton-nominators/blob/0553e1b6ddfc5c0b60505957505ce58d01bec3e7/compiled/nominators.fc#L20
+        const payload = beginCell()
+          .storeUint(3665837821, 32) // stake_withdraw method const
+          .storeUint(getRandomQueryId(), 64) // Query ID
+          .storeCoins(getDefaultGas()) // Gas
+          .storeCoins(amount) // Amount
+          .endCell()
+
+        const msg = {
+            address: validatorAddress,
+            bounceable: true,
+            amount: data.withdrawFee + data.receiptPrice,
+            payload
+        }
+
+        msgs.push(msg)
+    })
 
     const tx = {
       validUntil: defaultValidUntil(validUntil),
-      message: {
-        address: validatorAddress,
-        bounceable: true,
-        amount: data.withdrawFee + data.receiptPrice,
-        payload
-      }
+      messages: msgs.filter((msg) => msg !== null)
     }
 
     return { tx }
@@ -183,15 +223,26 @@ export class TonPoolStaker extends TonBaseStaker {
     // fetch required data:
     // 1. stake balance for both pools
     // 2. last election data to get the minimum stake for participation
-    const [ poolOneStatus, poolTwoStatus, elections ] = await Promise.all([
+    const [ poolOneStatus, poolTwoStatus, minStake ] = await Promise.all([
         this.getPoolStatus(validatorAddressPair[0]),
         this.getPoolStatus(validatorAddressPair[1]),
-
-        // elector contract address
-        this.getPastElections('Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF'),
+        this.getMinStake()
     ])
 
     const [ poolOneBalance, poolTwoBalance ] = [poolOneStatus.balance, poolTwoStatus.balance]
+
+    const selectedPoolIndex = TonPoolStaker.selectPool(minStake, [poolOneBalance, poolTwoBalance])
+
+    return {
+        selectedPoolAddress: validatorAddressPair[selectedPoolIndex],
+        minStake: minStake,
+        poolStakes: [poolOneBalance, poolTwoBalance]
+    }
+  }
+
+  async getMinStake (): Promise<bigint> {
+    // elector contract address
+    const elections = await this.getPastElections('Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF')
 
     // simple sanity validation
     if (elections.length == 0) {
@@ -203,13 +254,7 @@ export class TonPoolStaker extends TonBaseStaker {
     const values = Array.from(lastElection.frozen.values())
     const minStake = values.reduce((min, p) => p.stake < min ? p.stake : min, values[0].stake)
 
-    const selectedPoolIndex = TonPoolStaker.selectPool(minStake, [poolOneBalance, poolTwoBalance])
-
-    return {
-        selectedPoolAddress: validatorAddressPair[selectedPoolIndex],
-        minStake: minStake,
-        poolStakes: [poolOneBalance, poolTwoBalance]
-    }
+    return minStake
   }
 
   async getPoolStatus (validatorAddress: string): Promise<PoolStatus> {
@@ -291,5 +336,52 @@ export class TonPoolStaker extends TonBaseStaker {
 
       // both pools have reached minStake, so allocate to the one with the lower balance
       return balancePool1 <= balancePool2 ? 0 : 1;
+  }
+
+  /** @ignore */
+  static calculateUnstakePoolAmount (
+      amount: bigint, // amount to unstake
+      minStake: bigint, // minimum stake for participation (to be in the set)
+      currentPoolBalances: [bigint, bigint], // current stake balances of the pools
+      currentUserStakes: [bigint, bigint] // current user stakes in the pools
+  ): [bigint, bigint] {
+      const [balancePool1, balancePool2] = currentPoolBalances;
+      const [stakeUser1, stakeUser2] = currentUserStakes;
+
+      // check if the requested withdrawal amount exceeds the available user stakes
+      const totalUserStake = stakeUser1 + stakeUser2;
+      if (amount > totalUserStake) {
+          throw new Error('requested withdrawal amount exceeds available user stakes');
+      }
+
+      // check if the pool will remain active after withdrawal
+      const willRemainActive = (balance: bigint, withdraw: bigint): boolean =>
+      balance - withdraw >= minStake;
+
+      // sorting pools based on balance (highest balance first)
+      const pools = [
+          { index: 0, balance: balancePool1, userStake: stakeUser1 },
+          { index: 1, balance: balancePool2, userStake: stakeUser2 },
+      ].sort((a, b) => Number(b.balance - a.balance));
+
+      let remainingAmount = amount;
+      const result: [bigint, bigint] = [0n, 0n];
+
+      for (const pool of pools) {
+          if (remainingAmount === 0n) break;
+
+          // maximum that can be withdrawn from this pool without deactivating it
+          let maxWithdraw = pool.userStake;
+          if (!willRemainActive(pool.balance, maxWithdraw)) {
+              maxWithdraw = pool.balance - minStake;
+          }
+          maxWithdraw = maxWithdraw < 0n ? 0n : maxWithdraw;
+
+          const withdrawAmount = remainingAmount <= maxWithdraw ? remainingAmount : maxWithdraw;
+          result[pool.index] = withdrawAmount;
+          remainingAmount -= withdrawAmount;
+      }
+
+      return result;
   }
 }
