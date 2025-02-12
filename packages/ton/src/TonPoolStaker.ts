@@ -1,6 +1,6 @@
 import { Address, beginCell, fromNano, toNano, Slice, Builder, DictionaryValue, Dictionary, Cell } from '@ton/ton'
 import { defaultValidUntil, getDefaultGas, getRandomQueryId, TonBaseStaker } from './TonBaseStaker'
-import { UnsignedTx, Election, FrozenSet, PoolStatus, GetPoolAddressForStakeResponse, Message} from './types'
+import { UnsignedTx, Election, FrozenSet, PoolStatus, GetPoolAddressForStakeResponse, Message } from './types'
 
 export class TonPoolStaker extends TonBaseStaker {
   /**
@@ -69,6 +69,7 @@ export class TonPoolStaker extends TonBaseStaker {
    * @param params - Parameters for building the transaction
    * @param params.validatorAddressPair - The validator address pair to unstake from
    * @param params.amount - The amount to stake, specified in `TON`
+   * @param params.disableStatefulCalculation - (Optional) Disables stateful calculation where validator and user stake is taken into account
    * @param params.validUntil - (Optional) The Unix timestamp when the transaction expires
    *
    * @returns Returns a promise that resolves to a TON nominator pool staking transaction.
@@ -77,9 +78,10 @@ export class TonPoolStaker extends TonBaseStaker {
     delegatorAddress: string
     validatorAddressPair: [string, string]
     amount: string
+    disableStatefulCalculation?: boolean
     validUntil?: number
   }): Promise<{ tx: UnsignedTx }> {
-    const { delegatorAddress, validatorAddressPair, amount, validUntil } = params
+    const { delegatorAddress, validatorAddressPair, amount, disableStatefulCalculation, validUntil } = params
 
     // allow unstaking from a single pool
     const validatorAddresses = validatorAddressPair.filter((address) => address.length > 0)
@@ -101,51 +103,65 @@ export class TonPoolStaker extends TonBaseStaker {
         }
     })
 
-    const [poolParamsData, poolStatus, userStake, minStake] = await Promise.all([
-        Promise.all(validatorAddresses.map((validatorAddress) => this.getPoolParamsUnformatted({ validatorAddress }))),
-        Promise.all(validatorAddresses.map((validatorAddress) => this.getPoolStatus(validatorAddress))),
-        Promise.all(validatorAddresses.map((validatorAddress) => this.getStake({ delegatorAddress, validatorAddress }))),
-        this.getMinStake()
-    ])
+    const genUnstakeMsg = (validatorAddress: string, amount: bigint, withdrawFee: bigint, receiptPrice: bigint): Message => {
+            // https://github.com/tonwhales/ton-nominators/blob/0553e1b6ddfc5c0b60505957505ce58d01bec3e7/compiled/nominators.fc#L20
+            const payload = beginCell()
+              .storeUint(3665837821, 32) // stake_withdraw method const
+              .storeUint(getRandomQueryId(), 64) // Query ID
+              .storeCoins(getDefaultGas()) // Gas
+              .storeCoins(amount) // Amount
+              .endCell()
 
-    const currentPoolBalances: [bigint, bigint] = (validatorAddresses.length === 2) ? [poolStatus[0].balance, poolStatus[1].balance] : [poolStatus[0].balance, 0n]
-    const currentUserStakes: [bigint, bigint] = (validatorAddresses.length === 2) ? [toNano(userStake[0].balance), toNano(userStake[1].balance)] : [toNano(userStake[0].balance), 0n]
+            return {
+                address: validatorAddress,
+                bounceable: true,
+                amount: withdrawFee + receiptPrice,
+                payload
+            }
+    }
 
-    const unstakeAmountPerPool = TonPoolStaker.calculateUnstakePoolAmount(
-        toNano(amount),
-        minStake,
-        currentPoolBalances,
-        currentUserStakes,
-    )
-
+    const poolParamsData = await Promise.all(validatorAddresses.map((validatorAddress) => this.getPoolParamsUnformatted({ validatorAddress })))
     const msgs: Message[] = []
 
-    validatorAddresses.forEach((validatorAddress, index) => {
-        const data = poolParamsData[index]
-        const amount = unstakeAmountPerPool[index]
+    if (disableStatefulCalculation) {
+        const [poolStatus, userStake, minStake] = await Promise.all([
+            Promise.all(validatorAddresses.map((validatorAddress) => this.getPoolStatus(validatorAddress))),
+            Promise.all(validatorAddresses.map((validatorAddress) => this.getStake({ delegatorAddress, validatorAddress }))),
+            this.getMinStake()
+        ])
 
-        // skip if no amount to unstake
-        if (amount === 0n) {
-          return null
+        const currentPoolBalances: [bigint, bigint] = (validatorAddresses.length === 2) ? [poolStatus[0].balance, poolStatus[1].balance] : [poolStatus[0].balance, 0n]
+        const currentUserStakes: [bigint, bigint] = (validatorAddresses.length === 2) ? [toNano(userStake[0].balance), toNano(userStake[1].balance)] : [toNano(userStake[0].balance), 0n]
+
+        const unstakeAmountPerPool = TonPoolStaker.calculateUnstakePoolAmount(
+            toNano(amount),
+            minStake,
+            currentPoolBalances,
+            currentUserStakes,
+        )
+
+        // sanity check
+        if (unstakeAmountPerPool.reduce((acc, val) => acc + val, 0n) !== toNano(amount)) {
+            throw new Error('unstake amount does not match the requested amount')
         }
 
-        // https://github.com/tonwhales/ton-nominators/blob/0553e1b6ddfc5c0b60505957505ce58d01bec3e7/compiled/nominators.fc#L20
-        const payload = beginCell()
-          .storeUint(3665837821, 32) // stake_withdraw method const
-          .storeUint(getRandomQueryId(), 64) // Query ID
-          .storeCoins(getDefaultGas()) // Gas
-          .storeCoins(amount) // Amount
-          .endCell()
+        validatorAddresses.forEach((validatorAddress, index) => {
+            const data = poolParamsData[index]
+            const amount = unstakeAmountPerPool[index]
 
-        const msg = {
-            address: validatorAddress,
-            bounceable: true,
-            amount: data.withdrawFee + data.receiptPrice,
-            payload
-        }
+            // skip if no amount to unstake
+            if (amount === 0n) {
+              return null
+            }
 
-        msgs.push(msg)
-    })
+            msgs.push(genUnstakeMsg(validatorAddress, amount, data.withdrawFee, data.receiptPrice))
+        })
+    } else {
+        validatorAddresses.forEach((validatorAddress, index) => {
+            const data = poolParamsData[index]
+            msgs.push(genUnstakeMsg(validatorAddress, toNano(amount), data.withdrawFee, data.receiptPrice))
+        })
+    }
 
     const tx = {
       validUntil: defaultValidUntil(validUntil),
