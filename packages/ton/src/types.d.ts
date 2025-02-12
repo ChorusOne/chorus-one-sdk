@@ -51,33 +51,33 @@ export interface PoolData {
 
 // reference: https://github.com/ton-core/ton/blob/55c576dfc5976e1881180ee271ba8ec62d3f13d4/src/elector/ElectorContract.ts#L70C11-L70C27
 export interface Election {
-    id: number;
-    unfreezeAt: number;
-    stakeHeld: number;
-    validatorSetHash: bigint;
-    totalStake: bigint;
-    bonuses: bigint;
-    frozen: Map<string, FrozenSet>;
+  id: number
+  unfreezeAt: number
+  stakeHeld: number
+  validatorSetHash: bigint
+  totalStake: bigint
+  bonuses: bigint
+  frozen: Map<string, FrozenSet>
 }
 
 export interface FrozenSet {
-    address: Address;
-    weight: bigint;
-    stake: bigint;
+  address: Address
+  weight: bigint
+  stake: bigint
 }
 
 export interface PoolStatus {
-    balance: bigint;
-    balanceSent: bigint;
-    balancePendingDeposits: bigint;
-    balancePendingWithdrawals: bigint;
-    balanceWithdraw: bigint;
+  balance: bigint
+  balanceSent: bigint
+  balancePendingDeposits: bigint
+  balancePendingWithdrawals: bigint
+  balanceWithdraw: bigint
 }
 
 export interface GetPoolAddressForStakeResponse {
-    selectedPoolAddress: string;
-    minStake: bigint;
-    poolStakes: [biginy, bigint];
+  selectedPoolAddress: string
+  minStake: bigint
+  poolStakes: [biginy, bigint]
 }
 
 export interface AddressDerivationConfig {
@@ -89,20 +89,20 @@ export interface AddressDerivationConfig {
 }
 
 export interface Message {
-    // destination address
-    address: string
+  // destination address
+  address: string
 
-    // amount in nano tokens
-    amount: bigint
+  // amount in nano tokens
+  amount: bigint
 
-    // bounce flag
-    bounceable: boolean
+  // bounce flag
+  bounceable: boolean
 
-    // contract specific data to be included in the transaction
-    stateInit?: StateInit
+  // contract specific data to be included in the transaction
+  stateInit?: StateInit
 
-    // contract specific data to be included in the transaction
-    payload?: Cell | string
+  // contract specific data to be included in the transaction
+  payload?: Cell | string
 }
 
 export declare interface UnsignedTx {
