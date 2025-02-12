@@ -124,6 +124,11 @@ export class TonPoolStaker extends TonBaseStaker {
     const msgs: Message[] = []
 
     if (disableStatefulCalculation) {
+        validatorAddresses.forEach((validatorAddress, index) => {
+            const data = poolParamsData[index]
+            msgs.push(genUnstakeMsg(validatorAddress, toNano(amount), data.withdrawFee, data.receiptPrice))
+        })
+    } else {
         const [poolStatus, userStake, minStake] = await Promise.all([
             Promise.all(validatorAddresses.map((validatorAddress) => this.getPoolStatus(validatorAddress))),
             Promise.all(validatorAddresses.map((validatorAddress) => this.getStake({ delegatorAddress, validatorAddress }))),
@@ -131,7 +136,13 @@ export class TonPoolStaker extends TonBaseStaker {
         ])
 
         const currentPoolBalances: [bigint, bigint] = (validatorAddresses.length === 2) ? [poolStatus[0].balance, poolStatus[1].balance] : [poolStatus[0].balance, 0n]
-        const currentUserStakes: [bigint, bigint] = (validatorAddresses.length === 2) ? [toNano(userStake[0].balance), toNano(userStake[1].balance)] : [toNano(userStake[0].balance), 0n]
+        const currentUserStakes: [bigint, bigint] = (validatorAddresses.length === 2) ? [
+            toNano(userStake[0].balance) + toNano(userStake[0].pendingDeposit),
+            toNano(userStake[1].balance) + toNano(userStake[1].pendingDeposit)
+        ] : [
+            toNano(userStake[0].balance) + toNano(userStake[0].pendingDeposit),
+            0n
+        ]
 
         const unstakeAmountPerPool = TonPoolStaker.calculateUnstakePoolAmount(
             toNano(amount),
@@ -155,11 +166,6 @@ export class TonPoolStaker extends TonBaseStaker {
             }
 
             msgs.push(genUnstakeMsg(validatorAddress, amount, data.withdrawFee, data.receiptPrice))
-        })
-    } else {
-        validatorAddresses.forEach((validatorAddress, index) => {
-            const data = poolParamsData[index]
-            msgs.push(genUnstakeMsg(validatorAddress, toNano(amount), data.withdrawFee, data.receiptPrice))
         })
     }
 
