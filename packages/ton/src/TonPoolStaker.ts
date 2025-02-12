@@ -137,10 +137,10 @@ export class TonPoolStaker extends TonBaseStaker {
 
         const currentPoolBalances: [bigint, bigint] = (validatorAddresses.length === 2) ? [poolStatus[0].balance, poolStatus[1].balance] : [poolStatus[0].balance, 0n]
         const currentUserStakes: [bigint, bigint] = (validatorAddresses.length === 2) ? [
-            toNano(userStake[0].balance) + toNano(userStake[0].pendingDeposit),
-            toNano(userStake[1].balance) + toNano(userStake[1].pendingDeposit)
+            toNano(userStake[0].balance) + toNano(userStake[0].pendingDeposit) - toNano(userStake[0].pendingWithdraw),
+            toNano(userStake[1].balance) + toNano(userStake[1].pendingDeposit) - toNano(userStake[1].pendingWithdraw)
         ] : [
-            toNano(userStake[0].balance) + toNano(userStake[0].pendingDeposit),
+            toNano(userStake[0].balance) + toNano(userStake[0].pendingDeposit) - toNano(userStake[0].pendingWithdraw),
             0n
         ]
 
