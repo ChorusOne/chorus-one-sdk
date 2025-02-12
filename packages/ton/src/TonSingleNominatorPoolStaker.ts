@@ -119,14 +119,14 @@ export class TonSingleNominatorPoolStaker extends TonBaseStaker {
 
     const tx = {
       validUntil: defaultValidUntil(validUntil),
-      message: {
+      messages: [{
         address: validatorAddress,
         // to unstake tokens we need to send a some tokens that should
         // be returned to us in case of error
         bounceable: true,
         amount: toNano(amountToCoverTxFees),
         payload
-      }
+      }]
     }
 
     return { tx }
