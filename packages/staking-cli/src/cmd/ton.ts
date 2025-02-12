@@ -44,7 +44,8 @@ function makeTxCommand (): Command {
   tx.command('unstake-pool')
     .description('generate a unstake funds to TON pool contract transaction')
     .argument('<amount>', 'amount of tokens to unstake expressed in TON denom e.g 0.1')
-    .requiredOption('-I, --validator-index <value>', 'validator index to unstake from (1 or 2)', validateIndex)
+    .option('-i, --validator-index <value>', 'validator index to unstake from (1 or 2)', validateIndex)
+    .option('-d, --disable-stateful-calculation', 'disable stateful calculation', false)
     .action(getUnstakePoolTx)
 
   tx.command('delegate-nominator-pool')
@@ -103,7 +104,7 @@ async function init (
 
 async function runTx (
   msgType: string,
-  options: { validatorIndex: '1' | '2' } | undefined,
+  options: { validatorIndex?: '1' | '2' | undefined, disableStatefulCalculation?: boolean } | undefined,
   cmd: Command<[string]> | Command<[string, string]> | Command<[string, string, string]> | Command<[]>,
   arg: string[]
 ): Promise<void> {
@@ -175,15 +176,16 @@ async function runTx (
             validatorAddressPair = [validatorAddressPair[validatorIndex - 1], ""]
         }
 
-        console.log('Unstaking from contracts #' + validatorAddressPair)
-
         unsignedTx = (
           await tonStaker.buildUnstakeTx({
             delegatorAddress: config.delegatorAddress,
             validatorAddressPair,
-            amount: arg[0] // amount
+            amount: arg[0], // amount
+            disableStatefulCalculation: options?.disableStatefulCalculation
           })
         ).tx
+
+        console.log('Unstaking from ' + unsignedTx.messages?.length + ' contracts: ' + unsignedTx.messages?.map((msg) => msg.address).join(', '))
         break
       }
       case 'delegate-nominator-pool': {
@@ -318,7 +320,7 @@ async function getDelegatePoolTx (amount: string, options: any, cmd: Command<[st
 
 async function getUnstakePoolTx (
   amount: string,
-  options: { validatorIndex: '1' | '2' },
+  options: { validatorIndex?: '1' | '2' | undefined, disableStatefulCalculation?: boolean },
   cmd: Command<[string]>
 ): Promise<void> {
   await runTx('unstake-pool', options, cmd, [amount])
