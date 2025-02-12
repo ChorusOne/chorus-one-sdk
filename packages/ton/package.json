@@ -1,6 +1,6 @@
 {
   "name": "@chorus-one/ton",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "All-in-one tooling for building staking dApps on TON",
   "scripts": {
     "build": "rm -fr dist/* && tsc -p tsconfig.mjs.json --outDir dist/mjs && tsc -p tsconfig.cjs.json --outDir dist/cjs && bash ../../scripts/fix-package-json"
