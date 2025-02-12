@@ -104,7 +104,7 @@ async function init (
 
 async function runTx (
   msgType: string,
-  options: { validatorIndex?: '1' | '2' | undefined, disableStatefulCalculation?: boolean } | undefined,
+  options: { validatorIndex?: '1' | '2' | undefined; disableStatefulCalculation?: boolean } | undefined,
   cmd: Command<[string]> | Command<[string, string]> | Command<[string, string, string]> | Command<[]>,
   arg: string[]
 ): Promise<void> {
@@ -152,7 +152,7 @@ async function runTx (
           cmd.error('validator address not found in the pool', { exitCode: 1, code: `${msgType}.tx.abort` })
         }
 
-        console.log('Delegating to pool #' + (poolIndex+1) + ': ' + stakingPoolAddressPair[poolIndex])
+        console.log('Delegating to pool #' + (poolIndex + 1) + ': ' + stakingPoolAddressPair[poolIndex])
 
         unsignedTx = (
           await tonStaker.buildStakeTx({
@@ -172,8 +172,8 @@ async function runTx (
 
         let validatorAddressPair: [string, string] = [config.validatorAddress, config.validatorAddress2]
         if (options?.validatorIndex !== undefined) {
-            const validatorIndex = parseInt(options.validatorIndex)
-            validatorAddressPair = [validatorAddressPair[validatorIndex - 1], ""]
+          const validatorIndex = parseInt(options.validatorIndex)
+          validatorAddressPair = [validatorAddressPair[validatorIndex - 1], '']
         }
 
         unsignedTx = (
@@ -185,7 +185,12 @@ async function runTx (
           })
         ).tx
 
-        console.log('Unstaking from ' + unsignedTx.messages?.length + ' contracts: ' + unsignedTx.messages?.map((msg) => msg.address).join(', '))
+        console.log(
+          'Unstaking from ' +
+            unsignedTx.messages?.length +
+            ' contracts: ' +
+            unsignedTx.messages?.map((msg) => msg.address).join(', ')
+        )
         break
       }
       case 'delegate-nominator-pool': {
@@ -320,7 +325,7 @@ async function getDelegatePoolTx (amount: string, options: any, cmd: Command<[st
 
 async function getUnstakePoolTx (
   amount: string,
-  options: { validatorIndex?: '1' | '2' | undefined, disableStatefulCalculation?: boolean },
+  options: { validatorIndex?: '1' | '2' | undefined; disableStatefulCalculation?: boolean },
   cmd: Command<[string]>
 ): Promise<void> {
   await runTx('unstake-pool', options, cmd, [amount])
