@@ -217,12 +217,14 @@ export class TonBaseStaker {
 
     const tx = {
       validUntil: defaultValidUntil(validUntil),
-      messages: [{
-        address: destinationAddress,
-        bounceable: bounceable,
-        amount: toNano(amount),
-        payload: memo ?? ''
-      }]
+      messages: [
+        {
+          address: destinationAddress,
+          bounceable: bounceable,
+          amount: toNano(amount),
+          payload: memo ?? ''
+        }
+      ]
     }
 
     return { tx }
@@ -302,33 +304,33 @@ export class TonBaseStaker {
     const msgs = tx.messages
 
     if (msgs !== undefined && msgs.length > 0) {
-        msgs.map((msg) => {
-            if (msg.payload === undefined) {
-              throw new Error('missing payload')
-            }
+      msgs.map((msg) => {
+        if (msg.payload === undefined) {
+          throw new Error('missing payload')
+        }
 
-            // ensure the address is for the right network
-            this.checkIfAddressTestnetFlagMatches(msg.address)
+        // ensure the address is for the right network
+        this.checkIfAddressTestnetFlagMatches(msg.address)
 
-            // ensure the balance is above the minimum existential balance
-            this.checkMinimumExistentialBalance(signerAddress, fromNano(msg.amount))
+        // ensure the balance is above the minimum existential balance
+        this.checkMinimumExistentialBalance(signerAddress, fromNano(msg.amount))
 
-            // TON TEP-0002 defines how the flags within the address should be handled
-            // reference: https://github.com/ton-blockchain/TEPs/blob/master/text/0002-address.md#wallets-applications
-            //
-            // The Chorus TON SDK is not strictly a wallet application, so we follow most (but not all) of the rules.
-            // Specifically, we force the bounce flag wherever possible (for safety), but don't enforce user to specify
-            // the bounceable source address. This is because a user may use fireblocks signer where the address is in non-bounceable format.
-            internalMsgs.push(
-              internal({
-                value: msg.amount,
-                bounce: msg.bounceable,
-                to: msg.address,
-                body: msg.payload,
-                init: msg.stateInit
-              })
-            )
-        })
+        // TON TEP-0002 defines how the flags within the address should be handled
+        // reference: https://github.com/ton-blockchain/TEPs/blob/master/text/0002-address.md#wallets-applications
+        //
+        // The Chorus TON SDK is not strictly a wallet application, so we follow most (but not all) of the rules.
+        // Specifically, we force the bounce flag wherever possible (for safety), but don't enforce user to specify
+        // the bounceable source address. This is because a user may use fireblocks signer where the address is in non-bounceable format.
+        internalMsgs.push(
+          internal({
+            value: msg.amount,
+            bounce: msg.bounceable,
+            to: msg.address,
+            body: msg.payload,
+            init: msg.stateInit
+          })
+        )
+      })
     } else {
       internalMsgs = []
     }

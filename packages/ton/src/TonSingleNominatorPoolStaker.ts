@@ -49,15 +49,17 @@ export class TonSingleNominatorPoolStaker extends TonBaseStaker {
 
     const tx = {
       validUntil: defaultValidUntil(validUntil),
-      messages: [{
-        address: validatorAddress,
-        // to stake tokens we need to send a large amount of tokens
-        // it is critical that the transaction is bounceable
-        // otherwise in the case of contract failure we may loose tokens!
-        bounceable: true,
-        amount: toNano(amount),
-        payload: Cell.EMPTY
-      }]
+      messages: [
+        {
+          address: validatorAddress,
+          // to stake tokens we need to send a large amount of tokens
+          // it is critical that the transaction is bounceable
+          // otherwise in the case of contract failure we may loose tokens!
+          bounceable: true,
+          amount: toNano(amount),
+          payload: Cell.EMPTY
+        }
+      ]
     }
 
     return { tx }
@@ -119,14 +121,16 @@ export class TonSingleNominatorPoolStaker extends TonBaseStaker {
 
     const tx = {
       validUntil: defaultValidUntil(validUntil),
-      messages: [{
-        address: validatorAddress,
-        // to unstake tokens we need to send a some tokens that should
-        // be returned to us in case of error
-        bounceable: true,
-        amount: toNano(amountToCoverTxFees),
-        payload
-      }]
+      messages: [
+        {
+          address: validatorAddress,
+          // to unstake tokens we need to send a some tokens that should
+          // be returned to us in case of error
+          bounceable: true,
+          amount: toNano(amountToCoverTxFees),
+          payload
+        }
+      ]
     }
 
     return { tx }
