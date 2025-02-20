@@ -41,7 +41,7 @@ export class StakewiseConnector {
         })
 
         this.baseAPI = 'https://holesky-api.stakewise.io/graphql'
-        this.baseGraph = 'https://holesky-graph.stakewise.io/subgraphs/name/stakewise/stakewise'
+        this.baseGraph = 'https://graphs.stakewise.io/holesky/subgraphs/name/stakewise/prod'
         // Stakewise keeper contract
         this.keeper = '0xB580799Bf7d62721D1a523f0FDF2f5Ed7BA4e259'
         this.priceOracle = '0xe31FAf135A6047Cbe595F91B4b6802cDB9B46E2b'
@@ -56,7 +56,7 @@ export class StakewiseConnector {
         })
 
         this.baseAPI = 'https://mainnet-api.stakewise.io/graphql'
-        this.baseGraph = 'https://mainnet-graph.stakewise.io/subgraphs/name/stakewise/stakewise'
+        this.baseGraph = 'https://graphs.stakewise.io/mainnet-b/subgraphs/name/stakewise/prod'
         // Stakewise keeper contract
         this.keeper = '0x6B5815467da09DaA7DC83Db21c9239d98Bb487b5'
         this.priceOracle = '0x8023518b2192FB5384DAdc596765B3dD1cdFe471'
@@ -75,6 +75,7 @@ export class StakewiseConnector {
       query: request.query.trim(),
       variables: request.variables
     })
+
     const params: RequestInit = {
       method: 'POST',
       headers: {
