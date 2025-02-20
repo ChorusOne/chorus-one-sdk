@@ -21,10 +21,10 @@ import {
   beginCell,
   storeMessage
 } from '@ton/ton'
+import { mnemonicToSeed, deriveEd25519Path, keyPairFromSeed } from '@ton/crypto'
+import { pbkdf2_sha512 } from '@ton/crypto-primitives'
 import { TonClient } from './TonClient'
 import { createWalletTransferV4, externalMessage, sign } from './tx'
-import * as tonMnemonic from 'tonweb-mnemonic'
-import { ed25519 } from '@noble/curves/ed25519'
 
 /**
  * This class provides the functionality to stake assets on the Ton network.
@@ -67,12 +67,24 @@ export class TonBaseStaker {
    *
    * It can be used for signer initialization, e.g. `FireblocksSigner` or `LocalSigner`.
    *
+   * @param params.addressDerivationConfig - TON address derivation configuration
+   *
    * @returns Returns a seed derived from the mnemonic
    */
   static getMnemonicToSeedFn =
-    () =>
+    (params?: { addressDerivationConfig: AddressDerivationConfig | undefined }) =>
     async (mnemonic: string, password?: string): Promise<Uint8Array> => {
-      return await tonMnemonic.mnemonicToSeed(mnemonic.split(' '), password)
+      const { isBIP39 } = params?.addressDerivationConfig ?? defaultAddressDerivationConfig()
+
+      // the logic is based on the following implementation:
+      // https://github.com/xssnick/tonutils-go/blob/619c2aa1f6b992997bf322f8f9bfc4ae036a5181/ton/wallet/seed.go#L82
+      if (isBIP39) {
+        const pass = password ?? ''
+        return await pbkdf2_sha512(mnemonic, 'mnemonic' + pass, 2048, 64)
+      }
+
+      const seed = await mnemonicToSeed(mnemonic.split(' '), 'TON default seed', password)
+      return seed.slice(0, 32)
     }
 
   /**
@@ -81,18 +93,33 @@ export class TonBaseStaker {
    *
    * It can be used for signer initialization, e.g. `FireblocksSigner` or `LocalSigner`.
    *
+   * @param params.addressDerivationConfig - TON address derivation configuration
+   *
    * @returns Returns a public and private keypair derived from the seed
    */
   static getSeedToKeypairFn =
-    () =>
+    (params?: { addressDerivationConfig: AddressDerivationConfig | undefined }) =>
     async (seed: Uint8Array, hdPath?: string): Promise<{ publicKey: Uint8Array; privateKey: Uint8Array }> => {
-      if (hdPath !== undefined && hdPath !== '') {
-        throw new Error('hdPath is not supported for TON')
+      const { isBIP39 } = params?.addressDerivationConfig ?? defaultAddressDerivationConfig()
+
+      // the logic is based on the following implementation:
+      // https://github.com/xssnick/tonutils-go/blob/619c2aa1f6b992997bf322f8f9bfc4ae036a5181/ton/wallet/seed.go#L82
+
+      let newSeed = Buffer.from(seed)
+      if (isBIP39) {
+        const path = hdPath
+          ? hdPath
+              .replace('m/', '')
+              .split('/')
+              .map((x) => parseInt(x))
+          : []
+        newSeed = await deriveEd25519Path(newSeed, path)
       }
 
+      const keypair = keyPairFromSeed(newSeed)
       return {
-        publicKey: ed25519.getPublicKey(Buffer.from(seed)),
-        privateKey: seed
+        publicKey: keypair.publicKey,
+        privateKey: keypair.secretKey.slice(0, 32)
       }
     }
 
@@ -543,7 +570,8 @@ function defaultAddressDerivationConfig (): AddressDerivationConfig {
     workchain: 0,
     bounceable: false,
     testOnly: false,
-    urlSafe: true
+    urlSafe: true,
+    isBIP39: false
   }
 }
 

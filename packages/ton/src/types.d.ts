@@ -86,6 +86,7 @@ export interface AddressDerivationConfig {
   bounceable: boolean
   testOnly: boolean
   urlSafe: boolean
+  isBIP39: boolean
 }
 
 export interface Message {

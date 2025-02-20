@@ -34,9 +34,8 @@
   "dependencies": {
     "@chorus-one/signer": "^1.0.0",
     "@chorus-one/utils": "^1.0.0",
-    "@noble/curves": "^1.4.0",
+    "@ton/crypto": "^3.3.0",
     "@ton/ton": "^15.1.0",
-    "axios": "^1.7.2",
-    "tonweb-mnemonic": "^1.0.1"
+    "axios": "^1.7.2"
   }
 }
