@@ -92,8 +92,12 @@ async function init (
     addressDerivationFn: TonNominatorPoolStaker.getAddressDerivationFn({
       addressDerivationConfig: networkConfig.addressDerivationConfig
     }),
-    mnemonicToSeedFn: TonNominatorPoolStaker.getMnemonicToSeedFn(),
-    seedToKeypairFn: TonNominatorPoolStaker.getSeedToKeypairFn(),
+    mnemonicToSeedFn: TonNominatorPoolStaker.getMnemonicToSeedFn({
+      addressDerivationConfig: networkConfig.addressDerivationConfig
+    }),
+    seedToKeypairFn: TonNominatorPoolStaker.getSeedToKeypairFn({
+      addressDerivationConfig: networkConfig.addressDerivationConfig
+    }),
     keyType: KeyType.ED25519,
     logger: defaultLogger
   })
