@@ -1,58 +1,61 @@
 import { Hex } from 'viem'
 import { StakewiseConnector } from '../connector'
-import { RewardsDataPoint } from '../types/rewards'
-
-async function extractVaultUserRewards (
-  connector: StakewiseConnector,
-  vault: Hex,
-  allocatorAddress: string,
-  dateFrom: Date,
-  dateTo: Date
-): Promise<RewardsDataPoint[]> {
-  const vars_getRewards = {
-    vaultAddress: vault,
-    user: allocatorAddress.toLowerCase(),
-    dateFrom: Math.floor(dateFrom.getTime() / 1000).toString()
-  }
-
-  const rewardsData = await connector.graphqlRequest({
-    type: 'api',
-    op: 'UserRewards',
-    query: `query UserRewards($user: String!, $vaultAddress: String!, $dateFrom: DateAsTimestamp!) { userRewards(user: $user, vaultAddress: $vaultAddress, dateFrom: $dateFrom) { date, sumRewards, }}`,
-    variables: vars_getRewards
-  })
-
-  if (!rewardsData.data.userRewards) {
-    throw new Error(`Rewards data is missing the userRewards field`)
-  }
-  const dataPoints: RewardsDataPoint[] = []
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  rewardsData.data.userRewards.forEach((reward: any) => {
-    const when: Date = new Date(parseInt(reward.date) * 1000)
-    if (when <= dateTo) {
-      const sumRewards: string = reward.sumRewards
-      dataPoints.push({
-        when: when,
-        amount: BigInt(sumRewards),
-        vault: vault
-      })
-    }
-  })
-
-  return dataPoints
-}
 
 export async function getRewardsHistory (params: {
   connector: StakewiseConnector
-  from: Date
-  to: Date
+  from: number
+  to: number
   vault: Hex
   userAccount: Hex
-}): Promise<Array<RewardsDataPoint>> {
+}) {
   const { connector, from, to, vault, userAccount } = params
-  let vaultRewards: RewardsDataPoint[] = []
+  const rewardsData = await connector.graphqlRequest({
+    type: 'graph',
+    op: 'UserRewards',
+    query:
+      'query UserRewards( $where: AllocatorStats_filter $limit: Int) { allocator: allocatorStats_collection( interval: day first: $limit where: $where ) { apy timestamp earnedAssets totalAssets }}',
+    // variables: vars_getRewards
+    variables: {
+      limit: 365,
+      where: {
+        timestamp_gte: (from * 1000).toString(),
+        allocator_: {
+          address: userAccount.toLowerCase(),
+          vault: vault.toLowerCase()
+        }
+      }
+    }
+  })
 
-  vaultRewards = await extractVaultUserRewards(connector, vault, userAccount, from, to)
+  if (!rewardsData.data.allocator) {
+    throw new Error(`Rewards data is missing the allocator field`)
+  }
 
-  return vaultRewards
+  const data = rewardsData.data.allocator as {
+    timestamp: string
+    earnedAssets: string
+    totalAssets: string
+  }[]
+
+  return data
+    .reduce(
+      (acc, reward) => {
+        const timestamp = Math.floor(parseInt(reward.timestamp) / 1000)
+        if (timestamp > to) return acc
+        return [
+          ...acc,
+          {
+            timestamp,
+            totalRewards: BigInt(reward.totalAssets),
+            dailyRewards: BigInt(reward.earnedAssets)
+          }
+        ]
+      },
+      [] as {
+        timestamp: number
+        totalRewards: bigint
+        dailyRewards: bigint
+      }[]
+    )
+    .sort((a, b) => a.timestamp - b.timestamp)
 }
