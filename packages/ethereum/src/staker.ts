@@ -279,15 +279,20 @@ export class EthereumStaker {
   }) {
     const rewards = await getRewardsHistory({
       connector: this.connector,
-      from: new Date(params.startTime),
-      to: new Date(params.endTime),
+      from: params.startTime,
+      to: params.endTime,
       vault: params.validatorAddress,
       userAccount: params.delegatorAddress
     })
 
     return rewards.map((item) => ({
-      timestamp: item.when.getTime(),
-      amount: formatEther(item.amount)
+      timestamp: item.timestamp,
+      /**
+       * @deprecated Use `totalRewards` instead.
+       */
+      amount: formatEther(item.totalRewards),
+      totalRewards: formatEther(item.totalRewards),
+      dailyRewards: formatEther(item.dailyRewards)
     }))
   }
 
