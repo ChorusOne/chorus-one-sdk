@@ -42,6 +42,6 @@
     "viem": "^2.17.4"
   },
   "devDependencies": {
-    "hardhat": "2.19.4"
+    "hardhat": "2.22.13"
   }
 }
