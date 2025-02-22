@@ -369,7 +369,7 @@ export class TonBaseStaker {
     if (this.addressDerivationConfig.walletContractVersion !== 4) {
       throw new Error('unsupported wallet contract version')
     }
-    const preparedTx = createWalletTransferV4({
+    const txArgs = {
       seqno,
       // As explained here: https://docs.ton.org/develop/smart-contracts/messages#message-modes
       // IGNORE_ERRORS ignores only selected errors, such as insufficient funds etc
@@ -386,12 +386,16 @@ export class TonBaseStaker {
       walletId: wallet.walletId,
       messages: internalMsgs,
       timeout: tx.validUntil
-    })
+    }
 
+    const preparedTx = createWalletTransferV4(txArgs)
     const signingData: TonSigningData = {
       tx,
+      txArgs,
       txCell: preparedTx
     }
+
+    // sign transaction via signer
     const signedTx = await sign(signerAddress, signer, signingData)
 
     // decide whether to deploy wallet contract along with the transaction

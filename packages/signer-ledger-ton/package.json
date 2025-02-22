@@ -1,0 +1,41 @@
+{
+  "name": "@chorus-one/signer-ledger-ton",
+  "version": "1.0.0",
+  "description": "Ledger signer for the Chorus One SDK, used for signing TON transactions",
+  "scripts": {
+    "build": "rm -fr dist/* && tsc -p tsconfig.mjs.json --outDir dist/mjs && tsc -p tsconfig.cjs.json --outDir dist/cjs && bash ../../scripts/fix-package-json"
+  },
+  "main": "dist/cjs/index.js",
+  "module": "dist/mjs/index.js",
+  "types": "dist/mjs/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/mjs/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/mjs/index.d.ts"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChorusOne/chorus-one-sdk.git",
+    "directory": "packages/signer-ledger-ton"
+  },
+  "homepage": "https://chorus-one.gitbook.io/sdk",
+  "keywords": [
+    "chorus-one",
+    "sdk",
+    "signer",
+    "ledger",
+    "ton"
+  ],
+  "author": "Chrous One AG",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@chorus-one/signer": "^1.0.0",
+    "@chorus-one/ton": "^2.0.2",
+    "@chorus-one/utils": "^1.0.0",
+    "@ledgerhq/hw-transport": "^6.31.0",
+    "@ton-community/ton-ledger": "^7.2.0",
+    "@ton/ton": "^15.1.0"
+  }
+}
