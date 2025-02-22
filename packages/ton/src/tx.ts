@@ -53,14 +53,22 @@ export async function sign (signerAddress: string, signer: Signer, signingData: 
 
   const { sig } = await signer.sign(
     signerAddress,
-    { message: signingMessage.hash().toString('hex'), data: { tx: signingMessage } },
+    { message: signingMessage.hash().toString('hex'), data: signingData },
     { note: SafeJSONStringify(signingData.tx, 2) }
   )
+  const sigbuf = Buffer.from(sig.fullSig, 'hex')
 
-  const body = beginCell()
-    .storeBuffer(Buffer.from(sig.fullSig, 'hex'))
-    .storeBuilder(signingMessage.asBuilder())
-    .endCell()
+  // The signer can also return a signed transaction (e.g ledger signer).
+  // In such case the cell size will at 128 bytes + remaining transaction data
+  if (sigbuf.length > 128) {
+    const cells = Cell.fromBoc(sigbuf)
+    if (cells.length !== 1) {
+      throw new Error('signer returned ' + cells.length + 'cells instead of 1')
+    }
+    return cells[0]
+  }
+
+  const body = beginCell().storeBuffer(sigbuf).storeBuilder(signingMessage.asBuilder()).endCell()
 
   return body
 }

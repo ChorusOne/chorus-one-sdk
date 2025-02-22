@@ -2,7 +2,8 @@
 // value (not only the type)
 export enum SignerType {
   FIREBLOCKS = 'fireblocks',
-  LOCAL = 'local'
+  LOCAL = 'local',
+  LEDGER = 'ledger'
 }
 
 export enum NetworkType {

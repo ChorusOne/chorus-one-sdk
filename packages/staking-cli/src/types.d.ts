@@ -8,6 +8,7 @@ import type { TonNetworkConfig } from '@chorus-one/ton'
 import type { SolanaNetworkConfig } from '@chorus-one/solana'
 import type { FireblocksSignerConfig } from '@chorus-one/signer-fireblocks'
 import type { LocalSignerConfig } from '@chorus-one/signer-local'
+import type { LedgerTonSignerConfig } from '@chorus-one/signer-ledger-ton'
 
 interface FireblocksSignerCliConfig extends Omit<FireblocksSignerConfig, 'apiSecretKey' | 'apiKey'> {
   apiSecretKeyPath: string
@@ -33,6 +34,9 @@ export interface Config {
 
   // use local signer (used for testing)
   localsigner: LocalSignerCliConfig
+
+  // use ledger hardware wallet as signer
+  ledger: LedgerTonSignerConfig // | LedgerCosmosSignerConfig | ...
 
   // the network type to interact with
   networkType: NetworkType

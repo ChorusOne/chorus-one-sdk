@@ -1,4 +1,4 @@
-import { Cell, StateInit, Transaction } from '@ton/ton'
+import { Cell, StateInit, Transaction, MessageRelaxed } from '@ton/ton'
 
 /** @ignore */
 export interface TonSigningData {
@@ -7,6 +7,15 @@ export interface TonSigningData {
 
   // unsigned transaction as a Cell
   txCell: Cell
+
+  // unsigned transaction arguments
+  txArgs: {
+    seqno: number
+    sendMode: number
+    walletId: number
+    messages: MessageRelaxed[]
+    timeout?: number
+  }
 }
 
 /** @ignore */

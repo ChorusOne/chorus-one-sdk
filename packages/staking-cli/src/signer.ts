@@ -6,6 +6,8 @@ import { SignerType } from './enums'
 import { FireblocksSigner } from '@chorus-one/signer-fireblocks'
 import { LocalSigner } from '@chorus-one/signer-local'
 import { Logger } from '@chorus-one/utils'
+import { LedgerTonSigner } from '@chorus-one/signer-ledger-ton'
+import TransportNodeHid from '@ledgerhq/hw-transport-node-hid'
 
 export async function newSigner (
   config: Config,
@@ -48,6 +50,19 @@ export async function newSigner (
         logger: options.logger,
         keyType: options.keyType ?? KeyType.SECP256K1,
         ...config.localsigner
+      })
+    }
+    case SignerType.LEDGER: {
+      if (config.networkType !== 'ton') {
+        throw new Error('Ledger signer is only supported for TON network')
+      }
+
+      const transport = await TransportNodeHid.create()
+
+      return new LedgerTonSigner({
+        transport: transport,
+        logger: options.logger,
+        ...config.ledger
       })
     }
   }
