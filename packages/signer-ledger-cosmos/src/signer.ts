@@ -1,5 +1,6 @@
 import { nopLogger } from '@chorus-one/utils'
-import type { Logger, sortObjectByKeys } from '@chorus-one/utils'
+import type { Logger } from '@chorus-one/utils'
+import { sortObjectByKeys } from '@chorus-one/utils'
 import type { LedgerCosmosSignerConfig } from './types'
 import type { Signature, SignerData } from '@chorus-one/signer'
 import { secp256k1 } from '@noble/curves/secp256k1'
