@@ -216,15 +216,18 @@ export async function genSignableTx (
 export async function genSignDocSignature (
   signer: Signer,
   signerAccount: Account,
-  signDoc: StdSignDoc
+  signDoc: StdSignDoc,
+  isEVM: boolean
 ): Promise<{ sig: Signature; pk: Uint8Array }> {
-  if (signerAccount.pubkey === null) {
-    throw new Error('Signer account pubkey is not set')
+  // The LCD doesn't have to return a public key for an acocunt, therefore
+  // we do a best effort check to assert the pubkey type is ethsecp256k1
+  if (isEVM && signerAccount.pubkey !== undefined) {
+    if (!signerAccount.pubkey?.type.toLowerCase().includes('ethsecp256k1')) {
+      throw new Error('signer account pubkey type is not ethsecp256k1')
+    }
   }
 
-  const msg = signerAccount.pubkey.type.toLowerCase().includes('ethsecp256k1')
-    ? keccak256(serializeSignDoc(signDoc))
-    : new Sha256(serializeSignDoc(signDoc)).digest()
+  const msg = isEVM ? keccak256(serializeSignDoc(signDoc)) : new Sha256(serializeSignDoc(signDoc)).digest()
   const message = Buffer.from(msg).toString('hex')
   const note = SafeJSONStringify(signDoc, 2)
 

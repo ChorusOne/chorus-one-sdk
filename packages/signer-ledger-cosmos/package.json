@@ -32,7 +32,8 @@
   "dependencies": {
     "@chorus-one/signer": "^1.0.0",
     "@chorus-one/utils": "^1.0.0",
-    "@ledgerhq/hw-app-cosmos": "^6.7.0",
-    "@ledgerhq/hw-transport": "^6.31.0"
+    "@ledgerhq/hw-transport": "^6.31.0",
+    "@zondax/ledger-cosmos-js": "^4.0.0",
+    "@noble/curves": "^1.4.2"
   }
 }

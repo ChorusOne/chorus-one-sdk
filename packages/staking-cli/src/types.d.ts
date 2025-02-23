@@ -36,7 +36,7 @@ export interface Config {
   localsigner: LocalSignerCliConfig
 
   // use ledger hardware wallet as signer
-  ledger: LedgerTonSignerConfig // | LedgerCosmosSignerConfig | ...
+  ledger: LedgerTonSignerConfig | LedgerCosmosSignerConfig
 
   // the network type to interact with
   networkType: NetworkType

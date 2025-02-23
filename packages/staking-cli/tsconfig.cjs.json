@@ -12,6 +12,8 @@
     { "path": "../near" },
     { "path": "../signer-fireblocks" },
     { "path": "../signer-local" },
+    { "path": "../signer-ledger-ton" },
+    { "path": "../signer-ledger-cosmos" },
     { "path": "../signer" },
     { "path": "../solana" },
     { "path": "../substrate" },
