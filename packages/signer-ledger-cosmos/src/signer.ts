@@ -1,8 +1,9 @@
 import { nopLogger } from '@chorus-one/utils'
-import type { Logger } from '@chorus-one/utils'
+import type { Logger, sortObjectByKeys } from '@chorus-one/utils'
 import type { LedgerCosmosSignerConfig } from './types'
 import type { Signature, SignerData } from '@chorus-one/signer'
-import Cosmos from '@ledgerhq/hw-app-cosmos'
+import { secp256k1 } from '@noble/curves/secp256k1'
+import CosmosApp from '@zondax/ledger-cosmos-js'
 import Transport from '@ledgerhq/hw-transport'
 
 /**
@@ -16,7 +17,7 @@ export class LedgerCosmosSigner {
   private readonly config: LedgerCosmosSignerConfig
   private readonly transport: Transport
   private accounts: Map<string, { hdPath: string; publicKey: Uint8Array }>
-  private app?: Cosmos
+  private app?: CosmosApp
   private logger: Logger
 
   /**
@@ -43,15 +44,15 @@ export class LedgerCosmosSigner {
    * @returns A promise that resolves once the initialization is complete.
    */
   async init (): Promise<void> {
-    const app = new Cosmos(this.transport)
+    const app = new CosmosApp(this.transport)
     this.app = app
 
     this.config.accounts.forEach(async (account: { hdPath: string }) => {
-      const response = await app.getAddress(account.hdPath, this.config.bechPrefix)
+      const response = await app.getAddressAndPubKey(account.hdPath, this.config.bechPrefix)
 
-      this.accounts.set(response.address.toLowerCase(), {
+      this.accounts.set(response.bech32_address.toLowerCase(), {
         hdPath: account.hdPath,
-        publicKey: Buffer.from(response.publicKey, 'hex')
+        publicKey: response.compressed_pk
       })
     })
   }
@@ -75,16 +76,23 @@ export class LedgerCosmosSigner {
     }
 
     const account = this.getAccount(signerAddress)
-    const { signature, return_code } = await this.app.sign(account.hdPath, signerData.message)
 
-    if (signature === null) {
-      throw new Error(`failed to sign message: ${return_code}`)
+    const { signature } = await this.app.sign(
+      account.hdPath,
+      Buffer.from(JSON.stringify(sortObjectByKeys(signerData.data.signDoc)), 'utf-8'),
+      this.config.bechPrefix,
+      0 // 0 for JSON, 1 for TEXTUAL
+    )
+
+    if (signature.length === 0) {
+      throw new Error(`failed to sign message`)
     }
 
+    const secpsig = secp256k1.Signature.fromDER(signature)
     const sig = {
-      fullSig: Buffer.from(signature).toString('hex'),
-      r: Buffer.from(signature.subarray(0, 32)).toString('hex'),
-      s: Buffer.from(signature.subarray(32, 64)).toString('hex'),
+      fullSig: secpsig.toCompactHex(),
+      r: Buffer.from(secpsig.toCompactRawBytes().subarray(0, 32)).toString('hex'),
+      s: Buffer.from(secpsig.toCompactRawBytes().subarray(32, 64)).toString('hex'),
       v: 0
     }
 

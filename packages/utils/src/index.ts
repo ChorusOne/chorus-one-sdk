@@ -34,3 +34,17 @@ export function checkMaxDecimalPlaces (denomMultiplier: string) {
     throw new Error(`denomMultiplier ${denomMultiplier} exceeds maximum decimal precision: ${MAX_DECIMAL_PLACES}`)
   }
 }
+
+export function sortObjectByKeys<T> (obj: T): T {
+  if (Array.isArray(obj)) {
+    return obj.map(sortObjectByKeys) as T
+  } else if (obj !== null && typeof obj === 'object') {
+    return Object.keys(obj)
+      .sort()
+      .reduce((acc, key) => {
+        ;(acc as any)[key] = sortObjectByKeys((obj as any)[key])
+        return acc
+      }, {} as T)
+  }
+  return obj
+}

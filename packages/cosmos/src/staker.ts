@@ -309,9 +309,10 @@ export class CosmosStaker {
     const acc = await getAccount(cosmosClient, this.networkConfig.lcdUrl, signerAddress)
     const signDoc = await genSignableTx(this.networkConfig, chainID, tx, acc.accountNumber, acc.sequence, memo ?? '')
 
-    const { sig, pk } = await genSignDocSignature(signer, acc, signDoc)
+    const isEVM = this.networkConfig.isEVM ?? false
+    const { sig, pk } = await genSignDocSignature(signer, acc, signDoc, isEVM)
 
-    const pkType = this.networkConfig.isEVM ? acc.pubkey?.type ?? undefined : undefined
+    const pkType = isEVM ? acc.pubkey?.type ?? undefined : undefined
     const signedTx = genSignedTx(signDoc, sig, pk, pkType)
 
     // IMPORTANT: verify that signer address matches derived address from signature
