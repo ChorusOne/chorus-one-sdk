@@ -24,7 +24,7 @@ export async function buildWithdrawTx (request: {
       return positionTickets.includes(item.positionTicket.toString())
     })
     .map((item) => {
-      const timestamp = Math.floor(item.when.getTime() / 1000)
+      const timestamp = item.timestamp / 1000
       if (item.exitQueueIndex === undefined) {
         throw new Error('Exit queue index is missing')
       }

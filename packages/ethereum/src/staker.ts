@@ -346,10 +346,11 @@ export class EthereumStaker {
 
     return queue.map((item) => ({
       positionTicket: item.positionTicket.toString(),
-      timestamp: item.when.getTime(),
+      exitQueueIndex: item.exitQueueIndex?.toString(),
+      timestamp: item.timestamp,
       isWithdrawable: item.isWithdrawable,
       totalAmount: formatEther(item.totalAssets),
-      withdrawableAmount: formatEther(item.withdrawableAssets)
+      withdrawableAmount: formatEther(item.totalAssets - item.exitedAssets)
     }))
   }
 
