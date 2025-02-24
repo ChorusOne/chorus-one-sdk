@@ -21,7 +21,7 @@ import TransportNodeHid from '@ledgerhq/hw-transport-node-hid'
 const signer = new LedgerTonSigner({
   transport: await TransportNodeHid.create(),
   accounts: [{ hdPath: 'your-hd-path' }],
-  bounceable: false
+  bounceable: true
 })
 
 await signer.init()
