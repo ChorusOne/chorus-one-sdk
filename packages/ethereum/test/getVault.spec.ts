@@ -13,7 +13,7 @@ describe('EthereumStaker.getVault', () => {
     staker = setup.staker
   })
 
-  it('returns correct details and stake for Chorus mainnet wallet by default', async () => {
+  it('returns correct details and stake for Chorus One vault by default', async () => {
     const { vault } = await staker.getVault({
       validatorAddress
     })
