@@ -22,7 +22,7 @@ describe('EthereumStaker.buildStakeTx', () => {
     staker = setup.staker
   })
 
-  it('should build a staking tx', async () => {
+  it('builds a staking tx', async () => {
     const balanceBefore = await publicClient.getBalance({
       address: delegatorAddress
     })
@@ -50,7 +50,7 @@ describe('EthereumStaker.buildStakeTx', () => {
     assert.equal(parseEther(stakeAfter), amountToStake)
   })
 
-  it('should build a staking tx with referrer', async () => {
+  it('builds a staking tx with referrer', async () => {
     await stake({
       delegatorAddress,
       validatorAddress,
