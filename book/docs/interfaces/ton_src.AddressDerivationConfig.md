@@ -7,6 +7,7 @@
 - [bounceable](ton_src.AddressDerivationConfig.md#bounceable)
 - [testOnly](ton_src.AddressDerivationConfig.md#testonly)
 - [urlSafe](ton_src.AddressDerivationConfig.md#urlsafe)
+- [isBIP39](ton_src.AddressDerivationConfig.md#isbip39)
 
 ## Properties
 
@@ -37,3 +38,9 @@ ___
 ### urlSafe
 
 • **urlSafe**: `boolean`
+
+___
+
+### isBIP39
+
+• **isBIP39**: `boolean`
