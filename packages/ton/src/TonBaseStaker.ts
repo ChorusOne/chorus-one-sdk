@@ -474,13 +474,18 @@ export class TonBaseStaker {
       const description = transaction.description as TransactionDescriptionGeneric
 
       if (description.aborted) {
-        return { status: 'failure', receipt: transaction }
+        return { status: 'failure', receipt: transaction, reason: 'aborted' }
       }
 
       if (description.computePhase.type === 'vm') {
         const compute = description.computePhase
+
+        if (description.actionPhase && description.actionPhase?.resultCode === 50 && compute.exitCode === 0) {
+          return { status: 'failure', receipt: transaction, reason: 'out_of_storage' }
+        }
+
         if (compute.exitCode !== 0 || compute.success === false) {
-          return { status: 'failure', receipt: transaction }
+          return { status: 'failure', receipt: transaction, reason: 'compute_phase' }
         }
       }
 
@@ -488,13 +493,13 @@ export class TonBaseStaker {
         const action = description.actionPhase
 
         if (action.success === false || action.valid === false) {
-          return { status: 'failure', receipt: transaction }
+          return { status: 'failure', receipt: transaction, reason: 'action_phase' }
         }
       }
 
       // the transaction bounced if this is present (so likely it bounced due to error in the contract)
       if (description.bouncePhase) {
-        return { status: 'failure', receipt: transaction }
+        return { status: 'failure', receipt: transaction, reason: 'bounce_phase' }
       }
     }
 

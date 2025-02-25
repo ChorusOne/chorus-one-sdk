@@ -141,4 +141,5 @@ export declare interface SignedTx {
 export interface TonTxStatus {
   status: 'success' | 'failure' | 'pending' | 'unknown'
   receipt: Transaction | null
+  reason?: 'out_of_storage' | 'aborted' | 'compute_phase' | 'action_phase' | 'bounce_phase'
 }
