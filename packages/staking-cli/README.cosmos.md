@@ -87,4 +87,5 @@ Please be sure to always check the messages included in your transaction, the am
 - Any amount specified in the fee is distributed among the validators, therefore it is important to ensure the amount is acceptable.
 
 ### Demo
+
 [![asciicast](https://asciinema.org/a/UVLxguriRY7qrbfmaMMsccnxJ.svg)](https://asciinema.org/a/UVLxguriRY7qrbfmaMMsccnxJ)

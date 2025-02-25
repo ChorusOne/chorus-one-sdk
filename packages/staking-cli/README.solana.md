@@ -43,4 +43,5 @@ chorus-one-staking solana keys get-staking-accounts -c ../../config.solana.json
 Please note, the CLI is interactive. It will prompt you before signing a transaction and broadcasting it, giving you time to review its contents.
 
 ### Demo
+
 [![asciicast](https://asciinema.org/a/A87sSIVlH22sL3WulcD0jdJIH.svg)](https://asciinema.org/a/A87sSIVlH22sL3WulcD0jdJIH)
