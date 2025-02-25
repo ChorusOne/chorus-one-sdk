@@ -379,7 +379,7 @@ export class EthereumStaker {
     })
 
     return {
-      balance: formatEther(mint.minted.mintedWithoutFee),
+      balance: formatEther(mint.minted.shares),
       maxMint: formatEther(maxMint)
     }
   }

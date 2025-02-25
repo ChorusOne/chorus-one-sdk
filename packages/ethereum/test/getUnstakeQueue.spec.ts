@@ -16,7 +16,7 @@ describe('EthereumStaker.getUnstakeQueue', () => {
     staker = setup.staker
   })
 
-  it('should return the unstake queue', async () => {
+  it('returns the unstake queue', async () => {
     const unstakeQueue = await staker.getUnstakeQueue({
       validatorAddress,
       delegatorAddress

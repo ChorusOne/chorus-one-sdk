@@ -32,7 +32,7 @@ describe('EthereumStaker.buildUnstakeTx', () => {
     })
   })
 
-  it('should build an unstaking tx', async () => {
+  it('builds an unstaking tx', async () => {
     const { maxUnstake: maxUnstake, balance: assetsAfterStaking } = await staker.getStake({
       delegatorAddress,
       validatorAddress

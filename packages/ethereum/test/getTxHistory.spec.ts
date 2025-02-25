@@ -15,7 +15,7 @@ describe('EthereumStaker.getTxHistory', () => {
     staker = setup.staker
   })
 
-  it('returns correct interaction history for given period of time for Chorus mainnet stakers', async () => {
+  it('returns correct transaction history for given period of time', async () => {
     const txHistory = await staker.getTxHistory({
       validatorAddress,
       delegatorAddress
