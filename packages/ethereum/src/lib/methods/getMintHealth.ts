@@ -7,7 +7,7 @@ export const getMintHealth = async (params: {
   connector: StakewiseConnector
   mintedShares: bigint
   stakedAssets: bigint
-}): Promise<'healthy' | 'moderate' | 'risky' | 'unhealthy'> => {
+}): Promise<'healthy' | 'risky'> => {
   const { connector, mintedShares, stakedAssets } = params
 
   const mintedAssets = await (connector.eth.readContract({
@@ -33,10 +33,7 @@ export const getMintHealth = async (params: {
   // a small gap to notify the user in advance of problems with the position
   if (healthFactor >= 1.02) {
     return 'healthy'
-  } else if (healthFactor >= 1.01) {
-    return 'moderate'
-  } else if (healthFactor >= 1.0) {
-    return 'risky'
   }
-  return 'unhealthy'
+
+  return 'risky'
 }

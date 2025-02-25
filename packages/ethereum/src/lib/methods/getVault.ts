@@ -41,10 +41,8 @@ async function extractVaultProperties (connector: StakewiseConnector, vault: Hex
                 displayName
                 description
                 whitelister
-                keysManager
                 tokenSymbol
                 feeRecipient
-                validatorsRoot
                 blocklistCount
                 whitelistCount
                 blocklistManager
