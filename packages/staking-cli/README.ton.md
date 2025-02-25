@@ -40,4 +40,5 @@ The nominator pool contract doesn't allow partial unstaking. It is only possible
 Please note, the CLI is interactive. It will prompt you before signing a transaction and broadcasting it, giving you time to review its contents.
 
 ### Demo
+
 [![asciicast](https://asciinema.org/a/EyCXCh6naN1MvMJH7TXjINPk7.svg)](https://asciinema.org/a/EyCXCh6naN1MvMJH7TXjINPk7)

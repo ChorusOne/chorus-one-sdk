@@ -31,4 +31,5 @@ chorus-one-staking near tx withdraw 1 -c ./config.near.json --broadcast
 Please note, the CLI is interactive. It will prompt you before signing a transaction and broadcasting it, giving you time to review its contents.
 
 ### Demo
+
 [![asciicast](https://asciinema.org/a/nHT85edPgKkx5CC4jtHSK5VaB.svg)](https://asciinema.org/a/nHT85edPgKkx5CC4jtHSK5VaB)

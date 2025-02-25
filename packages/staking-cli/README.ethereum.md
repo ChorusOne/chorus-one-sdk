@@ -43,4 +43,5 @@ chorus-one-staking ethereum tx burn 1 -c ./config.ethreum.json --broadcast
 Please note, the CLI is interactive. It will prompt you before signing a transaction and broadcasting it, giving you time to review its contents.
 
 ### Demo
+
 [![asciicast](https://asciinema.org/a/eMe1QeTwN2WvsQtDvHefkws72.svg)](https://asciinema.org/a/eMe1QeTwN2WvsQtDvHefkws72)

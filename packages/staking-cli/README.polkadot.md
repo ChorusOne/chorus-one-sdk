@@ -51,4 +51,5 @@ chorus-one-staking substrate tx withdraw -c ./config.polkadot.json --broadcast
 Please note, the CLI is interactive. It will prompt you before signing a transaction and broadcasting it, giving you time to review its contents.
 
 ### Demo
+
 [![asciicast](https://asciinema.org/a/nnfeDMDjiIwQjYSCRfDJHyeff.svg)](https://asciinema.org/a/nnfeDMDjiIwQjYSCRfDJHyeff)
