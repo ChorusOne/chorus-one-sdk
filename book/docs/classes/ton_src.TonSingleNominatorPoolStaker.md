@@ -98,12 +98,19 @@ ___
 
 ## getMnemonicToSeedFn
 
-▸ **getMnemonicToSeedFn**(): (`mnemonic`: `string`, `password?`: `string`) => `Promise`\<`Uint8Array`\>
+▸ **getMnemonicToSeedFn**(`params?`): (`mnemonic`: `string`, `password?`: `string`) => `Promise`\<`Uint8Array`\>
 
 This **static** method is used to convert BIP39 mnemonic to seed. In TON
 network the seed is used as a private key.
 
 It can be used for signer initialization, e.g. `FireblocksSigner` or `LocalSigner`.
+
+### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params?` | `Object` | - |
+| `params.addressDerivationConfig` | [`AddressDerivationConfig`](../interfaces/ton_src.AddressDerivationConfig.md) | TON address derivation configuration |
 
 ### Returns
 
@@ -132,12 +139,19 @@ ___
 
 ## getSeedToKeypairFn
 
-▸ **getSeedToKeypairFn**(): (`seed`: `Uint8Array`, `hdPath?`: `string`) => `Promise`\<\{ `publicKey`: `Uint8Array` ; `privateKey`: `Uint8Array`  }\>
+▸ **getSeedToKeypairFn**(`params?`): (`seed`: `Uint8Array`, `hdPath?`: `string`) => `Promise`\<\{ `publicKey`: `Uint8Array` ; `privateKey`: `Uint8Array`  }\>
 
 This **static** method is used to convert a seed to a keypair. Note that
 TON network doesn't use BIP44 HD Path for address derivation.
 
 It can be used for signer initialization, e.g. `FireblocksSigner` or `LocalSigner`.
+
+### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params?` | `Object` | - |
+| `params.addressDerivationConfig` | [`AddressDerivationConfig`](../interfaces/ton_src.AddressDerivationConfig.md) | TON address derivation configuration |
 
 ### Returns
 

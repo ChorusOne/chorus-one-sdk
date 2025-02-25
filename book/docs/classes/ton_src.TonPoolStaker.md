@@ -19,6 +19,9 @@
 - [buildUnstakeTx](ton_src.TonPoolStaker.md#buildunstaketx)
 - [getStake](ton_src.TonPoolStaker.md#getstake)
 - [getPoolParams](ton_src.TonPoolStaker.md#getpoolparams)
+- [getMinStake](ton_src.TonPoolStaker.md#getminstake)
+- [getPoolStatus](ton_src.TonPoolStaker.md#getpoolstatus)
+- [getPastElections](ton_src.TonPoolStaker.md#getpastelections)
 - [init](ton_src.TonPoolStaker.md#init)
 - [buildDeployWalletTx](ton_src.TonPoolStaker.md#builddeploywallettx)
 - [sign](ton_src.TonPoolStaker.md#sign)
@@ -98,12 +101,19 @@ ___
 
 ## getMnemonicToSeedFn
 
-▸ **getMnemonicToSeedFn**(): (`mnemonic`: `string`, `password?`: `string`) => `Promise`\<`Uint8Array`\>
+▸ **getMnemonicToSeedFn**(`params?`): (`mnemonic`: `string`, `password?`: `string`) => `Promise`\<`Uint8Array`\>
 
 This **static** method is used to convert BIP39 mnemonic to seed. In TON
 network the seed is used as a private key.
 
 It can be used for signer initialization, e.g. `FireblocksSigner` or `LocalSigner`.
+
+### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params?` | `Object` | - |
+| `params.addressDerivationConfig` | [`AddressDerivationConfig`](../interfaces/ton_src.AddressDerivationConfig.md) | TON address derivation configuration |
 
 ### Returns
 
@@ -132,12 +142,19 @@ ___
 
 ## getSeedToKeypairFn
 
-▸ **getSeedToKeypairFn**(): (`seed`: `Uint8Array`, `hdPath?`: `string`) => `Promise`\<\{ `publicKey`: `Uint8Array` ; `privateKey`: `Uint8Array`  }\>
+▸ **getSeedToKeypairFn**(`params?`): (`seed`: `Uint8Array`, `hdPath?`: `string`) => `Promise`\<\{ `publicKey`: `Uint8Array` ; `privateKey`: `Uint8Array`  }\>
 
 This **static** method is used to convert a seed to a keypair. Note that
 TON network doesn't use BIP44 HD Path for address derivation.
 
 It can be used for signer initialization, e.g. `FireblocksSigner` or `LocalSigner`.
+
+### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params?` | `Object` | - |
+| `params.addressDerivationConfig` | [`AddressDerivationConfig`](../interfaces/ton_src.AddressDerivationConfig.md) | TON address derivation configuration |
 
 ### Returns
 
@@ -200,8 +217,10 @@ Builds an unstaking transaction for TON Pool contract.
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `params` | `Object` | Parameters for building the transaction |
-| `params.validatorAddress` | `string` | The validator address to unstake from |
+| `params.delegatorAddress` | `string` | - |
+| `params.validatorAddressPair` | [`string`, `string`] | The validator address pair to unstake from |
 | `params.amount` | `string` | The amount to stake, specified in `TON` |
+| `params.disableStatefulCalculation?` | `boolean` | (Optional) Disables stateful calculation where validator and user stake is taken into account |
 | `params.validUntil?` | `number` | (Optional) The Unix timestamp when the transaction expires |
 
 ### Returns
@@ -252,6 +271,48 @@ Retrieves the staking information for a specified pool, including minStake and f
 `Promise`\<\{ `minStake`: `string` ; `depositFee`: `string` ; `withdrawFee`: `string` ; `poolFee`: `string` ; `receiptPrice`: `string`  }\>
 
 Returns a promise that resolves to the staking information for the specified pool.
+
+___
+
+## getMinStake
+
+▸ **getMinStake**(): `Promise`\<`bigint`\>
+
+### Returns
+
+`Promise`\<`bigint`\>
+
+___
+
+## getPoolStatus
+
+▸ **getPoolStatus**(`validatorAddress`): `Promise`\<`PoolStatus`\>
+
+### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `validatorAddress` | `string` |
+
+### Returns
+
+`Promise`\<`PoolStatus`\>
+
+___
+
+## getPastElections
+
+▸ **getPastElections**(`electorContractAddress`): `Promise`\<`Election`[]\>
+
+### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `electorContractAddress` | `string` |
+
+### Returns
+
+`Promise`\<`Election`[]\>
 
 ___
 

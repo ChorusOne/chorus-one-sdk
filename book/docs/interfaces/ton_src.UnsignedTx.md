@@ -2,24 +2,14 @@
 
 ### Properties
 
-- [message](ton_src.UnsignedTx.md#message)
+- [messages](ton_src.UnsignedTx.md#messages)
 - [validUntil](ton_src.UnsignedTx.md#validuntil)
 
 ## Properties
 
-### message
+### messages
 
-• `Optional` **message**: `Object`
-
-#### Type declaration
-
-| Name | Type |
-| :------ | :------ |
-| `address` | `string` |
-| `amount` | `bigint` |
-| `bounceable` | `boolean` |
-| `stateInit?` | `StateInit` |
-| `payload?` | `string` \| `Cell` |
+• `Optional` **messages**: `Message`[]
 
 ___
 
