@@ -1,6 +1,6 @@
 {
   "name": "@chorus-one/ton",
-  "version": "2.0.2",
+  "version": "2.1.0",
   "description": "All-in-one tooling for building staking dApps on TON",
   "scripts": {
     "build": "rm -fr dist/* && tsc -p tsconfig.mjs.json --outDir dist/mjs && tsc -p tsconfig.cjs.json --outDir dist/cjs && bash ../../scripts/fix-package-json"
@@ -33,7 +33,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@chorus-one/signer": "^1.0.0",
-    "@chorus-one/utils": "^1.0.0",
+    "@chorus-one/utils": "^1.0.1",
     "@ton/crypto": "^3.3.0",
     "@ton/ton": "^15.1.0",
     "axios": "^1.7.2"
