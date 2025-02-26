@@ -19,7 +19,8 @@ import {
   Address,
   TransactionDescriptionGeneric,
   beginCell,
-  storeMessage
+  storeMessage,
+  Transaction
 } from '@ton/ton'
 import { mnemonicToSeed, deriveEd25519Path, keyPairFromSeed } from '@ton/crypto'
 import { pbkdf2_sha512 } from '@ton/crypto-primitives'
@@ -452,20 +453,12 @@ export class TonBaseStaker {
    * @returns A promise that resolves to an object containing the transaction status.
    */
   async getTxStatus (params: { address: string; txHash: string; limit?: number }): Promise<TonTxStatus> {
-    const client = this.getClient()
-    const { address, txHash, limit } = params
+    const transaction = await this.getTransactionByHash(params)
+    return this.matchTransactionStatus(transaction)
+  }
 
-    const transactions = await client.getTransactions(Address.parse(address), { limit: limit ?? 10 })
-    const transaction = transactions.find((tx) => {
-      // Check tx hash
-      if (tx.hash().toString('hex') === txHash) return true
-
-      // Check inMessage tx hash(that is the one we get from broadcast method)
-      if (tx.inMessage && beginCell().store(storeMessage(tx.inMessage)).endCell().hash().toString('hex') === txHash)
-        return true
-
-      return false
-    })
+  /** @ignore */
+  protected matchTransactionStatus (transaction: Transaction | undefined): TonTxStatus {
     if (transaction === undefined) {
       return { status: 'unknown', receipt: null }
     }
@@ -505,6 +498,26 @@ export class TonBaseStaker {
 
     // at this point we can assume the transaction was successful
     return { status: 'success', receipt: transaction }
+  }
+
+  /** @ignore */
+  protected async getTransactionByHash (params: { address: string; txHash: string; limit?: number }): Promise<Transaction | undefined> {
+    const client = this.getClient()
+    const { address, txHash, limit } = params
+
+    const transactions = await client.getTransactions(Address.parse(address), { limit: limit ?? 10 })
+    const transaction = transactions.find((tx) => {
+      // Check tx hash
+      if (tx.hash().toString('hex') === txHash) return true
+
+      // Check inMessage tx hash(that is the one we get from broadcast method)
+      if (tx.inMessage && beginCell().store(storeMessage(tx.inMessage)).endCell().hash().toString('hex') === txHash)
+        return true
+
+      return false
+    })
+
+    return transaction
   }
 
   /** @ignore */

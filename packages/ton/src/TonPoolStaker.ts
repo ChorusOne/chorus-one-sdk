@@ -1,6 +1,6 @@
-import { Address, beginCell, fromNano, toNano, Slice, Builder, DictionaryValue, Dictionary, Cell } from '@ton/ton'
+import { Address, beginCell, fromNano, toNano, Slice, Builder, DictionaryValue, Dictionary, Cell, TransactionDescriptionGeneric } from '@ton/ton'
 import { defaultValidUntil, getDefaultGas, getRandomQueryId, TonBaseStaker } from './TonBaseStaker'
-import { UnsignedTx, Election, FrozenSet, PoolStatus, GetPoolAddressForStakeResponse, Message } from './types'
+import { UnsignedTx, Election, FrozenSet, PoolStatus, GetPoolAddressForStakeResponse, Message, TonTxStatus } from './types'
 
 export class TonPoolStaker extends TonBaseStaker {
   /**
@@ -235,6 +235,40 @@ export class TonPoolStaker extends TonBaseStaker {
       poolFee: fromNano(result.poolFee),
       receiptPrice: fromNano(result.receiptPrice)
     }
+  }
+
+  /**
+   * Retrieves the status of a transaction using the transaction hash.
+   *
+   * This method is intended to check for transactions made recently (within limit) and not for historical transactions.
+   *
+   * @param params - Parameters for the transaction status request
+   * @param params.address - The account address to query
+   * @param params.txHash - The transaction hash to query
+   * @param params.limit - (Optional) The maximum number of transactions to fetch
+   *
+   * @returns A promise that resolves to an object containing the transaction status.
+   */
+  async getTxStatus (params: { address: string; txHash: string; limit?: number }): Promise<TonTxStatus> {
+    const transaction = await this.getTransactionByHash(params)
+
+    if (transaction === undefined) {
+      return { status: 'unknown', receipt: null }
+    }
+
+    if (transaction.description.type === 'generic') {
+      const description = transaction.description as TransactionDescriptionGeneric
+
+      if (description.computePhase.type === 'vm') {
+        const compute = description.computePhase
+
+        if (compute.exitCode === 501) {
+          return { status: 'failure', receipt: transaction, reason: 'withdraw_below_minimum_stake' }
+        }
+      }
+    }
+
+    return this.matchTransactionStatus(transaction)
   }
 
   private async getPoolParamsUnformatted (params: { validatorAddress: string }) {
