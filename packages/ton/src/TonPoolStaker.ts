@@ -1,6 +1,25 @@
-import { Address, beginCell, fromNano, toNano, Slice, Builder, DictionaryValue, Dictionary, Cell, TransactionDescriptionGeneric } from '@ton/ton'
+import {
+  Address,
+  beginCell,
+  fromNano,
+  toNano,
+  Slice,
+  Builder,
+  DictionaryValue,
+  Dictionary,
+  Cell,
+  TransactionDescriptionGeneric
+} from '@ton/ton'
 import { defaultValidUntil, getDefaultGas, getRandomQueryId, TonBaseStaker } from './TonBaseStaker'
-import { UnsignedTx, Election, FrozenSet, PoolStatus, GetPoolAddressForStakeResponse, Message, TonTxStatus } from './types'
+import {
+  UnsignedTx,
+  Election,
+  FrozenSet,
+  PoolStatus,
+  GetPoolAddressForStakeResponse,
+  Message,
+  TonTxStatus
+} from './types'
 
 export class TonPoolStaker extends TonBaseStaker {
   /**
