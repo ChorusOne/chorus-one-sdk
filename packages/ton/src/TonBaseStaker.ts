@@ -501,7 +501,11 @@ export class TonBaseStaker {
   }
 
   /** @ignore */
-  protected async getTransactionByHash (params: { address: string; txHash: string; limit?: number }): Promise<Transaction | undefined> {
+  protected async getTransactionByHash (params: {
+    address: string
+    txHash: string
+    limit?: number
+  }): Promise<Transaction | undefined> {
     const client = this.getClient()
     const { address, txHash, limit } = params
 
