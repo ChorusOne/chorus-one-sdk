@@ -19,6 +19,7 @@
 - [buildUnstakeTx](ton_src.TonPoolStaker.md#buildunstaketx)
 - [getStake](ton_src.TonPoolStaker.md#getstake)
 - [getPoolParams](ton_src.TonPoolStaker.md#getpoolparams)
+- [getTxStatus](ton_src.TonPoolStaker.md#gettxstatus)
 - [getMinStake](ton_src.TonPoolStaker.md#getminstake)
 - [getPoolStatus](ton_src.TonPoolStaker.md#getpoolstatus)
 - [getPastElections](ton_src.TonPoolStaker.md#getpastelections)
@@ -26,7 +27,6 @@
 - [buildDeployWalletTx](ton_src.TonPoolStaker.md#builddeploywallettx)
 - [sign](ton_src.TonPoolStaker.md#sign)
 - [broadcast](ton_src.TonPoolStaker.md#broadcast)
-- [getTxStatus](ton_src.TonPoolStaker.md#gettxstatus)
 
 # Constructors
 
@@ -274,6 +274,35 @@ Returns a promise that resolves to the staking information for the specified poo
 
 ___
 
+## getTxStatus
+
+▸ **getTxStatus**(`params`): `Promise`\<`TonTxStatus`\>
+
+Retrieves the status of a transaction using the transaction hash.
+
+This method is intended to check for transactions made recently (within limit) and not for historical transactions.
+
+### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | Parameters for the transaction status request |
+| `params.address` | `string` | The account address to query |
+| `params.txHash` | `string` | The transaction hash to query |
+| `params.limit?` | `number` | (Optional) The maximum number of transactions to fetch |
+
+### Returns
+
+`Promise`\<`TonTxStatus`\>
+
+A promise that resolves to an object containing the transaction status.
+
+### Overrides
+
+TonBaseStaker.getTxStatus
+
+___
+
 ## getMinStake
 
 ▸ **getMinStake**(): `Promise`\<`bigint`\>
@@ -409,32 +438,3 @@ Returns a promise that resolves to the response of the transaction that was broa
 ### Inherited from
 
 TonBaseStaker.broadcast
-
-___
-
-## getTxStatus
-
-▸ **getTxStatus**(`params`): `Promise`\<`TonTxStatus`\>
-
-Retrieves the status of a transaction using the transaction hash.
-
-This method is intended to check for transactions made recently (within limit) and not for historical transactions.
-
-### Parameters
-
-| Name | Type | Description |
-| :------ | :------ | :------ |
-| `params` | `Object` | Parameters for the transaction status request |
-| `params.address` | `string` | The account address to query |
-| `params.txHash` | `string` | The transaction hash to query |
-| `params.limit?` | `number` | (Optional) The maximum number of transactions to fetch |
-
-### Returns
-
-`Promise`\<`TonTxStatus`\>
-
-A promise that resolves to an object containing the transaction status.
-
-### Inherited from
-
-TonBaseStaker.getTxStatus
