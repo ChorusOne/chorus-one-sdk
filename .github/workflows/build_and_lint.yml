@@ -1,7 +1,11 @@
 ---
 
 name: Build and lint
-on: push
+on: 
+  push: {}
+  schedule:
+    # Runs at 00:00 on Monday and Thursday
+    - cron: '0 0 * * 1,4'
 jobs:
   build_and_lint:
     runs-on: ubuntu-latest
@@ -15,3 +19,5 @@ jobs:
         run: npm run build
       - name: Run tests
         run: npm run test
+      - name: Run ethereum tests
+        run: npm run test:ethereum
