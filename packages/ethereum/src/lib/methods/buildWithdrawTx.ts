@@ -17,6 +17,25 @@ export async function buildWithdrawTx (request: {
     vault
   })
 
+  if (positionTickets && positionTickets.length === 1) {
+    const item = queueItems.find((item) => item.positionTicket.toString() === positionTickets[0])
+
+    if (!item || !item.isWithdrawable || item.exitQueueIndex === undefined) {
+      throw new Error(`Position #${positionTickets[0]} is not withdrawable`)
+    }
+
+    const tx = encodeFunctionData({
+      abi: VaultABI,
+      functionName: 'claimExitedAssets',
+      args: [item.positionTicket, BigInt(item.timestamp / 1000), item.exitQueueIndex]
+    })
+
+    return {
+      to: vault,
+      data: tx
+    }
+  }
+
   const multicallArgs = queueItems
     .filter((item) => {
       if (!positionTickets) return item.isWithdrawable
@@ -38,6 +57,10 @@ export async function buildWithdrawTx (request: {
         args: [item.positionTicket, BigInt(timestamp), item.exitQueueIndex]
       })
     })
+
+  if (!multicallArgs.length) {
+    throw new Error('No withdrawable positions found')
+  }
 
   const tx = encodeFunctionData({
     abi: VaultABI,
