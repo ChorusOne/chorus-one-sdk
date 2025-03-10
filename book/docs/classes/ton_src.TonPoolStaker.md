@@ -25,6 +25,8 @@
 - [getPastElections](ton_src.TonPoolStaker.md#getpastelections)
 - [init](ton_src.TonPoolStaker.md#init)
 - [buildDeployWalletTx](ton_src.TonPoolStaker.md#builddeploywallettx)
+- [prepareSigningData](ton_src.TonPoolStaker.md#preparesigningdata)
+- [prepareSignedTx](ton_src.TonPoolStaker.md#preparesignedtx)
 - [sign](ton_src.TonPoolStaker.md#sign)
 - [broadcast](ton_src.TonPoolStaker.md#broadcast)
 
@@ -386,6 +388,60 @@ Returns a promise that resolves to a TON wallet deployment transaction.
 ### Inherited from
 
 TonBaseStaker.buildDeployWalletTx
+
+___
+
+## prepareSigningData
+
+▸ **prepareSigningData**(`params`): `Promise`\<`TonSigningData`\>
+
+Prepares data required for signing a transaction
+
+### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | Parameters for the signing data preparation |
+| `params.signerAddress` | `string` | The address of the signer |
+| `params.signerPublicKey` | `Uint8Array` | The public key of the signer |
+| `params.tx` | [`UnsignedTx`](../interfaces/ton_src.UnsignedTx.md) | The unsigned transaction to sign |
+
+### Returns
+
+`Promise`\<`TonSigningData`\>
+
+Returns a promise that resolves to the signing data
+
+### Inherited from
+
+TonBaseStaker.prepareSigningData
+
+___
+
+## prepareSignedTx
+
+▸ **prepareSignedTx**(`params`): `Promise`\<[`SignedTx`](../interfaces/ton_src.SignedTx.md)\>
+
+Prepares a signed transaction object
+
+### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | Parameters for the signed transaction preparation |
+| `params.signerAddress` | `string` | The address of the signer |
+| `params.signedTxCell` | `Cell` | The signed transaction cell |
+| `params.stateInit?` | `StateInit` | (Optional) The state init for the transaction |
+
+### Returns
+
+`Promise`\<[`SignedTx`](../interfaces/ton_src.SignedTx.md)\>
+
+A promise that resolves to a signed transaction object
+
+### Inherited from
+
+TonBaseStaker.prepareSignedTx
 
 ___
 

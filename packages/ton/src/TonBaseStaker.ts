@@ -10,10 +10,12 @@ import type {
   PoolData
 } from './types'
 import {
+  Cell,
   toNano,
   fromNano,
   WalletContractV4,
   internal,
+  StateInit,
   MessageRelaxed,
   SendMode,
   Address,
@@ -292,40 +294,28 @@ export class TonBaseStaker {
     return { tx }
   }
 
-  /** @ignore */
-  async getBalance (params: { address: string }): Promise<{ amount: string }> {
-    const client = this.getClient()
-    const { address } = params
-
-    // ensure the address is for the right network
-    this.checkIfAddressTestnetFlagMatches(address)
-
-    const amount = await client.getBalance(Address.parse(address))
-    return { amount: fromNano(amount) }
-  }
-
   /**
-   * Signs a transaction using the provided signer.
+   * Prepares data required for signing a transaction
    *
-   * @param params - Parameters for the signing process
-   * @param params.signer - Signer instance
+   * @param params - Parameters for the signing data preparation
    * @param params.signerAddress - The address of the signer
-   * @param params.tx - The transaction to sign
+   * @param params.signerPublicKey - The public key of the signer
+   * @param params.tx - The unsigned transaction to sign
    *
-   * @returns A promise that resolves to an object containing the signed transaction.
+   * @returns Returns a promise that resolves to the signing data
    */
-  async sign (params: { signer: Signer; signerAddress: string; tx: UnsignedTx }): Promise<SignedTx> {
+  async prepareSigningData (params: {
+    signerAddress: string
+    signerPublicKey: Uint8Array
+    tx: UnsignedTx
+  }): Promise<TonSigningData> {
     const client = this.getClient()
-    const { signer, signerAddress, tx } = params
+    const { signerAddress, signerPublicKey, tx } = params
 
-    // ensure the address is for the right network
-    this.checkIfAddressTestnetFlagMatches(signerAddress)
-
-    const pk = await signer.getPublicKey(signerAddress)
     const wallet = getWalletContract(
       this.addressDerivationConfig.walletContractVersion,
       this.addressDerivationConfig.workchain,
-      Buffer.from(pk)
+      Buffer.from(signerPublicKey)
     )
 
     let internalMsgs: MessageRelaxed[] = []
@@ -370,6 +360,21 @@ export class TonBaseStaker {
     if (this.addressDerivationConfig.walletContractVersion !== 4) {
       throw new Error('unsupported wallet contract version')
     }
+
+    // decide whether to deploy wallet contract along with the transaction
+    const isContractDeployed = await client.isContractDeployed(Address.parse(signerAddress))
+    let shouldDeployWallet = false
+    if (!isContractDeployed) {
+      // if contract is missing and there is no messages, it must be the init transaction
+      if (internalMsgs.length === 0) {
+        shouldDeployWallet = true
+      } else if (this.networkConfig.allowSeamlessWalletDeployment) {
+        shouldDeployWallet = true
+      } else {
+        throw new Error('wallet contract is not deployed and seamless wallet deployment is disabled')
+      }
+    }
+
     const txArgs = {
       seqno,
       // As explained here: https://docs.ton.org/develop/smart-contracts/messages#message-modes
@@ -386,7 +391,8 @@ export class TonBaseStaker {
       sendMode: SendMode.PAY_GAS_SEPARATELY + SendMode.IGNORE_ERRORS,
       walletId: wallet.walletId,
       messages: internalMsgs,
-      timeout: tx.validUntil
+      timeout: tx.validUntil,
+      stateInit: shouldDeployWallet ? wallet.init : undefined
     }
 
     const preparedTx = createWalletTransferV4(txArgs)
@@ -396,29 +402,65 @@ export class TonBaseStaker {
       txCell: preparedTx
     }
 
-    // sign transaction via signer
-    const signedTx = await sign(signerAddress, signer, signingData)
+    return signingData
+  }
 
-    // decide whether to deploy wallet contract along with the transaction
-    const isContractDeployed = await client.isContractDeployed(Address.parse(signerAddress))
-    let shouldDeployWallet = false
-    if (!isContractDeployed) {
-      // if contract is missing and there is no messages, it must be the init transaction
-      if (internalMsgs.length === 0) {
-        shouldDeployWallet = true
-      } else if (this.networkConfig.allowSeamlessWalletDeployment) {
-        shouldDeployWallet = true
-      } else {
-        throw new Error('wallet contract is not deployed and seamless wallet deployment is disabled')
-      }
-    }
+  /**
+   * Prepares a signed transaction object
+   *
+   * @param params - Parameters for the signed transaction preparation
+   * @param params.signerAddress - The address of the signer
+   * @param params.signedTxCell - The signed transaction cell
+   * @param params.stateInit - (Optional) The state init for the transaction
+   *
+   * @returns A promise that resolves to a signed transaction object
+   */
+  async prepareSignedTx (params: {
+    signerAddress: string
+    signedTxCell: Cell
+    stateInit?: StateInit
+  }): Promise<SignedTx> {
+    const { signerAddress, signedTxCell, stateInit } = params
 
     return {
-      tx: signedTx,
+      tx: signedTxCell,
       address: signerAddress,
-      txHash: signedTx.hash().toString('hex'),
-      stateInit: shouldDeployWallet ? wallet.init : undefined
+      txHash: signedTxCell.hash().toString('hex'),
+      stateInit
     }
+  }
+
+  /**
+   * Signs a transaction using the provided signer.
+   *
+   * @param params - Parameters for the signing process
+   * @param params.signer - Signer instance
+   * @param params.signerAddress - The address of the signer
+   * @param params.tx - The transaction to sign
+   *
+   * @returns A promise that resolves to an object containing the signed transaction.
+   */
+  async sign (params: { signer: Signer; signerAddress: string; tx: UnsignedTx }): Promise<SignedTx> {
+    const { signer, signerAddress, tx } = params
+
+    // ensure the address is for the right network
+    this.checkIfAddressTestnetFlagMatches(signerAddress)
+
+    const signerPublicKey = await signer.getPublicKey(signerAddress)
+    const signingData = await this.prepareSigningData({
+      signerAddress,
+      signerPublicKey,
+      tx
+    })
+
+    // sign transaction via signer
+    const signedTxCell = await sign(signerAddress, signer, signingData)
+
+    return await this.prepareSignedTx({
+      signerAddress,
+      signedTxCell,
+      stateInit: signingData.txArgs.stateInit
+    })
   }
 
   /**
@@ -455,6 +497,18 @@ export class TonBaseStaker {
   async getTxStatus (params: { address: string; txHash: string; limit?: number }): Promise<TonTxStatus> {
     const transaction = await this.getTransactionByHash(params)
     return this.matchTransactionStatus(transaction)
+  }
+
+  /** @ignore */
+  async getBalance (params: { address: string }): Promise<{ amount: string }> {
+    const client = this.getClient()
+    const { address } = params
+
+    // ensure the address is for the right network
+    this.checkIfAddressTestnetFlagMatches(address)
+
+    const amount = await client.getBalance(Address.parse(address))
+    return { amount: fromNano(amount) }
   }
 
   /** @ignore */
