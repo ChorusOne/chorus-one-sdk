@@ -3,11 +3,11 @@
   "networks": {
     "hardhat": {
       "forking": {
-        "url": "https://ethereum-holesky-rpc.publicnode.com"
+        "url": "https://eth.merkle.io"
       },
       "accounts": [
         {
-          "privateKey": "0xab82f0095a3087580d1c8fcdf8937fa54d4e99287f63cc82c82512860d7c9687",
+          "privateKey": "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a",
           "balance": "10000000000000000000000"
         }
       ]

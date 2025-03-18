@@ -32,15 +32,15 @@ export const prepareTests = async () => {
   })
 
   const staker = new EthereumStaker({
-    network: 'holesky',
+    network: 'ethereum',
     rpcUrl: hardhat.rpcUrls.default.http[0]
   })
   await staker.init()
 
-  const osEthTokenAddress = '0xF603c5A3F774F05d4D848A9bB139809790890864' as const
+  const osEthTokenAddress = '0xf1C9acDc66974dFB6dEcB12aA385b9cD01190E38' as const
 
   return {
-    validatorAddress: CHORUS_ONE_ETHEREUM_VALIDATORS.holesky.mevMaxVault,
+    validatorAddress: CHORUS_ONE_ETHEREUM_VALIDATORS.ethereum.mevMaxVault,
     walletClient,
     publicClient,
     staker,

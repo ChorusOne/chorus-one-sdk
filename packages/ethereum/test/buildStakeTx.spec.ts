@@ -47,7 +47,7 @@ describe('EthereumStaker.buildStakeTx', () => {
 
     // Take into account gas fees
     assert.closeTo(Number(balanceAfter), Number(balanceBefore - amountToStake), Number(parseEther('0.001')))
-    assert.equal(parseEther(stakeAfter), amountToStake)
+    assert.closeTo(Number(parseEther(stakeAfter) - amountToStake), 0, 1)
   })
 
   it('builds a staking tx with referrer', async () => {

@@ -18,9 +18,12 @@ describe('EthereumStaker.getVault', () => {
       validatorAddress
     })
 
-    assert.equal(vault.name, 'Chorus One Test Wallet')
+    assert.equal(vault.name, 'Chorus One - MEV Max')
     assert.isTrue(Number(vault.tvl) > 1000 * 10 ** 18)
-    assert.isTrue(vault.description === 'Test wallet for Chorus')
+    assert.isTrue(
+      vault.description ===
+        'Chorus One’s ground-breaking MEV research ensures the highest yields with top-tier security and enterprise-level infrastructure. Start staking ETH today.'
+    )
     assert.isTrue(/^https?:\/\/.*.png$/.test(vault.logoUrl))
   })
 })

@@ -37,7 +37,7 @@ describe('EthereumStaker.getStake', () => {
     })
 
     // Take into account gas fees
-    assert.equal(parseEther(stakeAfter), amountToStake)
-    assert.equal(parseEther(maxUnstake), amountToStake)
+    assert.closeTo(Number(parseEther(stakeAfter) - amountToStake), 0, 1)
+    assert.closeTo(Number(parseEther(maxUnstake) - amountToStake), 0, 1)
   })
 })

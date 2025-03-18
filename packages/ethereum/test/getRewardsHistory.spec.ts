@@ -11,9 +11,9 @@ describe('EthereumStaker.getRewards', () => {
   beforeEach(async () => {
     const setup = await prepareTests()
     // Use Stakewise Pool for testing, it has more interesting data on rewards
-    validatorAddress = '0x472D1A6342E007A5F5E6C674c9D514ae5A3a2fC4'
+    validatorAddress = '0xac0f906e433d58fa868f936e8a43230473652885'
     // Use one of the first delegators to the Stakewise Pool
-    delegatorAddress = '0xd676090f860227009156D5A9E541bb9f72B1e356'
+    delegatorAddress = '0x387a4700117D6fe815d71146db984880EC423884'
     staker = setup.staker
   })
 
@@ -28,183 +28,195 @@ describe('EthereumStaker.getRewards', () => {
     assert.deepEqual(rewards, [
       {
         timestamp: 1735689600000,
-        amount: '3.208018739074895893',
-        totalRewards: '3.208018739074895893',
-        dailyRewards: '-0.000177297500710675'
+        amount: '0.000000000000000001',
+        totalRewards: '0.000000000000000001',
+        dailyRewards: '0'
       },
       {
         timestamp: 1735776000000,
-        amount: '3.207897231782333641',
-        totalRewards: '3.207897231782333641',
-        dailyRewards: '-0.000123973176610331'
+        amount: '0.000000000000000001',
+        totalRewards: '0.000000000000000001',
+        dailyRewards: '0'
       },
       {
         timestamp: 1735862400000,
-        amount: '3.207776262132658833',
-        totalRewards: '3.207776262132658833',
-        dailyRewards: '-0.000123424622731523'
+        amount: '0.000000000000000001',
+        totalRewards: '0.000000000000000001',
+        dailyRewards: '0'
       },
       {
         timestamp: 1735948800000,
-        amount: '3.207654217197209138',
-        totalRewards: '3.207654217197209138',
-        dailyRewards: '-0.000124521730489137'
+        amount: '0.000000000000000001',
+        totalRewards: '0.000000000000000001',
+        dailyRewards: '0'
       },
       {
         timestamp: 1736035200000,
-        amount: '3.207532709904646886',
-        totalRewards: '3.207532709904646886',
-        dailyRewards: '-0.00012397317661033'
+        amount: '0.000000000000000001',
+        totalRewards: '0.000000000000000001',
+        dailyRewards: '0'
       },
       {
         timestamp: 1736121600000,
-        amount: '3.207411202612084635',
-        totalRewards: '3.207411202612084635',
-        dailyRewards: '-0.00012397317661033'
+        amount: '0.000000000000000001',
+        totalRewards: '0.000000000000000001',
+        dailyRewards: '0'
       },
       {
         timestamp: 1736208000000,
-        amount: '3.207290246410884504',
-        totalRewards: '3.207290246410884504',
-        dailyRewards: '-0.000123410901331835'
+        amount: '0.000000000000000001',
+        totalRewards: '0.000000000000000001',
+        dailyRewards: '0'
       },
       {
         timestamp: 1736294400000,
-        amount: '3.207168219224293829',
-        totalRewards: '3.207168219224293829',
-        dailyRewards: '-0.000124503621432573'
+        amount: '4.500180294719893715',
+        totalRewards: '4.500180294719893715',
+        dailyRewards: '0.000180294719893714'
       },
       {
         timestamp: 1736380800000,
-        amount: '3.207046729602401792',
-        totalRewards: '3.207046729602401792',
-        dailyRewards: '-0.000123955147329345'
+        amount: '4.500343838739714004',
+        totalRewards: '4.500343838739714004',
+        dailyRewards: '0.000163544019820289'
       },
       {
         timestamp: 1736467200000,
-        amount: '3.206925777545208393',
-        totalRewards: '3.206925777545208393',
-        dailyRewards: '-0.000123406673226117'
+        amount: '4.500724597414951508',
+        totalRewards: '4.500724597414951508',
+        dailyRewards: '0.000380758675237504'
       },
       {
         timestamp: 1736553600000,
-        amount: '3.206803750358617719',
-        totalRewards: '3.206803750358617719',
-        dailyRewards: '-0.000124503621432572'
+        amount: '4.501051734402490899',
+        totalRewards: '4.501051734402490899',
+        dailyRewards: '0.000327136987539391'
       },
       {
         timestamp: 1736640000000,
-        amount: '3.206672638852300013',
-        totalRewards: '3.206672638852300013',
-        dailyRewards: '-0.000133772299469548'
+        amount: '4.501408897854618204',
+        totalRewards: '4.501408897854618204',
+        dailyRewards: '0.000357163452127305'
       },
       {
         timestamp: 1736726400000,
-        amount: '3.206460167701871754',
-        totalRewards: '3.206460167701871754',
-        dailyRewards: '-0.000216783066276844'
+        amount: '4.501755244384521194',
+        totalRewards: '4.501755244384521194',
+        dailyRewards: '0.00034634652990299'
       },
       {
         timestamp: 1736812800000,
-        amount: '3.206336314042347775',
-        totalRewards: '3.206336314042347775',
-        dailyRewards: '-0.000126367161033857'
+        amount: '4.502104714425675114',
+        totalRewards: '4.502104714425675114',
+        dailyRewards: '0.00034947004115392'
       },
       {
         timestamp: 1736899200000,
-        amount: '3.206214842091125952',
-        totalRewards: '3.206214842091125952',
-        dailyRewards: '-0.00012393711804836'
+        amount: '4.502478354511437552',
+        totalRewards: '4.502478354511437552',
+        dailyRewards: '0.000373640085762438'
       },
       {
         timestamp: 1736985600000,
-        amount: '3.20609337013990413',
-        totalRewards: '3.20609337013990413',
-        dailyRewards: '-0.00012393711804836'
+        amount: '4.502824687684210262',
+        totalRewards: '4.502824687684210262',
+        dailyRewards: '0.00034633317277271'
+      },
+      {
+        timestamp: 1737072000000,
+        amount: '4.503175621268643342',
+        totalRewards: '4.503175621268643342',
+        dailyRewards: '0.00035093358443308'
       },
       {
         timestamp: 1737158400000,
-        amount: '3.205850426237460485',
-        totalRewards: '3.205850426237460485',
-        dailyRewards: '-0.000247874236096721'
+        amount: '4.503541935799732674',
+        totalRewards: '4.503541935799732674',
+        dailyRewards: '0.000366314531089332'
       },
       {
         timestamp: 1737244800000,
-        amount: '3.205728954286238663',
-        totalRewards: '3.205728954286238663',
-        dailyRewards: '-0.000123937118048359'
+        amount: '4.503929381136803542',
+        totalRewards: '4.503929381136803542',
+        dailyRewards: '0.000387445337070868'
       },
       {
         timestamp: 1737331200000,
-        amount: '3.205607482335016841',
-        totalRewards: '3.205607482335016841',
-        dailyRewards: '-0.00012393711804836'
+        amount: '4.504583908315077103',
+        totalRewards: '4.504583908315077103',
+        dailyRewards: '0.000654527178273561'
+      },
+      {
+        timestamp: 1737417600000,
+        amount: '5.505398562004289498',
+        totalRewards: '5.505398562004289498',
+        dailyRewards: '0.000791296462689308'
       },
       {
         timestamp: 1737504000000,
-        amount: '3.205364538432573196',
-        totalRewards: '3.205364538432573196',
-        dailyRewards: '-0.00024787423609672'
+        amount: '5.508996433773194235',
+        totalRewards: '5.508996433773194235',
+        dailyRewards: '0.003621231618800895'
       },
       {
         timestamp: 1737590400000,
-        amount: '3.205243066481351374',
-        totalRewards: '3.205243066481351374',
-        dailyRewards: '-0.00012393711804836'
+        amount: '5.509649562709147252',
+        totalRewards: '5.509649562709147252',
+        dailyRewards: '0.000653137011885009'
       },
       {
         timestamp: 1737676800000,
-        amount: '3.205121594530129552',
-        totalRewards: '3.205121594530129552',
-        dailyRewards: '-0.00012393711804836'
+        amount: '5.511344373510842162',
+        totalRewards: '5.511344373510842162',
+        dailyRewards: '0.001694825980314944'
       },
       {
         timestamp: 1737763200000,
-        amount: '3.205000122578907729',
-        totalRewards: '3.205000122578907729',
-        dailyRewards: '-0.00012393711804836'
+        amount: '5.511913182049208305',
+        totalRewards: '5.511913182049208305',
+        dailyRewards: '0.000568804185377588'
       },
       {
         timestamp: 1737849600000,
-        amount: '3.204878650627685907',
-        totalRewards: '3.204878650627685907',
-        dailyRewards: '-0.00012393711804836'
+        amount: '5.512171842756760304',
+        totalRewards: '5.512171842756760304',
+        dailyRewards: '0.000258661777777363'
       },
       {
         timestamp: 1737936000000,
-        amount: '3.204757178676464085',
-        totalRewards: '3.204757178676464085',
-        dailyRewards: '-0.000123937118048359'
+        amount: '5.512828622519735305',
+        totalRewards: '5.512828622519735305',
+        dailyRewards: '0.000656787793936647'
       },
       {
         timestamp: 1738022400000,
-        amount: '3.204635706725242263',
-        totalRewards: '3.204635706725242263',
-        dailyRewards: '-0.00012393711804836'
+        amount: '5.513298075564695477',
+        totalRewards: '5.513298075564695477',
+        dailyRewards: '0.000469462235155532'
       },
       {
         timestamp: 1738108800000,
-        amount: '3.204514254751491767',
-        totalRewards: '3.204514254751491767',
-        dailyRewards: '-0.000123916735151756'
+        amount: '5.513192394302233519',
+        totalRewards: '5.513192394302233519',
+        dailyRewards: '-0.000105684535506714'
       },
       {
         timestamp: 1738195200000,
-        amount: '3.204393234291121938',
-        totalRewards: '3.204393234291121938',
-        dailyRewards: '-0.000123476464585084'
+        amount: '5.513426225627519923',
+        totalRewards: '5.513426225627519923',
+        dailyRewards: '0.000233837944457476'
       },
       {
         timestamp: 1738281600000,
-        amount: '3.204272213830752108',
-        totalRewards: '3.204272213830752108',
-        dailyRewards: '-0.000123476464585084'
+        amount: '5.513568486790528493',
+        totalRewards: '5.513568486790528493',
+        dailyRewards: '0.000142268482502555'
       },
       {
         timestamp: 1738368000000,
-        amount: '3.204151193370382279',
-        totalRewards: '3.204151193370382279',
-        dailyRewards: '-0.000123476464585083'
+        amount: '5.513756274302327208',
+        totalRewards: '5.513756274302327208',
+        dailyRewards: '0.000187792191345239'
       }
     ])
   })
