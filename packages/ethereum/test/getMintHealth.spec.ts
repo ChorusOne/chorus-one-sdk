@@ -47,7 +47,7 @@ describe('EthereumStaker.getMintHealth', () => {
 
     const amountToMintRisky = parseEther(maxMint) + parseEther('1')
 
-    const { health: risky } = await staker.getMintHealth({
+    const { health: _risky } = await staker.getMintHealth({
       mintAmount: formatEther(amountToMintRisky),
       stakeAmount: formatEther(amountToStake),
       validatorAddress

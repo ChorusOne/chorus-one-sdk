@@ -1,5 +1,4 @@
 import Decimal from 'decimal.js'
-import { MintTokenConfigAbi } from '../contracts/mintTokenConfigAbi'
 import { PriceOracleAbi } from '../contracts/priceOracleAbi'
 import { StakewiseConnector } from '../connector'
 import { Hex } from 'viem'

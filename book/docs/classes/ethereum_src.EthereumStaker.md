@@ -367,7 +367,7 @@ ___
 
 ## getMintHealth
 
-▸ **getMintHealth**(`params`): `Promise`\<\{ `health`: ``"healthy"`` \| ``"moderate"`` \| ``"risky"`` \| ``"unhealthy"``  }\>
+▸ **getMintHealth**(`params`): `Promise`\<\{ `health`: ``"healthy"`` \| ``"risky"``  }\>
 
 Retrieves the mint health for a specified stake and mint amount.
 
@@ -392,10 +392,11 @@ Risky positions may enter redemption processes, while positions deemed unhealthy
 | `params` | `Object` | Parameters for the request |
 | `params.stakeAmount` | `string` | The amount of ETH staked |
 | `params.mintAmount` | `string` | The amount of osETH minted |
+| `params.vault` | `Hex` | The vault address |
 
 ### Returns
 
-`Promise`\<\{ `health`: ``"healthy"`` \| ``"moderate"`` \| ``"risky"`` \| ``"unhealthy"``  }\>
+`Promise`\<\{ `health`: ``"healthy"`` \| ``"risky"`` \`  }\>
 
 Returns a promise that resolves to the mint health status('healthy' | 'moderate' | 'risky' | 'unhealthy')
 
