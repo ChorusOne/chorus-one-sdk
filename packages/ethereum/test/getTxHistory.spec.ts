@@ -11,7 +11,7 @@ describe('EthereumStaker.getTxHistory', () => {
   beforeEach(async () => {
     const setup = await prepareTests()
     validatorAddress = setup.validatorAddress
-    delegatorAddress = '0x2dF83a340D5067751e8045cCe90764B19D9e7A4D'
+    delegatorAddress = '0x25B8ed65839b411Ce1afA8D75925958bD27cD5d0'
     staker = setup.staker
   })
 
@@ -22,10 +22,10 @@ describe('EthereumStaker.getTxHistory', () => {
     })
 
     const expectedTx = {
-      timestamp: 1705042416000,
+      timestamp: 1741662167000,
       type: 'Deposited',
-      amount: '0.01',
-      txHash: '0xd2d3c10b5e4dde53afe9cede8d10a961c357f574324599e9d78467f6c811afcf'
+      amount: '0.457878161232164171',
+      txHash: '0x6f2d4c8499367d417616368988fff37c064d6adb15857076f2519eff55ad3e44'
     }
 
     const tx = txHistory.find((tx) => tx.txHash === expectedTx.txHash)

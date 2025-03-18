@@ -11,7 +11,7 @@ describe('EthereumStaker.getUnstakeQueue', () => {
   beforeEach(async () => {
     const setup = await prepareTests()
     // Use stale delegator address which never unstaked
-    delegatorAddress = '0x15e4287B086f0a8556A5B578a8d8284F19F2c9aC'
+    delegatorAddress = '0x9685b00aa0db8eccc1684c1155b826169ce48d3d'
     validatorAddress = setup.validatorAddress
     staker = setup.staker
   })
@@ -24,11 +24,11 @@ describe('EthereumStaker.getUnstakeQueue', () => {
 
     assert.deepEqual(unstakeQueue, [
       {
-        exitQueueIndex: '47',
-        positionTicket: '112811942030831899448',
-        timestamp: 1711727436000,
+        exitQueueIndex: '25',
+        positionTicket: '98310168873892613271',
+        timestamp: 1712647703000,
         isWithdrawable: true,
-        totalAmount: '0.500019229644855834',
+        totalAmount: '0.100003157585081498',
         withdrawableAmount: '0'
       }
     ])

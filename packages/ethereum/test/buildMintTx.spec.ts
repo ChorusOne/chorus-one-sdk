@@ -119,9 +119,8 @@ describe('EthereumStaker.buildMintTx', () => {
     })
 
     assert(parseEther(maxMint) > 0n)
-    // Add 2 wei above max
-    // 2 instead of 1 is to avoid conversion issues
-    const amountToMint = parseEther(maxMint) + 2n
+    // Add 0.01% of 1ETH above max
+    const amountToMint = parseEther(maxMint) + parseEther('1') / 10_000n
 
     let error = undefined
     try {
