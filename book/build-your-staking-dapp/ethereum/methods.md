@@ -318,9 +318,7 @@ The `getMintHealth` method retrieves the health status of a mint position based 
 The position health parameter is used to monitor the value of minted osETH relative to the staked ETH value:
 
 - **`healthy`**: Minted osETH ≤ 90% of staked ETH
-- **`moderate`**: Minted osETH > 90% but ≤ 91% of staked ETH
 - **`risky`**: Minted osETH > 91% but ≤ 92% of staked ETH
-- **`unhealthy`**: Minted osETH > 92% of staked ETH
 
 Changes in position health can result from discrepancies between Vault APY and osETH APY, higher fees, or inconsistent performance.
 
@@ -338,6 +336,7 @@ To get mint health, you need to provide the stake amount and the mint amount.
 const { health } = await staker.getMintHealth({
   stakeAmount: '10', // 10 ETH
   mintAmount: '5' // 5 osETH
+  validatorAddress: '0x...' // Vault address
 })
 console.log(`Mint health: ${health}`)
 ```

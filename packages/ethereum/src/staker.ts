@@ -408,7 +408,7 @@ export class EthereumStaker {
    *
    * @returns Returns a promise that resolves to the mint health status('healthy' | 'risky' )
    */
-  async getMintHealth(params: { stakeAmount: string; mintAmount: string; validatorAddress: Hex }) {
+  async getMintHealth (params: { stakeAmount: string; mintAmount: string; validatorAddress: Hex }) {
     const health = await getMintHealth({
       connector: this.connector,
       mintedShares: this.parseEther(params.mintAmount),

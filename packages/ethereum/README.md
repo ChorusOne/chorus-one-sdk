@@ -22,7 +22,7 @@ Here is a basic example of how to use the Chorus One SDK to build, sign, and bro
 // Configuration
 // -------------
 
-import { EthereumStaker, CHORUS_ONE_ETHEREUM_VALIDATORS } from '@chorus-one/solana'
+import { EthereumStaker, CHORUS_ONE_ETHEREUM_VALIDATORS } from '@chorus-one/ethereum'
 
 const staker = new EthereumStaker({
   network: 'ethereum'})
@@ -32,7 +32,7 @@ await staker.init()
 // Building the transaction
 // ------------------------
 
-const delegatorAddress = '0xe6d8d8ac54461b1c5ed15740eee322043f696c08'
+const delegatorAddress = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045'
 
 // You can use the Chorus One validator address or specify your own
 const validatorAddress = CHORUS_ONE_ETHEREUM_VALIDATORS.ethereum.mevMaxVault
