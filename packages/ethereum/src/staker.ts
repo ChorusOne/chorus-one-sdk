@@ -404,14 +404,16 @@ export class EthereumStaker {
    * @param params - Parameters for the request
    * @param params.stakeAmount - The amount of ETH staked
    * @param params.mintAmount - The amount of osETH minted
+   * @param params.validatorAddress - The validator (vault) address 
    *
-   * @returns Returns a promise that resolves to the mint health status('healthy' | 'moderate' | 'risky' | 'unhealthy')
+   * @returns Returns a promise that resolves to the mint health status('healthy' | 'risky' )
    */
-  async getMintHealth (params: { stakeAmount: string; mintAmount: string }) {
+  async getMintHealth(params: { stakeAmount: string; mintAmount: string; validatorAddress: Hex }) {
     const health = await getMintHealth({
       connector: this.connector,
       mintedShares: this.parseEther(params.mintAmount),
-      stakedAssets: this.parseEther(params.stakeAmount)
+      stakedAssets: this.parseEther(params.stakeAmount),
+      vault: params.validatorAddress
     })
 
     return { health }

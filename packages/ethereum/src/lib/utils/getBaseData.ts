@@ -2,9 +2,11 @@ import Decimal from 'decimal.js'
 import { MintTokenConfigAbi } from '../contracts/mintTokenConfigAbi'
 import { PriceOracleAbi } from '../contracts/priceOracleAbi'
 import { StakewiseConnector } from '../connector'
+import { Hex } from 'viem'
 
 export const getBaseData = async (
-  connector: StakewiseConnector
+  connector: StakewiseConnector,
+  vaultAddress: Hex
 ): Promise<{
   rate: string
   ltvPercent: bigint
@@ -16,26 +18,32 @@ export const getBaseData = async (
     functionName: 'latestAnswer',
     address: connector.priceOracle
   }) as Promise<bigint>
-  const ltvPercentPromise = publicClient.readContract({
-    abi: MintTokenConfigAbi,
-    functionName: 'ltvPercent',
-    address: connector.mintTokenConfig
-  }) as Promise<bigint>
-  const thresholdPercentPromise = publicClient.readContract({
-    abi: MintTokenConfigAbi,
-    functionName: 'liqThresholdPercent',
-    address: connector.mintTokenConfig
-  }) as Promise<bigint>
-  const [mintTokenRate, ltvPercent, thresholdPercent] = await Promise.all([
-    mintTokenRatePromise,
-    ltvPercentPromise,
-    thresholdPercentPromise
-  ])
+
+  const osTokenConfigPromise = connector.graphqlRequest({
+    type: 'graph',
+    op: 'Vault',
+    query: `
+    query Vault($address: ID!) {
+      vault(id: $address) {
+        osTokenConfig {
+          ltvPercent
+          liqThresholdPercent
+        }
+      }
+    }
+  `,
+    variables: {
+      address: vaultAddress
+    }
+  }) as Promise<{ data: { vault: { osTokenConfig: { ltvPercent: bigint; liqThresholdPercent: bigint } } } }>
+
+  const [mintTokenRate, osTokenConfig] = await Promise.all([mintTokenRatePromise, osTokenConfigPromise])
+
   // ETH per osETH exchange rate
   const rate = new Decimal(mintTokenRate.toString()).div(1_000_000_000_000_000_000).toString()
   return {
     rate,
-    ltvPercent,
-    thresholdPercent // minting threshold, max 90%
+    ltvPercent: BigInt(osTokenConfig.data.vault.osTokenConfig.ltvPercent),
+    thresholdPercent: BigInt(osTokenConfig.data.vault.osTokenConfig.liqThresholdPercent) // minting threshold, max 90%
   }
 }

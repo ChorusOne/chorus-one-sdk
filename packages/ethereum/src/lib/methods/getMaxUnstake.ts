@@ -12,7 +12,7 @@ export const getMaxUnstake = async (params: {
 }): Promise<bigint> => {
   const { connector, vault, userAccount } = params
   const min = parseEther('0.00001')
-  const { ltvPercent } = await getBaseData(connector)
+  const { ltvPercent } = await getBaseData(connector, vault)
   const { assets } = await getStake({
     connector,
     userAccount,
