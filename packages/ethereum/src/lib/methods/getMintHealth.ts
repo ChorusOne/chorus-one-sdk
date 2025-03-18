@@ -2,13 +2,15 @@ import Decimal from 'decimal.js'
 import { getBaseData } from '../utils/getBaseData'
 import { StakewiseConnector } from '../connector'
 import { MintTokenControllerAbi } from '../contracts/mintCotrollerAbi'
+import { Hex } from 'viem'
 
 export const getMintHealth = async (params: {
   connector: StakewiseConnector
   mintedShares: bigint
   stakedAssets: bigint
+  vault: Hex
 }): Promise<'healthy' | 'risky'> => {
-  const { connector, mintedShares, stakedAssets } = params
+  const { connector, mintedShares, stakedAssets, vault } = params
 
   const mintedAssets = await (connector.eth.readContract({
     abi: MintTokenControllerAbi,
@@ -20,12 +22,12 @@ export const getMintHealth = async (params: {
   if (mintedAssets === 0n || stakedAssets === 0n) {
     return 'healthy'
   }
-  const { thresholdPercent } = await getBaseData(connector)
+  const { thresholdPercent } = await getBaseData(connector, vault)
 
   const healthFactor = new Decimal(stakedAssets.toString())
     .mul(thresholdPercent.toString())
+    .div(10 ** 18)
     .div(mintedAssets.toString())
-    .div(10_000)
     .toDecimalPlaces(4)
     .toNumber()
 

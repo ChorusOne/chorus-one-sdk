@@ -11,7 +11,7 @@ export const getMaxMint = async (params: {
   userAccount: Hex
 }): Promise<bigint> => {
   const { connector, vault, userAccount } = params
-  const { ltvPercent } = await getBaseData(connector)
+  const { ltvPercent } = await getBaseData(connector, vault)
   const { assets } = await getStake({
     connector,
     userAccount,
@@ -33,7 +33,7 @@ export const getMaxMint = async (params: {
     address: connector.mintTokenController
   })) as bigint
 
-  const maxMintedAssets: bigint = (assets * ltvPercent) / 10_000n
+  const maxMintedAssets: bigint = (assets * ltvPercent) / 1_000_000_000_000_000_000n
 
   const maxMintedAssetsHourReward: bigint = (maxMintedAssets * avgRewardPerSecond * 3600n) / 1_000_000_000_000_000_000n
   const canMintAssets = maxMintedAssets - maxMintedAssetsHourReward - mint.minted.assets
