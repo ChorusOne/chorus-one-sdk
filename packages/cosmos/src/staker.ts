@@ -198,7 +198,7 @@ export class CosmosStaker {
   }
 
   /**
-   * Retrieves the staking information for a specified delegator.
+   * Retrieves the staked balance for a specified delegator.
    *
    * @param params - Parameters for the request
    * @param params.delegatorAddress - The delegator (wallet) address
@@ -227,6 +227,63 @@ export class CosmosStaker {
     }
 
     return { balance: denomToMacroAmount(staked.amount, this.networkConfig.denomMultiplier) }
+  }
+
+  /**
+   * Retrieves the unbonding balance for a specified delegator.
+   *
+   * @param params - Parameters for the request
+   * @param params.delegatorAddress - The delegator (wallet) address
+   * @param params.validatorAddress - (Optional) The validator address to gather staking information from
+   *
+   * @returns Returns a promise that resolves to the unbonding information for the specified delegator.
+   */
+  async getUnbondingStake (params: {
+    delegatorAddress: string
+    validatorAddress?: string
+  }): Promise<{ balance: string }> {
+    const { delegatorAddress, validatorAddress } = params
+
+    const queryClient = this.getClient().getCosmosQueryClient().staking
+    const response = await queryClient.delegatorUnbondingDelegations(delegatorAddress)
+
+    let totalUnbonding = 0n
+    response.unbondingResponses.forEach((unbondingDelegation) => {
+      if (validatorAddress !== undefined && validatorAddress !== unbondingDelegation.validatorAddress) {
+        return
+      }
+
+      // NOTE: the unbonding entries have no denom, but we can assume that they are all related
+      // to the configured staking token
+      const totalPerValidator = unbondingDelegation.entries
+        .map((entry) => {
+          return BigInt(entry.balance)
+        })
+        .reduce((a: bigint, b: bigint) => a + b, BigInt(0))
+
+      totalUnbonding += totalPerValidator
+    })
+
+    return { balance: denomToMacroAmount(totalUnbonding.toString(10), this.networkConfig.denomMultiplier) }
+  }
+
+  /**
+   * Retrieves the delegator's available balance.
+   *
+   * @param params - Parameters for the request
+   * @param params.delegatorAddress - The delegator (wallet) address
+   *
+   * @returns Returns a promise that resolves to the available balance for the specified delegator.
+   */
+  async getBalance (params: { delegatorAddress: string }): Promise<{ balance: string }> {
+    const { delegatorAddress } = params
+
+    const cosmosClient = this.getClient()
+    const denom = this.networkConfig.denom
+
+    const balance = await cosmosClient.getBalance(delegatorAddress, denom)
+
+    return { balance: denomToMacroAmount(balance.amount, this.networkConfig.denomMultiplier) }
   }
 
   /**
