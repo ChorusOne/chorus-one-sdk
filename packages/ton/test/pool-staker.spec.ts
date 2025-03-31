@@ -1,3 +1,4 @@
+import { toNano } from '@ton/ton'
 import { TonPoolStaker } from '@chorus-one/ton'
 import { describe, it } from 'mocha'
 import { expect } from 'chai'
@@ -89,5 +90,15 @@ describe('TonPoolStaker_calculateStakeAmount', () => {
   it('should balance based on the user stake when both pools are above minStake', () => {
     const result = fn(500n, 1000n, [1000n, 1000n], [200n, 300n])
     expect(result).to.eql([300n, 200n])
+  })
+
+  it('should handle uneven stake amounts', () => {
+    // even pool stakes
+    const result_one = fn(toNano(503), toNano(500), [toNano(1000), toNano(1000)], [toNano(500), toNano(500)])
+    expect(result_one).to.eql([toNano(251.5), toNano(251.5)])
+
+    // uneven pool stakes
+    const result_two = fn(503n, 500n, [1000n, 1000n], [500n, 500n])
+    expect(result_two).to.eql([251n, 252n])
   })
 })

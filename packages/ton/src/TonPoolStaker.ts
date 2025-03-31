@@ -97,7 +97,7 @@ export class TonPoolStaker extends TonBaseStaker {
 
       // sanity check
       if (stakeAmountPerPool.reduce((acc, val) => acc + val, 0n) !== toNano(amount)) {
-        throw new Error('unstake amount does not match the requested amount')
+        throw new Error('stake amount does not match the requested amount')
       }
 
       validatorAddresses.forEach((validatorAddress, index) => {
@@ -487,27 +487,27 @@ export class TonPoolStaker extends TonBaseStaker {
     currentPoolBalances: [bigint, bigint], // current stake balances of the pools
     currentUserStakes: [bigint, bigint] // current user stakes in the pools
   ): [bigint, bigint] {
-    const [pool1Balance, pool2Balance] = currentPoolBalances
-    const [user1Stake, user2Stake] = currentUserStakes
+    const [poolOneBalance, poolTwoBalance] = currentPoolBalances
+    const [userOneStake, userTwoStake] = currentUserStakes
 
-    const totalUserStake = user1Stake + user2Stake + amount
+    const totalUserStake = userOneStake + userTwoStake + amount
     const idealUserSplit = totalUserStake / 2n
     const result: [bigint, bigint] = [0n, 0n]
 
     // case: both pools are at or above minStake
-    const pool1AboveMin = pool1Balance >= minStake
-    const pool2AboveMin = pool2Balance >= minStake
+    const poolOneAboveMin = poolOneBalance >= minStake
+    const poolTwoAboveMin = poolTwoBalance >= minStake
 
-    if (pool1AboveMin && pool2AboveMin) {
+    if (poolOneAboveMin && poolTwoAboveMin) {
       // aim for user balance
-      result[0] = idealUserSplit - user1Stake
-      result[1] = idealUserSplit - user2Stake
+      result[0] = idealUserSplit - userOneStake
+      result[1] = amount - result[0]
       return result
     }
 
     // case: one pool is below minStake and one is above
-    if (pool1Balance < minStake && pool2Balance >= minStake) {
-      const needed = minStake - pool1Balance
+    if (poolOneBalance < minStake && poolTwoBalance >= minStake) {
+      const needed = minStake - poolOneBalance
       if (amount >= needed) {
         result[0] = needed
         const remaining = amount - needed
@@ -517,8 +517,8 @@ export class TonPoolStaker extends TonBaseStaker {
       }
     }
 
-    if (pool2Balance < minStake && pool1Balance >= minStake) {
-      const needed = minStake - pool2Balance
+    if (poolTwoBalance < minStake && poolOneBalance >= minStake) {
+      const needed = minStake - poolTwoBalance
       if (amount >= needed) {
         result[1] = needed
         const remaining = amount - needed
@@ -529,8 +529,8 @@ export class TonPoolStaker extends TonBaseStaker {
     }
 
     // case: both pools are below minStake
-    if (!pool1AboveMin && !pool2AboveMin) {
-      const needed1 = minStake - pool1Balance
+    if (!poolOneAboveMin && !poolTwoAboveMin) {
+      const needed1 = minStake - poolOneBalance
       if (amount <= needed1) {
         result[0] = amount
         return result
