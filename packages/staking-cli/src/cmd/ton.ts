@@ -8,6 +8,7 @@ import { prompt, readConfig, getNetworkConfig, log, defaultLogger } from '../uti
 import { SafeJSONStringify } from '@chorus-one/utils'
 import { newSigner } from '../signer'
 import { TonPoolStaker, TonNominatorPoolStaker, TonSingleNominatorPoolStaker } from '@chorus-one/ton'
+import { fromNano } from '@ton/ton'
 
 export interface CLINetworkConfig extends TonNetworkConfig {
   // block explorer URL to display Transaction ID via Web UI. Example:
@@ -160,6 +161,15 @@ async function runTx (
             amount: arg[0] // amount
           })
         ).tx
+
+        if (unsignedTx.messages === undefined) {
+          throw new Error('no messages found in the unsigned transaction')
+        }
+
+        console.log('Staking to the following contracts:')
+        unsignedTx.messages.forEach((msg) => {
+          console.log(`* ${msg.address} with ${fromNano(msg.amount)} TON`)
+        })
         break
       }
       case 'unstake-pool': {
