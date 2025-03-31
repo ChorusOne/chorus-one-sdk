@@ -71,51 +71,74 @@ describe('TonPoolStaker_calculateUnstakePoolAmount', () => {
 
 describe('TonPoolStaker_calculateStakeAmount', () => {
   const fn = TonPoolStaker.calculateStakePoolAmount
+  const minPoolStakes = [1n, 1n]
 
   it('should split equally when both pools are above minStake and user stake is balanced', () => {
-    const result = fn(1000n, 500n, [1000n, 1000n], [500n, 500n])
+    const result = fn(1000n, 500n, [1000n, 1000n], [500n, 500n], minPoolStakes)
     expect(result).to.eql([500n, 500n])
   })
 
-  it('should top up pool1 to minStake and split remainder', () => {
-    const result = fn(1000n, 1000n, [500n, 1500n], [0n, 0n])
-    // 500 to pool1, remaining 500 split -> 250 to each
+  it('should top up poolOne to minStake and split remainder', () => {
+    const result = fn(1000n, 1000n, [500n, 1500n], [0n, 0n], minPoolStakes)
+    // 500 to poolOne, remaining 500 split -> 250 to each
     expect(result).to.eql([750n, 250n])
   })
 
-  it('should top up pool2 to minStake and split remainder', () => {
-    const result = fn(1000n, 1000n, [1500n, 500n], [0n, 0n])
+  it('should top up poolTwo to minStake and split remainder', () => {
+    const result = fn(1000n, 1000n, [1500n, 500n], [0n, 0n], minPoolStakes)
     expect(result).to.eql([250n, 750n])
   })
 
-  it('should fill pool1 to minStake and send rest to pool2 if both below minStake', () => {
-    const result = fn(1500n, 1000n, [400n, 400n], [0n, 0n])
-    // 600 to pool1 to hit minStake, 900 to pool2
+  it('should fill poolOne to minStake and send rest to poolTwo if both below minStake', () => {
+    const result = fn(1500n, 1000n, [400n, 400n], [0n, 0n], minPoolStakes)
+    // 600 to poolOne to hit minStake, 900 to poolTwo
     expect(result).to.eql([600n, 900n])
   })
 
-  it('should assign all to pool1 if both pools below minStake and amount is too small', () => {
-    const result = fn(300n, 1000n, [500n, 500n], [0n, 0n])
+  it('should assign all to poolOne if both pools below minStake and amount is too small', () => {
+    const result = fn(300n, 1000n, [500n, 500n], [0n, 0n], [0n, 0n])
     expect(result).to.eql([300n, 0n])
   })
 
   it('should fallback to even split when unsure (e.g., both pools at min and no user balance)', () => {
-    const result = fn(1000n, 1000n, [1000n, 1000n], [0n, 0n])
+    const result = fn(1000n, 1000n, [1000n, 1000n], [0n, 0n], minPoolStakes)
     expect(result).to.eql([500n, 500n])
   })
 
   it('should balance based on the user stake when both pools are above minStake', () => {
-    const result = fn(500n, 1000n, [1000n, 1000n], [200n, 300n])
+    const result = fn(500n, 1000n, [1000n, 1000n], [200n, 300n], minPoolStakes)
     expect(result).to.eql([300n, 200n])
   })
 
   it('should handle uneven stake amounts', () => {
     // even pool stakes
-    const result_one = fn(toNano(503), toNano(500), [toNano(1000), toNano(1000)], [toNano(500), toNano(500)])
+    const result_one = fn(
+      toNano(503),
+      toNano(500),
+      [toNano(1000), toNano(1000)],
+      [toNano(500), toNano(500)],
+      minPoolStakes
+    )
     expect(result_one).to.eql([toNano(251.5), toNano(251.5)])
 
     // uneven pool stakes
-    const result_two = fn(503n, 500n, [1000n, 1000n], [500n, 500n])
+    const result_two = fn(503n, 500n, [1000n, 1000n], [500n, 500n], minPoolStakes)
     expect(result_two).to.eql([251n, 252n])
+  })
+
+  it('should split amount so that the stake is balanced as close as possible', () => {
+    // instead of 1.5 and 1.5 that seems to be even split, we should ensure that
+    // the user stake is balanced as close as possible
+    // the total stake is 15 (5 + 10) and the minimum stake is 1 TON
+    // to stake 3 TON while maintaining the minimm stake amount and the "best
+    // balance" we should get 2 and 1 TON split
+    const result = fn(
+      toNano(3), // to stake
+      toNano(5), // minmum for election
+      [toNano(5), toNano(10)], // current user stakes
+      [toNano(5), toNano(10)],
+      [toNano(1), toNano(1)] // minPoolStakes
+    )
+    expect(result).to.eql([toNano(2), toNano(1)])
   })
 })

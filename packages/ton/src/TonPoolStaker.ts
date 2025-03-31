@@ -89,13 +89,13 @@ export class TonPoolStaker extends TonBaseStaker {
     )
     const lowestMinStake: bigint = poolParams
       .filter((param) => param.minStake !== 0n)
-      .reduce((acc, val) => (val.minStake < acc ? val.minStake : acc), poolParams[0].minStake)
+      .reduce((acc, val) => (val.minStakeTotal < acc ? val.minStakeTotal : acc), poolParams[0].minStakeTotal)
     if (lowestMinStake === 0n) {
-      throw new Error('minimum stake for both pools is zero')
+      throw new Error('minimum stake for both pools is zero, that does not seem right')
     }
 
     if (toNano(amount) < lowestMinStake) {
-      throw new Error('amount is less than the minimum required stake')
+      throw new Error('provided amount is less than the minimum required to stake')
     }
 
     const msgs: Message[] = []
@@ -109,13 +109,9 @@ export class TonPoolStaker extends TonBaseStaker {
         toNano(amount),
         minElectionStake,
         currentPoolBalances,
-        currentUserStakes
+        currentUserStakes,
+        [poolParams[0].minStakeTotal, poolParams[1].minStakeTotal]
       )
-
-      // sanity check
-      if (stakeAmountPerPool.reduce((acc, val) => acc + val, 0n) !== toNano(amount)) {
-        throw new Error('stake amount does not match the requested amount')
-      }
 
       validatorAddresses.forEach((validatorAddress, index) => {
         if (stakeAmountPerPool[index] === 0n) {
@@ -333,15 +329,20 @@ export class TonPoolStaker extends TonBaseStaker {
     const client = this.getClient()
     const response = await client.runMethod(Address.parse(validatorAddress), 'get_params', [])
 
-    return {
+    const data = {
       enabled: response.stack.readBoolean(),
       updatesEnables: response.stack.readBoolean(),
       minStake: response.stack.readBigNumber(),
       depositFee: response.stack.readBigNumber(),
       withdrawFee: response.stack.readBigNumber(),
       poolFee: response.stack.readBigNumber(),
-      receiptPrice: response.stack.readBigNumber()
+      receiptPrice: response.stack.readBigNumber(),
+      minStakeTotal: 0n
     }
+
+    data.minStakeTotal = data.minStake + data.depositFee + data.withdrawFee
+
+    return data
   }
 
   /** @ignore */
@@ -526,65 +527,99 @@ export class TonPoolStaker extends TonBaseStaker {
     amount: bigint, // amount to stake
     minStake: bigint, // minimum stake for participation (to be in the set)
     currentPoolBalances: [bigint, bigint], // current stake balances of the pools
-    currentUserStakes: [bigint, bigint] // current user stakes in the pools
+    currentUserStakes: [bigint, bigint], // current user stakes in the pools
+    minPoolStakes: [bigint, bigint] // min staked amount per pool
   ): [bigint, bigint] {
     const [poolOneBalance, poolTwoBalance] = currentPoolBalances
     const [userOneStake, userTwoStake] = currentUserStakes
+    const [minPoolOne, minPoolTwo] = minPoolStakes
 
-    const totalUserStake = userOneStake + userTwoStake + amount
-    const idealUserSplit = totalUserStake / 2n
-    const result: [bigint, bigint] = [0n, 0n]
+    const calculate = (): [bigint, bigint] => {
+      const totalUserStake = userOneStake + userTwoStake + amount
+      const idealUserSplit = totalUserStake / 2n
+      const result: [bigint, bigint] = [0n, 0n]
 
-    // case: both pools are at or above minStake
-    const poolOneAboveMin = poolOneBalance >= minStake
-    const poolTwoAboveMin = poolTwoBalance >= minStake
+      // case: both pools are at or above minStake
+      const poolOneAboveMin = poolOneBalance >= minStake
+      const poolTwoAboveMin = poolTwoBalance >= minStake
 
-    if (poolOneAboveMin && poolTwoAboveMin) {
-      // aim for user balance
-      result[0] = idealUserSplit - userOneStake
+      if (poolOneAboveMin && poolTwoAboveMin) {
+        // aim for user balance
+        result[0] = idealUserSplit - userOneStake
+        result[1] = amount - result[0]
+
+        // the above calulation aims for perfect balance, meaning that one
+        // value may be negative if the user has more stake in one pool
+        // since we can't substract stake, we ought to adjust balances so much
+        // that the stakes are as close to the ideal split as possible
+        if (result[1] < 0n) {
+          const deltaToMin = minPoolTwo - result[1]
+          result[0] -= deltaToMin
+          result[1] = minPoolTwo
+        } else if (result[0] < 0n) {
+          const deltaToMin = minPoolOne - result[0]
+          result[1] -= deltaToMin
+          result[0] = minPoolOne
+        }
+
+        return result
+      }
+
+      // case: one pool is below minStake and one is above
+      if (poolOneBalance < minStake && poolTwoBalance >= minStake) {
+        const needed = minStake - poolOneBalance
+        if (amount >= needed) {
+          result[0] = needed
+          const remaining = amount - needed
+          result[0] += remaining / 2n
+          result[1] = remaining - remaining / 2n
+          return result
+        }
+      }
+
+      if (poolTwoBalance < minStake && poolOneBalance >= minStake) {
+        const needed = minStake - poolTwoBalance
+        if (amount >= needed) {
+          result[1] = needed
+          const remaining = amount - needed
+          result[0] = remaining / 2n
+          result[1] += remaining - remaining / 2n
+          return result
+        }
+      }
+
+      // case: both pools are below minStake
+      if (!poolOneAboveMin && !poolTwoAboveMin) {
+        const neededOne = minStake - poolOneBalance
+        if (amount <= neededOne) {
+          result[0] = amount
+          return result
+        }
+
+        result[0] = neededOne
+        result[1] = amount - neededOne
+        return result
+      }
+
+      // fallback: split 50/50
+      result[0] = amount / 2n
       result[1] = amount - result[0]
+
       return result
     }
 
-    // case: one pool is below minStake and one is above
-    if (poolOneBalance < minStake && poolTwoBalance >= minStake) {
-      const needed = minStake - poolOneBalance
-      if (amount >= needed) {
-        result[0] = needed
-        const remaining = amount - needed
-        result[0] += remaining / 2n
-        result[1] = remaining - remaining / 2n
-        return result
-      }
+    const stakeAmountPerPool: [bigint, bigint] = calculate()
+
+    // sanity check sum
+    if (stakeAmountPerPool.reduce((acc, val) => acc + val, 0n) !== amount) {
+      throw new Error('stake amount does not match the requested amount')
     }
 
-    if (poolTwoBalance < minStake && poolOneBalance >= minStake) {
-      const needed = minStake - poolTwoBalance
-      if (amount >= needed) {
-        result[1] = needed
-        const remaining = amount - needed
-        result[0] = remaining / 2n
-        result[1] += remaining - remaining / 2n
-        return result
-      }
+    // sanity check negative values
+    if (stakeAmountPerPool.some((stake) => stake < 0n)) {
+      throw new Error('stake amount per pool cannot be negative, this should not have happened')
     }
 
-    // case: both pools are below minStake
-    if (!poolOneAboveMin && !poolTwoAboveMin) {
-      const needed1 = minStake - poolOneBalance
-      if (amount <= needed1) {
-        result[0] = amount
-        return result
-      }
-
-      result[0] = needed1
-      result[1] = amount - needed1
-      return result
-    }
-
-    // fallback: split 50/50
-    result[0] = amount / 2n
-    result[1] = amount - result[0]
-    return result
+    return stakeAmountPerPool
   }
 }
