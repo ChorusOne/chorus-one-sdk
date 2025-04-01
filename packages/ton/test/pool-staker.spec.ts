@@ -73,72 +73,139 @@ describe('TonPoolStaker_calculateStakeAmount', () => {
   const fn = TonPoolStaker.calculateStakePoolAmount
   const minPoolStakes = [1n, 1n]
 
-  it('should split equally when both pools are above minStake and user stake is balanced', () => {
-    const result = fn(1000n, 500n, [1000n, 1000n], [500n, 500n], minPoolStakes)
-    expect(result).to.eql([500n, 500n])
-  })
+  it('should equalize the user stake if both pools are above min', () => {
+    // equalize the user stake across both pools
+    // strategy: both pools are above minStake, so our goal is to optimize the
+    // balance for the user stake (not for pool stake)
+    const result = fn(1000n, 500n, [1000n, 1000n], [250n, 200n], minPoolStakes)
+    expect(result).to.eql([475n, 525n])
 
-  it('should top up poolOne to minStake and split remainder', () => {
-    const result = fn(1000n, 1000n, [500n, 1500n], [0n, 0n], minPoolStakes)
-    // 500 to poolOne, remaining 500 split -> 250 to each
-    expect(result).to.eql([750n, 250n])
-  })
-
-  it('should top up poolTwo to minStake and split remainder', () => {
-    const result = fn(1000n, 1000n, [1500n, 500n], [0n, 0n], minPoolStakes)
-    expect(result).to.eql([250n, 750n])
-  })
-
-  it('should fill poolOne to minStake and send rest to poolTwo if both below minStake', () => {
-    const result = fn(1500n, 1000n, [400n, 400n], [0n, 0n], minPoolStakes)
-    // 600 to poolOne to hit minStake, 900 to poolTwo
-    expect(result).to.eql([600n, 900n])
-  })
-
-  it('should assign all to poolOne if both pools below minStake and amount is too small', () => {
-    const result = fn(300n, 1000n, [500n, 500n], [0n, 0n], [0n, 0n])
-    expect(result).to.eql([300n, 0n])
-  })
-
-  it('should fallback to even split when unsure (e.g., both pools at min and no user balance)', () => {
-    const result = fn(1000n, 1000n, [1000n, 1000n], [0n, 0n], minPoolStakes)
-    expect(result).to.eql([500n, 500n])
-  })
-
-  it('should balance based on the user stake when both pools are above minStake', () => {
-    const result = fn(500n, 1000n, [1000n, 1000n], [200n, 300n], minPoolStakes)
-    expect(result).to.eql([300n, 200n])
-  })
-
-  it('should handle uneven stake amounts', () => {
-    // even pool stakes
-    const result_one = fn(
-      toNano(503),
-      toNano(500),
-      [toNano(1000), toNano(1000)],
-      [toNano(500), toNano(500)],
-      minPoolStakes
-    )
-    expect(result_one).to.eql([toNano(251.5), toNano(251.5)])
-
-    // uneven pool stakes
-    const result_two = fn(503n, 500n, [1000n, 1000n], [500n, 500n], minPoolStakes)
-    expect(result_two).to.eql([251n, 252n])
-  })
-
-  it('should split amount so that the stake is balanced as close as possible', () => {
-    // instead of 1.5 and 1.5 that seems to be even split, we should ensure that
-    // the user stake is balanced as close as possible
-    // the total stake is 15 (5 + 10) and the minimum stake is 1 TON
-    // to stake 3 TON while maintaining the minimm stake amount and the "best
-    // balance" we should get 2 and 1 TON split
-    const result = fn(
-      toNano(3), // to stake
+    // if user balances are equal, split the stake evenly
+    // the lower balance
+    const result_tw = fn(
+      toNano(5), // to stake
       toNano(5), // minmum for election
-      [toNano(5), toNano(10)], // current user stakes
-      [toNano(5), toNano(10)],
+      [toNano(10), toNano(10)], // current pool balances
+      [toNano(10), toNano(10)], // current user stakes
       [toNano(1), toNano(1)] // minPoolStakes
     )
-    expect(result).to.eql([toNano(2), toNano(1)])
+    expect(result_tw).to.eql([toNano(2.5), toNano(2.5)])
+
+    // if there is no chance to equalize the stakes, stake to the pool with
+    // the lower balance
+    const result_two = fn(
+      toNano(3), // to stake
+      toNano(5), // minmum for election
+      [toNano(5), toNano(10)], // current pool balances
+      [toNano(5), toNano(10)], // current user stakes
+      [toNano(1), toNano(1)] // minPoolStakes
+    )
+    expect(result_two).to.eql([toNano(3), toNano(0)])
+
+    // if the amount is enough to balance the stakes do it
+    const result_three = fn(
+      toNano(5), // to stake
+      toNano(5), // minmum for election
+      [toNano(5), toNano(10)], // current pool balances
+      [toNano(5), toNano(10)], // current user stakes
+      [toNano(1), toNano(1)] // minPoolStakes
+    )
+    expect(result_three).to.eql([toNano(5), toNano(0)])
+
+    // if the remainder ( 6 - (6 - 1) = 1 ) divided evenlty (0.5) is not meeting
+    // the minimum stake, try to fill up the pool with the lower balance and
+    // push the whole remainder to the other pool
+    const result_four = fn(
+      toNano(6), // to stake
+      toNano(5), // minmum for election
+      [toNano(5), toNano(10)], // current pool balances
+      [toNano(5), toNano(10)], // current user stakes
+      [toNano(1), toNano(1)] // minPoolStakes
+    )
+    expect(result_four).to.eql([toNano(5), toNano(1)])
+
+    // it's not possible to blance the stakes and keep the minimum stake
+    // so resign from blancing the current user stake and simply split the
+    // amount between the pools
+    const result_five = fn(
+      toNano(2.4), // to stake
+      toNano(58418.512270274), // minmum for election
+      [toNano(138935.813773278), toNano(137495.974875379)],
+      [toNano(1.871), toNano(1.7348)], // current user stakes
+      [toNano(1.2), toNano(1.2)] // minPoolStakes
+    )
+    expect(result_five).to.eql([toNano(1.2), toNano(1.2)])
+
+    // if the remainder as a whole is not meeting the minimum stake, stake it
+    // with the lowest stake pool
+    const result_six = fn(
+      toNano(5.5), // to stake
+      toNano(5), // minmum for election
+      [toNano(5), toNano(10)], // current pool balances
+      [toNano(5), toNano(10)], // current user stakes
+      [toNano(1), toNano(1)] // minPoolStakes
+    )
+    expect(result_six).to.eql([toNano(5.5), toNano(0)])
+  })
+
+  it('should distribute stake if only one pool is below minimum', () => {
+    // activate pool two with 500 and the remainer (500) split between two pools
+    const result = fn(1000n, 1000n, [1500n, 500n], [0n, 0n], minPoolStakes)
+    expect(result).to.eql([250n, 750n])
+
+    const result_two = fn(1000n, 1000n, [500n, 1500n], [0n, 0n], minPoolStakes)
+    expect(result_two).to.eql([750n, 250n])
+
+    // ^^ at edge
+    const result_three = fn(500n, 1000n, [500n, 1500n], [0n, 0n], minPoolStakes)
+    expect(result_three).to.eql([500n, 0n])
+
+    // if there is not enough to activate pool two, split stakes between
+    // active/inactive pool
+    //
+    // strategy: user stake can't activae the pool two, so staking all to pool
+    // two doesn't earn any rewards. Instead, split the stake between two pools
+    // so that the other staker has a chance to bring pool one in the next
+    // staking action but at the same time user can still earn reawards from the
+    // active pool (half of his stake)
+    const result_four = fn(300n, 1000n, [500n, 1500n], [0n, 0n], minPoolStakes)
+    expect(result_four).to.eql([150n, 150n])
+
+    const result_five = fn(300n, 1000n, [1500n, 500n], [0n, 0n], minPoolStakes)
+    expect(result_five).to.eql([150n, 150n])
+  })
+
+  it('should distribute stake if both pools are below minimum', () => {
+    // there is no chance to make both pools active, fill the one with
+    // highest stake
+    const result = fn(150n, 1000n, [300n, 400n], [0n, 0n], minPoolStakes)
+    expect(result).to.eql([0n, 150n])
+
+    // ^^ same case as but reversed pool stakes
+    const result_reverse = fn(150n, 1000n, [400n, 300n], [0n, 0n], minPoolStakes)
+    expect(result_reverse).to.eql([150n, 0n])
+
+    // there is a chance to make second pool active
+    //
+    // strategy: user stake was used to activate one pool, the remainder can
+    // either be staked with the second pool or split in between activa/inactive
+    // pool. In the first case user doesn't earn anything on inactive pool so in
+    // below case that would 4150 (our of 10150) earning no rewards. In the
+    // second case only 2075 doesn't earn rewards, but at least the portion of
+    // it contributes to the inactive pool being elected with next staker
+    const result_two = fn(10150n, 10000n, [3000n, 4000n], [0n, 0n], minPoolStakes)
+    expect(result_two).to.eql([2075n, 8075n])
+
+    // there is a chance to make second pool active
+    // strategy: as above ^^ but reversed the pools
+    const result_three = fn(650n, 1000n, [400n, 300n], [0n, 0n], minPoolStakes)
+    expect(result_three).to.eql([625n, 25n])
+
+    // there is a chance to make both pools active, split the stake
+    // strategy: fill both pools to the minStake and split the rest. This way
+    // user stake will benefit from both pools (as both pools have been just
+    // activated with his stake)
+    const result_four = fn(13150n, 10000n, [3000n, 4000n], [0n, 0n], minPoolStakes)
+    expect(result_four).to.eql([7075n, 6075n])
   })
 })
