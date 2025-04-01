@@ -32,6 +32,7 @@ function makeTxCommand (): Command {
 
   tx.command('delegate-pool')
     .description('generate a delegate funds to TON pool contract transaction')
+    .option('-S, --strategy <value>', 'select preferred stake allocation strategy (balanced | split | single)', 'balanced')
     .argument('<amount>', 'amount of tokens to stake expressed in TON denom e.g 0.1')
     .action(getDelegatePoolTx)
 
@@ -144,7 +145,10 @@ async function runTx (
   try {
     switch (msgType) {
       case 'delegate-pool': {
-        tonStaker = new TonPoolStaker({ ...networkConfig })
+        const preferredStrategy: string = cmd.getOptionValue('strategy') as 'balanced' | 'split' | 'single'
+        tonStaker = new TonPoolStaker({
+          ...networkConfig,
+        })
         await tonStaker.init()
 
         if (!config.validatorAddress2) {
@@ -152,13 +156,15 @@ async function runTx (
         }
         const stakingPoolAddressPair: [string, string] = [config.validatorAddress, config.validatorAddress2]
 
+        console.log('Preferred strategy: ' + preferredStrategy)
         console.log('Delegating to pool(s): ' + stakingPoolAddressPair.filter((addr) => addr !== "").join(', '))
 
         unsignedTx = (
           await tonStaker.buildStakeTx({
             delegatorAddress: config.delegatorAddress,
             validatorAddressPair: stakingPoolAddressPair,
-            amount: arg[0] // amount
+            amount: arg[0], // amount
+            preferredStrategy
           })
         ).tx
 

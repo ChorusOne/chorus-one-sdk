@@ -22,6 +22,10 @@ export class TonPoolStaker extends TonBaseStaker {
    * @param params.delegatorAddress - The delegator address
    * @param params.validatorAddressPair - The validator address pair to stake to
    * @param params.amount - The amount to stake, specified in `TON`
+   * @param params.preferredStrategy - (Optional) The stake allocation strategy. Default is `balanced`.
+   * * `balanced` - automatically balances the stake between the two pools based on the current pool balances and user stakes
+   * * `split` - splits the stake evenly between the two pools
+   * * `single` - stakes to a single pool
    * @param params.referrer - (Optional) The address of the referrer. This is used to track the origin of transactions,
    * providing insights into which sources or campaigns are driving activity. This can be useful for analytics and
    * optimizing user acquisition strategies
@@ -33,10 +37,11 @@ export class TonPoolStaker extends TonBaseStaker {
     delegatorAddress: string
     validatorAddressPair: [string, string]
     amount: string
+    preferredStrategy?: 'balanced' | 'split' | 'single'
     referrer?: string
     validUntil?: number
   }): Promise<{ tx: UnsignedTx }> {
-    const { validatorAddressPair, delegatorAddress, amount, validUntil, referrer } = params
+    const { validatorAddressPair, delegatorAddress, amount, preferredStrategy, validUntil, referrer } = params
 
     // allow staking to both pools
     const validatorAddresses = validatorAddressPair.filter((address) => address.length > 0)
@@ -98,30 +103,46 @@ export class TonPoolStaker extends TonBaseStaker {
       throw new Error('provided amount is less than the minimum required to stake')
     }
 
+    const selectedStrategy = TonPoolStaker.selectStrategy(
+      preferredStrategy,
+      toNano(amount),
+      validatorAddresses.length,
+      lowestMinStake
+    )
+
     const msgs: Message[] = []
+    switch (selectedStrategy) {
+      case 'single': {
+        const poolIndex = TonPoolStaker.selectPool(minElectionStake, currentPoolBalances)
+        msgs.push(genStakeMsg(validatorAddressPair[poolIndex], toNano(amount)))
+        break
+      }
 
-    // both pool calculation - if there is enough stake to split between pools and the two pools are defined
-    // simple calculation - if there is only one pool defined or the amount is less than 2 * lowestMinStake
-    const stakeToBothPools = validatorAddresses.length > 1 && toNano(amount) >= 2n * lowestMinStake
+      case 'split': {
+        const amounts: [bigint, bigint] = [0n, 0n]
+        amounts[0] = toNano(amount) / 2n
+        amounts[1] = toNano(amount) - amounts[0]
+        msgs.push(genStakeMsg(validatorAddressPair[0], amounts[0]))
+        msgs.push(genStakeMsg(validatorAddressPair[1], amounts[1]))
+        break
+      }
 
-    if (stakeToBothPools) {
-      const stakeAmountPerPool = TonPoolStaker.calculateStakePoolAmount(
-        toNano(amount),
-        minElectionStake,
-        currentPoolBalances,
-        currentUserStakes,
-        [poolParams[0].minStakeTotal, poolParams[1].minStakeTotal]
-      )
+      case 'balanced': {
+        const stakeAmountPerPool = TonPoolStaker.calculateStakePoolAmount(
+          toNano(amount),
+          minElectionStake,
+          currentPoolBalances,
+          currentUserStakes,
+          [poolParams[0].minStakeTotal, poolParams[1].minStakeTotal]
+        )
 
-      validatorAddresses.forEach((validatorAddress, index) => {
-        if (stakeAmountPerPool[index] === 0n) {
-          return null
-        }
-        msgs.push(genStakeMsg(validatorAddress, stakeAmountPerPool[index]))
-      })
-    } else {
-      const poolIndex = TonPoolStaker.selectPool(minElectionStake, currentPoolBalances)
-      msgs.push(genStakeMsg(validatorAddressPair[poolIndex], toNano(amount)))
+        validatorAddresses.forEach((validatorAddress, index) => {
+          if (stakeAmountPerPool[index] === 0n) {
+            return null
+          }
+          msgs.push(genStakeMsg(validatorAddress, stakeAmountPerPool[index]))
+        })
+      }
     }
 
     const tx = {
@@ -474,6 +495,34 @@ export class TonPoolStaker extends TonBaseStaker {
 
     // both pools have reached minStake, so allocate to the one with the lower balance
     return balancePool1 <= balancePool2 ? 0 : 1
+  }
+
+  /** @ignore */
+  static selectStrategy (
+    preferredStrategy: string | undefined,
+    amount: bigint,
+    totalValidators: number,
+    lowestMinStake: bigint
+  ): string {
+    const strategy = preferredStrategy || 'balanced'
+
+    if (totalValidators === 0) {
+      throw new Error('At least one validator address is required')
+    }
+
+    if (totalValidators === 1) {
+      return 'single'
+    }
+
+    if (['split', 'balanced'].includes(strategy)) {
+      const enoughStakeForBothPools = totalValidators > 1 && amount >= 2n * lowestMinStake
+      if (enoughStakeForBothPools) {
+        return strategy
+      }
+      return 'single'
+    }
+
+    return strategy
   }
 
   /** @ignore */
