@@ -145,7 +145,7 @@ async function runTx (
   try {
     switch (msgType) {
       case 'delegate-pool': {
-        const preferredStrategy: string = cmd.getOptionValue('strategy') as 'balanced' | 'split' | 'single'
+        const preferredStrategy = cmd.getOptionValue('strategy') as 'balanced' | 'split' | 'single'
         tonStaker = new TonPoolStaker({
           ...networkConfig,
         })
