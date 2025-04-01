@@ -168,7 +168,7 @@ async function runTx (
 
         console.log('Staking to the following contracts:')
         unsignedTx.messages.forEach((msg) => {
-          console.log(`* ${msg.address} with ${fromNano(msg.amount)} TON`)
+          console.log(`* ${msg.address} with ${fromNano(msg.amount)} TON (${msg.amount} nanoTON)`)
         })
         break
       }
