@@ -43,13 +43,19 @@ export class KeplrSigner {
 
     const { signDoc }: CosmosSigningData = signerData.data
 
-    const signingResponse = await this.signer.signAmino(signDoc.chain_id, signerAddress, signDoc)
+    // if we allow to change the fees, the signature will be invalid as the
+    // wallet will change the signDoc
+    const signingResponse = await this.signer.signAmino(signDoc.chain_id, signerAddress, signDoc, {
+        preferNoSetFee: true,
+        preferNoSetMemo: true,
+        disableBalanceCheck: false
+    })
 
     const signature = signingResponse.signature.signature
     const rawSig = Uint8Array.from(Buffer.from(signature, 'base64'))
 
     const sig = {
-      fullSig: signature,
+      fullSig: Buffer.from(rawSig).toString('hex'),
       r: Buffer.from(rawSig.subarray(0, 32)).toString('hex'),
       s: Buffer.from(rawSig.subarray(32, 64)).toString('hex'),
       v: undefined
