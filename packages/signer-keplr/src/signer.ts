@@ -32,6 +32,12 @@ export class KeplrSigner {
     return account.pubkey
   }
 
+  async getAddress (): Promise<string> {
+    const key = await this.signer.getKey(this.chainId)
+
+    return key.bech32Address
+  }
+
   async sign (
     signerAddress: string,
     signerData: SignerData,
