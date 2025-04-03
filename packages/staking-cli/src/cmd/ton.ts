@@ -8,6 +8,7 @@ import { prompt, readConfig, getNetworkConfig, log, defaultLogger } from '../uti
 import { SafeJSONStringify } from '@chorus-one/utils'
 import { newSigner } from '../signer'
 import { TonPoolStaker, TonNominatorPoolStaker, TonSingleNominatorPoolStaker } from '@chorus-one/ton'
+import { fromNano } from '@ton/ton'
 
 export interface CLINetworkConfig extends TonNetworkConfig {
   // block explorer URL to display Transaction ID via Web UI. Example:
@@ -31,6 +32,7 @@ function makeTxCommand (): Command {
 
   tx.command('delegate-pool')
     .description('generate a delegate funds to TON pool contract transaction')
+    .option('-S, --strategy <value>', 'select preferred stake allocation strategy (balanced | split | single)', 'balanced')
     .argument('<amount>', 'amount of tokens to stake expressed in TON denom e.g 0.1')
     .action(getDelegatePoolTx)
 
@@ -143,27 +145,37 @@ async function runTx (
   try {
     switch (msgType) {
       case 'delegate-pool': {
-        tonStaker = new TonPoolStaker({ ...networkConfig })
+        const preferredStrategy = cmd.getOptionValue('strategy') as 'balanced' | 'split' | 'single'
+        tonStaker = new TonPoolStaker({
+          ...networkConfig,
+        })
         await tonStaker.init()
 
         if (!config.validatorAddress2) {
           cmd.error('second validator address is required for TON Pool', { exitCode: 1, code: `${msgType}.tx.abort` })
         }
         const stakingPoolAddressPair: [string, string] = [config.validatorAddress, config.validatorAddress2]
-        const poolsInfo = await tonStaker.getPoolAddressForStake({ validatorAddressPair: stakingPoolAddressPair })
-        const poolIndex = stakingPoolAddressPair.findIndex((addr: string) => addr === poolsInfo.selectedPoolAddress)
-        if (poolIndex === -1) {
-          cmd.error('validator address not found in the pool', { exitCode: 1, code: `${msgType}.tx.abort` })
-        }
 
-        console.log('Delegating to pool #' + (poolIndex + 1) + ': ' + stakingPoolAddressPair[poolIndex])
+        console.log('Preferred strategy: ' + preferredStrategy)
+        console.log('Delegating to pool(s): ' + stakingPoolAddressPair.filter((addr) => addr !== "").join(', '))
 
         unsignedTx = (
           await tonStaker.buildStakeTx({
+            delegatorAddress: config.delegatorAddress,
             validatorAddressPair: stakingPoolAddressPair,
-            amount: arg[0] // amount
+            amount: arg[0], // amount
+            preferredStrategy
           })
         ).tx
+
+        if (unsignedTx.messages === undefined) {
+          throw new Error('no messages found in the unsigned transaction')
+        }
+
+        console.log('Staking to the following contracts:')
+        unsignedTx.messages.forEach((msg) => {
+          console.log(`* ${msg.address} with ${fromNano(msg.amount)} TON (${msg.amount} nanoTON)`)
+        })
         break
       }
       case 'unstake-pool': {
