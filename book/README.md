@@ -221,7 +221,7 @@ Here is a basic example of how to use the Chorus One SDK to build, sign, and bro
 // Configuration
 // -------------
 
-import { EthereumStaker, CHORUS_ONE_ETHEREUM_VALIDATORS } from '@chorus-one/solana'
+import { EthereumStaker, CHORUS_ONE_ETHEREUM_VALIDATORS } from '@chorus-one/ethereum'
 
 const staker = new EthereumStaker({
   network: 'ethereum'
