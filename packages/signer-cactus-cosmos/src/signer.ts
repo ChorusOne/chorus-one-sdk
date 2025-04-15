@@ -50,11 +50,11 @@ export class CactusCosmosSigner {
 
     const { signDoc }: CosmosSigningData = signerData.data
 
-    await this.signer.signAmino(signDoc.chain_id, signerAddress, signDoc)
+    const signingResponse = await this.signer.signAmino(signDoc.chain_id, signerAddress, signDoc)
 
-    // NOTE: This is a dummy signature
-    // Cactus extension signs and broadcasts transactions on their own
-    const rawSig = Uint8Array.from(Buffer.from("DEADC0DE".repeat(8)))
+    const signature = signingResponse.signature.signature
+    const rawSig = Uint8Array.from(Buffer.from(signature, 'base64'))
+
     const sig = {
       fullSig: Buffer.from(rawSig).toString('hex'),
       r: Buffer.from(rawSig.subarray(0, 32)).toString('hex'),
