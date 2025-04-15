@@ -10,8 +10,20 @@ export interface Key {
   isNanoLedger: boolean
 }
 
+export interface SignAminoResponse {
+    signature: {
+        signature: string
+        pub_key: {
+            type: string
+            value: string
+        }
+    }
+
+    signed: any
+}
+
 export interface CactusLinkCosmos {
   getKey(chainId: string): Promise<Key>
 
-  signAmino(chainId: string, signer: string, signDoc: any): Promise<string>
+  signAmino(chainId: string, signer: string, signDoc: any): Promise<SignAminoResponse>
 }
