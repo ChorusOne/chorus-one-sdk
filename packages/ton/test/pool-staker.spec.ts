@@ -73,7 +73,7 @@ describe('TonPoolStaker_calculateStakeAmount', () => {
   const fn = TonPoolStaker.calculateStakePoolAmount
   const minPoolStakes = [1n, 1n]
 
-  it('should equalize the user stake if both pools are above min', () => {
+  it('should equalize the pool stake if both pools are above min', () => {
     // strategy: both pools are above minStake, so our goal is to optimize the
     // balance for the pool stake
     const result = fn(1000n, 200n, [250n, 200n], minPoolStakes)
