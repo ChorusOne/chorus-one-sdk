@@ -133,7 +133,6 @@ export class TonPoolStaker extends TonBaseStaker {
           minElectionStake,
           currentPoolBalances,
           currentUserStakes,
-          [poolParams[0].minStakeTotal, poolParams[1].minStakeTotal]
         )
 
         validatorAddresses.forEach((validatorAddress, index) => {
@@ -576,11 +575,9 @@ export class TonPoolStaker extends TonBaseStaker {
     amount: bigint, // amount to stake
     minStake: bigint, // minimum stake for participation (to be in the set)
     currentPoolBalances: [bigint, bigint], // current stake balances of the pools
-    currentUserStakes: [bigint, bigint], // current user stakes in the pools
     minPoolStakes: [bigint, bigint] // min staked amount per pool
   ): [bigint, bigint] {
     const [poolOneBalance, poolTwoBalance] = currentPoolBalances
-    const [userOneStake, userTwoStake] = currentUserStakes
     const [minPoolOne, minPoolTwo] = minPoolStakes
 
     if (amount < minPoolOne || amount < minPoolTwo) {
@@ -595,12 +592,11 @@ export class TonPoolStaker extends TonBaseStaker {
       const poolTwoAboveMin = poolTwoBalance >= minStake
 
       // here we know that both pools will get elected therefore
-      // we should balance the user stakes (instead of pool stakes) to maximize
-      // the rewards
+      // we should balance the user stake to equalize the pool balances
       if (poolOneAboveMin && poolTwoAboveMin) {
-        const highestStakeI = userOneStake > userTwoStake ? 0 : 1
+        const highestStakeI = poolOneBalance > poolTwoBalance ? 0 : 1
         const lowerStakeI = highestStakeI === 1 ? 0 : 1
-        const stakedDelta = currentUserStakes[highestStakeI] - currentUserStakes[lowerStakeI]
+        const stakedDelta = currentPoolBalances[highestStakeI] - currentPoolBalances[lowerStakeI]
 
         const remainder = amount - stakedDelta
 
