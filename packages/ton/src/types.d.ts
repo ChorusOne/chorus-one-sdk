@@ -83,12 +83,6 @@ export interface PoolStatus {
   balanceWithdraw: bigint
 }
 
-export interface GetPoolAddressForStakeResponse {
-  selectedPoolAddress: string
-  minStake: bigint
-  poolStakes: [biginy, bigint]
-}
-
 export interface AddressDerivationConfig {
   walletContractVersion: number
   workchain: number

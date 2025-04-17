@@ -11,15 +11,7 @@ import {
   TransactionDescriptionGeneric
 } from '@ton/ton'
 import { defaultValidUntil, getDefaultGas, getRandomQueryId, TonBaseStaker } from './TonBaseStaker'
-import {
-  UnsignedTx,
-  Election,
-  FrozenSet,
-  PoolStatus,
-  GetPoolAddressForStakeResponse,
-  Message,
-  TonTxStatus
-} from './types'
+import { UnsignedTx, Election, FrozenSet, PoolStatus, Message, TonTxStatus } from './types'
 
 export class TonPoolStaker extends TonBaseStaker {
   /**
@@ -27,8 +19,13 @@ export class TonPoolStaker extends TonBaseStaker {
    * to stake to automatically.
    *
    * @param params - Parameters for building the transaction
+   * @param params.delegatorAddress - The delegator address
    * @param params.validatorAddressPair - The validator address pair to stake to
    * @param params.amount - The amount to stake, specified in `TON`
+   * @param params.preferredStrategy - (Optional) The stake allocation strategy. Default is `balanced`.
+   * * `balanced` - automatically balances the stake between the two pools based on the current pool balances and user stakes
+   * * `split` - splits the stake evenly between the two pools
+   * * `single` - stakes to a single pool
    * @param params.referrer - (Optional) The address of the referrer. This is used to track the origin of transactions,
    * providing insights into which sources or campaigns are driving activity. This can be useful for analytics and
    * optimizing user acquisition strategies
@@ -37,48 +34,119 @@ export class TonPoolStaker extends TonBaseStaker {
    * @returns Returns a promise that resolves to a TON nominator pool staking transaction.
    */
   async buildStakeTx (params: {
+    delegatorAddress: string
     validatorAddressPair: [string, string]
     amount: string
+    preferredStrategy?: 'balanced' | 'split' | 'single'
     referrer?: string
     validUntil?: number
   }): Promise<{ tx: UnsignedTx }> {
-    const { validatorAddressPair, amount, validUntil, referrer } = params
-    const poolAddress = (await this.getPoolAddressForStake({ validatorAddressPair })).selectedPoolAddress
+    const { validatorAddressPair, delegatorAddress, amount, preferredStrategy, validUntil, referrer } = params
 
-    // ensure the address is for the right network
-    this.checkIfAddressTestnetFlagMatches(poolAddress)
-
-    // ensure the validator address is bounceable.
-    // NOTE: TEP-002 specifies that the address bounceable flag should match both the internal message and the address.
-    // This has no effect as we force the bounce flag anyway. However it is a good practice to be consistent
-    if (!Address.parseFriendly(poolAddress).isBounceable) {
-      throw new Error(
-        'validator address is not bounceable! It is required for nominator pool contract operations to use bounceable addresses'
-      )
+    // allow staking to both pools
+    const validatorAddresses = validatorAddressPair.filter((address) => address.length > 0)
+    if (validatorAddresses.length == 0) {
+      throw new Error('At least one validator address is required')
     }
 
-    // https://github.com/tonwhales/ton-nominators/blob/0553e1b6ddfc5c0b60505957505ce58d01bec3e7/compiled/nominators.fc#L18
-    let basePayload = beginCell()
-      .storeUint(2077040623, 32) // stake_deposit method const
-      .storeUint(getRandomQueryId(), 64) // Query ID
-      .storeCoins(getDefaultGas()) // Gas
+    validatorAddresses.forEach((validatorAddress) => {
+      // ensure the address is for the right network
+      this.checkIfAddressTestnetFlagMatches(validatorAddress)
 
-    if (referrer) {
-      basePayload = basePayload.storeStringTail(referrer)
+      // ensure the validator address is bounceable.
+      // NOTE: TEP-002 specifies that the address bounceable flag should match both the internal message and the address.
+      // This has no effect as we force the bounce flag anyway. However it is a good practice to be consistent
+      if (!Address.parseFriendly(validatorAddress).isBounceable) {
+        throw new Error(
+          'validator address is not bounceable! It is required for nominator pool contract operations to use bounceable addresses'
+        )
+      }
+    })
+
+    const genStakeMsg = (validatorAddress: string, amount: bigint): Message => {
+      // https://github.com/tonwhales/ton-nominators/blob/0553e1b6ddfc5c0b60505957505ce58d01bec3e7/compiled/nominators.fc#L18
+      let basePayload = beginCell()
+        .storeUint(2077040623, 32) // stake_deposit method const
+        .storeUint(getRandomQueryId(), 64) // Query ID
+        .storeCoins(getDefaultGas()) // Gas
+
+      if (referrer) {
+        basePayload = basePayload.storeStringTail(referrer)
+      }
+
+      const payload = basePayload.endCell()
+
+      return {
+        address: validatorAddress,
+        bounceable: true,
+        amount: amount,
+        payload
+      }
     }
 
-    const payload = basePayload.endCell()
+    const { minElectionStake, currentPoolBalances, currentUserStakes } = await this.getPoolDataForDelegator(
+      delegatorAddress,
+      validatorAddresses
+    )
+
+    const poolParams = await Promise.all(
+      validatorAddresses.map((validatorAddress) => this.getPoolParamsUnformatted({ validatorAddress }))
+    )
+    const lowestMinStake: bigint = poolParams
+      .filter((param) => param.minStake !== 0n)
+      .reduce((acc, val) => (val.minStakeTotal < acc ? val.minStakeTotal : acc), poolParams[0].minStakeTotal)
+    if (lowestMinStake === 0n) {
+      throw new Error('minimum stake for both pools is zero, that does not seem right')
+    }
+
+    if (toNano(amount) < lowestMinStake) {
+      throw new Error('provided amount is less than the minimum required to stake')
+    }
+
+    const selectedStrategy = TonPoolStaker.selectStrategy(
+      preferredStrategy,
+      toNano(amount),
+      validatorAddresses.length,
+      lowestMinStake
+    )
+
+    const msgs: Message[] = []
+    switch (selectedStrategy) {
+      case 'single': {
+        const poolIndex = TonPoolStaker.selectPool(minElectionStake, currentPoolBalances)
+        msgs.push(genStakeMsg(validatorAddressPair[poolIndex], toNano(amount)))
+        break
+      }
+
+      case 'split': {
+        const amounts: [bigint, bigint] = [0n, 0n]
+        amounts[0] = toNano(amount) / 2n
+        amounts[1] = toNano(amount) - amounts[0]
+        msgs.push(genStakeMsg(validatorAddressPair[0], amounts[0]))
+        msgs.push(genStakeMsg(validatorAddressPair[1], amounts[1]))
+        break
+      }
+
+      case 'balanced': {
+        const stakeAmountPerPool = TonPoolStaker.calculateStakePoolAmount(
+          toNano(amount),
+          minElectionStake,
+          currentPoolBalances,
+          currentUserStakes,
+        )
+
+        validatorAddresses.forEach((validatorAddress, index) => {
+          if (stakeAmountPerPool[index] === 0n) {
+            return null
+          }
+          msgs.push(genStakeMsg(validatorAddress, stakeAmountPerPool[index]))
+        })
+      }
+    }
 
     const tx = {
       validUntil: defaultValidUntil(validUntil),
-      messages: [
-        {
-          address: poolAddress,
-          bounceable: true,
-          amount: toNano(amount),
-          payload
-        }
-      ]
+      messages: msgs.filter((msg) => msg !== null)
     }
 
     return { tx }
@@ -88,6 +156,7 @@ export class TonPoolStaker extends TonBaseStaker {
    * Builds an unstaking transaction for TON Pool contract.
    *
    * @param params - Parameters for building the transaction
+   * @param params.delegatorAddress - The delegator address
    * @param params.validatorAddressPair - The validator address pair to unstake from
    * @param params.amount - The amount to stake, specified in `TON`
    * @param params.disableStatefulCalculation - (Optional) Disables stateful calculation where validator and user stake is taken into account
@@ -149,6 +218,7 @@ export class TonPoolStaker extends TonBaseStaker {
     const poolParamsData = await Promise.all(
       validatorAddresses.map((validatorAddress) => this.getPoolParamsUnformatted({ validatorAddress }))
     )
+
     const msgs: Message[] = []
 
     if (disableStatefulCalculation) {
@@ -157,30 +227,14 @@ export class TonPoolStaker extends TonBaseStaker {
         msgs.push(genUnstakeMsg(validatorAddress, toNano(amount), data.withdrawFee, data.receiptPrice))
       })
     } else {
-      const [poolStatus, userStake, minStake] = await Promise.all([
-        Promise.all(validatorAddresses.map((validatorAddress) => this.getPoolStatus(validatorAddress))),
-        Promise.all(
-          validatorAddresses.map((validatorAddress) => this.getStake({ delegatorAddress, validatorAddress }))
-        ),
-        this.getMinStake()
-      ])
-
-      const currentPoolBalances: [bigint, bigint] =
-        validatorAddresses.length === 2 ? [poolStatus[0].balance, poolStatus[1].balance] : [poolStatus[0].balance, 0n]
-      const currentUserStakes: [bigint, bigint] =
-        validatorAddresses.length === 2
-          ? [
-              toNano(userStake[0].balance) + toNano(userStake[0].pendingDeposit) - toNano(userStake[0].pendingWithdraw),
-              toNano(userStake[1].balance) + toNano(userStake[1].pendingDeposit) - toNano(userStake[1].pendingWithdraw)
-            ]
-          : [
-              toNano(userStake[0].balance) + toNano(userStake[0].pendingDeposit) - toNano(userStake[0].pendingWithdraw),
-              0n
-            ]
+      const { minElectionStake, currentPoolBalances, currentUserStakes } = await this.getPoolDataForDelegator(
+        delegatorAddress,
+        validatorAddresses
+      )
 
       const unstakeAmountPerPool = TonPoolStaker.calculateUnstakePoolAmount(
         toNano(amount),
-        minStake,
+        minElectionStake,
         currentPoolBalances,
         currentUserStakes
       )
@@ -295,44 +349,52 @@ export class TonPoolStaker extends TonBaseStaker {
     const client = this.getClient()
     const response = await client.runMethod(Address.parse(validatorAddress), 'get_params', [])
 
-    return {
+    const data = {
       enabled: response.stack.readBoolean(),
       updatesEnables: response.stack.readBoolean(),
       minStake: response.stack.readBigNumber(),
       depositFee: response.stack.readBigNumber(),
       withdrawFee: response.stack.readBigNumber(),
       poolFee: response.stack.readBigNumber(),
-      receiptPrice: response.stack.readBigNumber()
+      receiptPrice: response.stack.readBigNumber(),
+      minStakeTotal: 0n
     }
+
+    data.minStakeTotal = data.minStake + data.depositFee + data.withdrawFee
+
+    return data
   }
 
   /** @ignore */
-  async getPoolAddressForStake (params: {
-    validatorAddressPair: [string, string]
-  }): Promise<GetPoolAddressForStakeResponse> {
-    const { validatorAddressPair } = params
-
-    // fetch required data:
-    // 1. stake balance for both pools
-    // 2. last election data to get the minimum stake for participation
-    const [poolOneStatus, poolTwoStatus, minStake] = await Promise.all([
-      this.getPoolStatus(validatorAddressPair[0]),
-      this.getPoolStatus(validatorAddressPair[1]),
-      this.getMinStake()
+  private async getPoolDataForDelegator (delegatorAddress: string, validatorAddresses: string[]) {
+    const [poolStatus, userStake, minElectionStake] = await Promise.all([
+      Promise.all(validatorAddresses.map((validatorAddress) => this.getPoolStatus(validatorAddress))),
+      Promise.all(validatorAddresses.map((validatorAddress) => this.getStake({ delegatorAddress, validatorAddress }))),
+      this.getElectionMinStake()
     ])
 
-    const [poolOneBalance, poolTwoBalance] = [poolOneStatus.balance, poolTwoStatus.balance]
+    const currentPoolBalances: [bigint, bigint] =
+      validatorAddresses.length === 2 ? [poolStatus[0].balance, poolStatus[1].balance] : [poolStatus[0].balance, 0n]
 
-    const selectedPoolIndex = TonPoolStaker.selectPool(minStake, [poolOneBalance, poolTwoBalance])
+    const currentUserStakes: [bigint, bigint] =
+      validatorAddresses.length === 2
+        ? [
+            toNano(userStake[0].balance) + toNano(userStake[0].pendingDeposit) - toNano(userStake[0].pendingWithdraw),
+            toNano(userStake[1].balance) + toNano(userStake[1].pendingDeposit) - toNano(userStake[1].pendingWithdraw)
+          ]
+        : [
+            toNano(userStake[0].balance) + toNano(userStake[0].pendingDeposit) - toNano(userStake[0].pendingWithdraw),
+            0n
+          ]
 
     return {
-      selectedPoolAddress: validatorAddressPair[selectedPoolIndex],
-      minStake: minStake,
-      poolStakes: [poolOneBalance, poolTwoBalance]
+      minElectionStake,
+      currentPoolBalances,
+      currentUserStakes
     }
   }
 
-  async getMinStake (): Promise<bigint> {
+  async getElectionMinStake (): Promise<bigint> {
     // elector contract address
     const elections = await this.getPastElections('Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF')
 
@@ -435,6 +497,34 @@ export class TonPoolStaker extends TonBaseStaker {
   }
 
   /** @ignore */
+  static selectStrategy (
+    preferredStrategy: string | undefined,
+    amount: bigint,
+    totalValidators: number,
+    lowestMinStake: bigint
+  ): string {
+    const strategy = preferredStrategy || 'balanced'
+
+    if (totalValidators === 0) {
+      throw new Error('At least one validator address is required')
+    }
+
+    if (totalValidators === 1) {
+      return 'single'
+    }
+
+    if (['split', 'balanced'].includes(strategy)) {
+      const enoughStakeForBothPools = totalValidators > 1 && amount >= 2n * lowestMinStake
+      if (enoughStakeForBothPools) {
+        return strategy
+      }
+      return 'single'
+    }
+
+    return strategy
+  }
+
+  /** @ignore */
   static calculateUnstakePoolAmount (
     amount: bigint, // amount to unstake
     minStake: bigint, // minimum stake for participation (to be in the set)
@@ -478,5 +568,162 @@ export class TonPoolStaker extends TonBaseStaker {
     }
 
     return result
+  }
+
+  /** @ignore */
+  static calculateStakePoolAmount (
+    amount: bigint, // amount to stake
+    minStake: bigint, // minimum stake for participation (to be in the set)
+    currentPoolBalances: [bigint, bigint], // current stake balances of the pools
+    minPoolStakes: [bigint, bigint] // min staked amount per pool
+  ): [bigint, bigint] {
+    const [poolOneBalance, poolTwoBalance] = currentPoolBalances
+    const [minPoolOne, minPoolTwo] = minPoolStakes
+
+    if (amount < minPoolOne || amount < minPoolTwo) {
+      throw new Error('amount is less than the minimum required to stake')
+    }
+
+    const calculate = (): [bigint, bigint] => {
+      const result: [bigint, bigint] = [0n, 0n]
+
+      // case: both pools are at or above minStake
+      const poolOneAboveMin = poolOneBalance >= minStake
+      const poolTwoAboveMin = poolTwoBalance >= minStake
+
+      // here we know that both pools will get elected therefore
+      // we should balance the user stake to equalize the pool balances
+      if (poolOneAboveMin && poolTwoAboveMin) {
+        const highestStakeI = poolOneBalance > poolTwoBalance ? 0 : 1
+        const lowerStakeI = highestStakeI === 1 ? 0 : 1
+        const stakedDelta = currentPoolBalances[highestStakeI] - currentPoolBalances[lowerStakeI]
+
+        const remainder = amount - stakedDelta
+
+        // if the amount won't balance two stakes, we add the amount to the
+        // lowest stake to fill the gap as much as possible
+        if (remainder <= 0n) {
+          result[lowerStakeI] = amount
+          result[highestStakeI] = 0n
+          return result
+        }
+
+        // if the remainder is less than min, then spliting it 50/50 will
+        // not work. Instead stake all to one pool
+        if (remainder < minPoolOne || remainder < minPoolTwo) {
+          result[highestStakeI] = 0n
+          result[lowerStakeI] = stakedDelta + remainder
+          return result
+        }
+
+        // now ideal case is to split the remainder 50/50, but if that is not
+        // possible due to minPool stake constraints, we need to adjust
+        const halfRemainder = remainder / 2n
+        if (halfRemainder <= minPoolOne || halfRemainder <= minPoolTwo) {
+          if (stakedDelta < minPoolOne || stakedDelta < minPoolTwo) {
+            // balancing out wihtout going below minPool is impossible
+            // split the stake amount 50/50 instead
+            result[highestStakeI] = amount / 2n
+            result[lowerStakeI] = amount - result[highestStakeI]
+          } else {
+            // carry over the remainder to the higher stake pool,
+            // because reminder can't be split 50/50 without violating minPool
+            // constraint
+            result[highestStakeI] = remainder
+            result[lowerStakeI] = stakedDelta
+          }
+          return result
+        }
+
+        // here most likely we have enough tokens to blance and split the
+        // remainder 50/50
+        result[highestStakeI] = remainder / 2n
+        result[lowerStakeI] = stakedDelta + remainder - remainder / 2n
+
+        return result
+      }
+
+      const poolOneBelowMin = poolOneBalance < minStake && poolTwoBalance >= minStake
+      const poolTwoBelowMin = poolTwoBalance < minStake && poolOneBalance >= minStake
+      // case: one pool is below minStake and one is above
+      if (poolOneBelowMin || poolTwoBelowMin) {
+        const needed = [minStake - poolOneBalance, minStake - poolTwoBalance]
+        const highestStakeI = poolOneBalance > poolTwoBalance ? 0 : 1
+        const lowerStakeI = highestStakeI === 1 ? 0 : 1
+
+        // the pool will become active
+        if (needed[lowerStakeI] - amount <= 0) {
+          const remaining = amount - needed[highestStakeI]
+          result[highestStakeI] = needed[highestStakeI] + remaining / 2n
+          result[lowerStakeI] = remaining - remaining / 2n
+          return result
+        }
+
+        // no chance of filling the pool to become active
+        const remaining = amount
+        result[lowerStakeI] = remaining / 2n
+        result[highestStakeI] = remaining - remaining / 2n
+
+        return result
+      }
+
+      // case: both pools are below minStake
+      if (!poolOneAboveMin && !poolTwoAboveMin) {
+        const needed = [minStake - poolOneBalance, minStake - poolTwoBalance]
+        const highestStakeI = poolOneBalance > poolTwoBalance ? 0 : 1
+        const lowerStakeI = highestStakeI === 1 ? 0 : 1
+
+        // there is a chance to make both pools active
+        if (amount >= needed[0] + needed[1]) {
+          const remaining = amount - (needed[0] + needed[1])
+          result[0] = needed[0] + remaining / 2n
+          result[1] = needed[1] + remaining - remaining / 2n
+          return result
+        }
+
+        // at least one pool will be active
+        if (needed[0] - amount <= 0 || needed[1] - amount <= 0) {
+          const remaining = amount - needed[highestStakeI]
+          result[highestStakeI] = needed[highestStakeI] + remaining / 2n
+          result[lowerStakeI] = remaining - remaining / 2n
+          return result
+        }
+
+        // no chance of filling both pools to become active
+        result[highestStakeI] = amount
+        return result
+      }
+
+      // fallback: split 50/50
+      result[0] = amount / 2n
+      result[1] = amount - result[0]
+
+      return result
+    }
+
+    const fallback = (result: [bigint, bigint]) => {
+      // if both amounts are lower than minPool (0n may be explicit action), something must hve gone wrong
+      // attempt to split the amount 50/50 and hope for the best
+      if ((result[0] !== 0n && result[0] < minPoolOne) || (result[1] !== 0n && result[1] < minPoolTwo)) {
+        result[0] = amount / 2n
+        result[1] = amount - result[0]
+      }
+
+      return result
+    }
+
+    const stakeAmountPerPool: [bigint, bigint] = fallback(calculate())
+
+    // sanity check sum
+    if (stakeAmountPerPool.reduce((acc, val) => acc + val, 0n) !== amount) {
+      throw new Error('stake amount does not match the requested amount, this should not have happened')
+    }
+
+    // sanity check negative values
+    if (stakeAmountPerPool.some((stake) => stake < 0n)) {
+      throw new Error('stake amount per pool cannot be negative, this should not have happened')
+    }
+
+    return stakeAmountPerPool
   }
 }
