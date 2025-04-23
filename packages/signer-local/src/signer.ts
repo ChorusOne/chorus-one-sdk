@@ -60,37 +60,41 @@ export class LocalSigner {
   async init (): Promise<void> {
     const seed = await this.mnemonicToSeedFn(this.config.mnemonic)
 
-    this.config.accounts.map(async (account) => {
-      let key: { publicKey: Uint8Array; privateKey: Uint8Array }
+    await Promise.all(
+      this.config.accounts.map(async (account) => {
+        let key: { publicKey: Uint8Array; privateKey: Uint8Array }
 
-      switch (this.config.keyType) {
-        case undefined:
-        case KeyType.SECP256K1: {
-          const fn = this.seedToKeypairFn ?? deriveSecp256k1
-          key = await fn(seed, account.hdPath)
-          break
+        switch (this.config.keyType) {
+          case undefined:
+          case KeyType.SECP256K1: {
+            const fn = this.seedToKeypairFn ?? deriveSecp256k1
+            key = await fn(seed, account.hdPath)
+            break
+          }
+          case KeyType.ED25519: {
+            const fn = this.seedToKeypairFn ?? deriveEd25519
+            key = await fn(seed, account.hdPath)
+            break
+          }
+          default:
+            throw new Error('unsupported key type')
         }
-        case KeyType.ED25519: {
-          const fn = this.seedToKeypairFn ?? deriveEd25519
-          key = await fn(seed, account.hdPath)
-          break
-        }
-        default:
-          throw new Error('unsupported key type')
-      }
 
-      const publicKey = key.publicKey
-      const privateKey = key.privateKey
+        const publicKey = key.publicKey
 
-      const derivedAddresses = await this.addressDerivationFn(key.publicKey, account.hdPath)
-      derivedAddresses.forEach((address) => {
-        this.accounts.set(address.toLowerCase(), {
-          hdPath: account.hdPath,
-          privateKey,
-          publicKey
+        const privateKey = key.privateKey
+
+        const derivedAddresses = await this.addressDerivationFn(key.publicKey, account.hdPath)
+
+        derivedAddresses.forEach((address) => {
+          this.accounts.set(address.toLowerCase(), {
+            hdPath: account.hdPath,
+            privateKey,
+            publicKey
+          })
         })
       })
-    })
+    )
   }
 
   /**
