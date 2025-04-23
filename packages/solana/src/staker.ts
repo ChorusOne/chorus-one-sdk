@@ -6,9 +6,10 @@ import {
   Keypair,
   StakeProgram,
   Authorized,
-  Transaction,
   ParsedAccountData,
-  GetVersionedTransactionConfig
+  GetVersionedTransactionConfig,
+  VersionedTransaction,
+  TransactionMessage
 } from '@solana/web3.js'
 import { getDenomMultiplier, macroToDenomAmount, denomToMacroAmount } from './tx'
 import type { Signer } from '@chorus-one/signer'
@@ -357,31 +358,37 @@ export class SolanaStaker {
     signer: Signer
     signerAddress: string
     tx: SolanaTransaction
-  }): Promise<{ signedTx: Transaction }> {
+  }): Promise<{ signedTx: VersionedTransaction }> {
     const connection = this.getConnection()
     const { signer, signerAddress, tx } = params
-    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash()
+    const { blockhash } = await connection.getLatestBlockhash()
+    const versionedTransaction = new VersionedTransaction(
+      new TransactionMessage({
+        payerKey: new PublicKey(signerAddress),
+        recentBlockhash: blockhash,
+        instructions: tx.tx.instructions
+      }).compileToV0Message()
+    )
 
-    // the owner of the stake account is the fee payer
-    tx.tx.feePayer = new PublicKey(signerAddress)
+    const serializedMessage = versionedTransaction.message.serialize()
+    let message: string = ''
+    if (Buffer.isBuffer(serializedMessage)) {
+      message = serializedMessage.toString('hex')
+    } else {
+      message = Buffer.from(serializedMessage).toString('hex')
+    }
 
-    const nativeTx = tx.tx
     const keys = tx.additionalKeys || []
+    if (keys.length > 0) {
+      versionedTransaction.sign(keys)
+    }
     const signingData: SolanaSigningData = { tx }
 
-    nativeTx.recentBlockhash = blockhash
-    nativeTx.lastValidBlockHeight = lastValidBlockHeight
-
-    const message = nativeTx.compileMessage().serialize().toString('hex')
     const { sig, pk } = await signer.sign(signerAddress, { message, data: signingData }, { note: '' })
+    const signatureBytes = Uint8Array.from(Buffer.from(sig.fullSig, 'hex'))
+    versionedTransaction.addSignature(new PublicKey(pk), signatureBytes)
 
-    nativeTx.addSignature(new PublicKey(pk), Buffer.from(sig.fullSig, 'hex'))
-
-    keys.forEach((key) => {
-      nativeTx.partialSign(key)
-    })
-
-    return { signedTx: nativeTx }
+    return { signedTx: versionedTransaction }
   }
 
   /**
@@ -393,7 +400,7 @@ export class SolanaStaker {
    * @returns A promise that resolves to the final execution outcome of the broadcast transaction.
    *
    */
-  async broadcast (params: { signedTx: Transaction }): Promise<{
+  async broadcast (params: { signedTx: VersionedTransaction }): Promise<{
     txHash: string
     slot: number
     error: any
@@ -401,16 +408,17 @@ export class SolanaStaker {
     const connection = this.getConnection()
     const { signedTx } = params
 
-    if (!signedTx.recentBlockhash || !signedTx.lastValidBlockHeight || signedTx.signatures.length == 0) {
+    if (signedTx.signatures.length == 0) {
       throw new Error('the provided transaction is not signed')
     }
 
     const signature = await connection.sendRawTransaction(signedTx.serialize())
+    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash(this.commitment)
     const confirmation = await connection.confirmTransaction(
       {
         signature,
-        blockhash: signedTx.recentBlockhash as string,
-        lastValidBlockHeight: signedTx.lastValidBlockHeight as number
+        blockhash: blockhash,
+        lastValidBlockHeight: lastValidBlockHeight
       },
       this.commitment
     )
