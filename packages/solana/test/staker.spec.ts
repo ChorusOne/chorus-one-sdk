@@ -189,7 +189,7 @@ describe('SolanaStaker', () => {
   })
 })
 
-describe.only('SolanaStake - with real connection', () => {
+describe('SolanaStake - with real connection', () => {
   let testStaker: SolanaTestStaker
 
   before(async function () {
@@ -235,7 +235,7 @@ describe.only('SolanaStake - with real connection', () => {
     const stakeAccountsAfterWithdrawCount = stakeAccountsAfterWithdraw.accounts.length
     expect(stakeAccountsAfterWithdrawCount).to.equal(allStakeAccountsBeforeCount)
   }).timeout(60000)
-  it.only('should stake and split the stake account', async () => {
+  it('should stake and split the stake account', async () => {
     const stakeAmount = 0.3
     const stakeAccountAddress = await testStaker.createAndDelegateStake(stakeAmount.toString())
 

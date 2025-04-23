@@ -100,6 +100,23 @@ npm run build
 
 This command will build all packages in the monorepo in a correct order.
 
+### Running Tests
+
+The Solana package tests require the `TEST_SOLANA_MNEMONIC` environment variable to be set. You can set it in your shell and run the tests as follows:
+
+```bash
+export TEST_SOLANA_MNEMONIC="your mnemonic here"
+npm run test
+```
+
+To run the tests for the Ethereum package, use the following command:
+
+```bash
+npm run test:ethereum
+```
+
+This command will spin up a hardhat node and will run the Ethreum tests against it.
+
 ### Building the API reference
 
 The project uses typedoc to generate API reference with additional markdown post-processing for better readability.
