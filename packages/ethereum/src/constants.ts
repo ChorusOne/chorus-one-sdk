@@ -19,16 +19,16 @@ export const CHORUS_ONE_ETHEREUM_VALIDATORS = {
     mevMaxVault: '0xe6d8d8ac54461b1c5ed15740eee322043f696c08'
   },
   /**
-   * Holesky testnet validator addresses.
+   * Hoodi testnet validator addresses.
    */
-  holesky: {
+  hoodi: {
     /**
      * Testnet vault address
      */
-    mevMaxVault: '0x95d0db03d59658e1af0d977ecfe142f178930ac5',
+    mevMaxVault: '0xba447498dc4c169f2b4f427b2c4d532320457e89',
     /**
      * Testnet vault address
      */
-    obolDvVault: '0x95d0db03d59658e1af0d977ecfe142f178930ac5'
+    obolDvVault: '0xba447498dc4c169f2b4f427b2c4d532320457e89'
   }
 } as const
