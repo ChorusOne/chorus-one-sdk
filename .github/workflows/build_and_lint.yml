@@ -18,6 +18,8 @@ jobs:
       - name: Test build
         run: npm run build
       - name: Run tests
+        env:
+          TEST_SOLANA_MNEMONIC: ${{secrets.TEST_SOLANA_MNEMONIC}}
         run: npm run test
       - name: Run ethereum tests
         run: npm run test:ethereum
