@@ -2,7 +2,7 @@ import { Hex } from 'viem'
 import { assert } from 'chai'
 import { EthereumStaker } from '../dist/mjs'
 import { prepareTests } from './lib/utils'
-import { itWrapped } from './lib/itWrapped'
+import { disableHoodi } from './lib/disableHoodi'
 
 describe('EthereumStaker.getUnstakeQueue', () => {
   let delegatorAddress: Hex
@@ -17,7 +17,9 @@ describe('EthereumStaker.getUnstakeQueue', () => {
     staker = setup.staker
   })
 
-  itWrapped({ disableNetworks: ['hoodi'] }, 'returns the unstake queue', async () => {
+  it('returns the unstake queue', async function () {
+    disableHoodi.bind(this)()
+
     const unstakeQueue = await staker.getUnstakeQueue({
       validatorAddress,
       delegatorAddress

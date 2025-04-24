@@ -21,7 +21,7 @@ export const prepareTests = async () => {
   })
   const resetParams = {
     forking: {
-      jsonRpcUrl: config.network.url
+      jsonRpcUrl: config.networkConfig.url
     },
     accounts: config.accounts
   }
@@ -32,17 +32,18 @@ export const prepareTests = async () => {
   })
 
   const staker = new EthereumStaker({
-    network: config.network.name,
+    network: config.networkConfig.name,
     rpcUrl: hardhat.rpcUrls.default.http[0]
   })
   await staker.init()
 
   return {
-    validatorAddress: CHORUS_ONE_ETHEREUM_VALIDATORS[config.network.name].mevMaxVault,
+    validatorAddress: CHORUS_ONE_ETHEREUM_VALIDATORS[config.networkConfig.name].mevMaxVault,
     walletClient,
     publicClient,
     staker,
-    osEthTokenAddress: config.network.addresses.osEthToken
+    osEthTokenAddress: config.networkConfig.addresses.osEthToken,
+    network: config.network
   }
 }
 

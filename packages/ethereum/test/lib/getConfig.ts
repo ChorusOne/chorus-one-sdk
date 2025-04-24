@@ -15,8 +15,9 @@ interface Account {
 }
 
 export const getConfig = (): {
-  network: NetworkConfig
+  networkConfig: NetworkConfig
   accounts: Account[]
+  network: keyof typeof config.networks
 } => {
   if (!process.env.NETWORK || !(process.env.NETWORK in config.networks)) {
     throw new Error('NETWORK is not set')
@@ -25,7 +26,8 @@ export const getConfig = (): {
   const networkConfig = config.networks[process.env.NETWORK as keyof typeof config.networks] as NetworkConfig
 
   return {
-    network: networkConfig,
-    accounts: config.accounts
+    networkConfig,
+    accounts: config.accounts,
+    network: process.env.NETWORK as keyof typeof config.networks
   }
 }

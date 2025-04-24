@@ -2,7 +2,7 @@ import { EthereumStaker } from '@chorus-one/ethereum'
 import { assert } from 'chai'
 import { Hex } from 'viem'
 import { prepareTests } from './lib/utils'
-import { itWrapped } from './lib/itWrapped'
+import { disableHoodi } from './lib/disableHoodi'
 
 describe('EthereumStaker.getTxHistory', () => {
   let validatorAddress: Hex
@@ -16,25 +16,23 @@ describe('EthereumStaker.getTxHistory', () => {
     staker = setup.staker
   })
 
-  itWrapped(
-    { disableNetworks: ['hoodi'] },
-    'returns correct transaction history for given period of time',
-    async () => {
-      const txHistory = await staker.getTxHistory({
-        validatorAddress,
-        delegatorAddress
-      })
+  it('returns correct transaction history for given period of time', async function () {
+    disableHoodi.bind(this)()
 
-      const expectedTx = {
-        timestamp: 1741662167000,
-        type: 'Deposited',
-        amount: '0.457878161232164171',
-        txHash: '0x6f2d4c8499367d417616368988fff37c064d6adb15857076f2519eff55ad3e44'
-      }
+    const txHistory = await staker.getTxHistory({
+      validatorAddress,
+      delegatorAddress
+    })
 
-      const tx = txHistory.find((tx) => tx.txHash === expectedTx.txHash)
-
-      assert.deepEqual(tx, expectedTx)
+    const expectedTx = {
+      timestamp: 1741662167000,
+      type: 'Deposited',
+      amount: '0.457878161232164171',
+      txHash: '0x6f2d4c8499367d417616368988fff37c064d6adb15857076f2519eff55ad3e44'
     }
-  )
+
+    const tx = txHistory.find((tx) => tx.txHash === expectedTx.txHash)
+
+    assert.deepEqual(tx, expectedTx)
+  })
 })

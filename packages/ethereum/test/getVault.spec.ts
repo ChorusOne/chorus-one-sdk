@@ -2,7 +2,7 @@ import { EthereumStaker } from '@chorus-one/ethereum'
 import { assert } from 'chai'
 import { Hex } from 'viem'
 import { prepareTests } from './lib/utils'
-import { itWrapped } from './lib/itWrapped'
+import { disableHoodi } from './lib/disableHoodi'
 
 describe('EthereumStaker.getVault', () => {
   let validatorAddress: Hex
@@ -14,7 +14,9 @@ describe('EthereumStaker.getVault', () => {
     staker = setup.staker
   })
 
-  itWrapped({ disableNetworks: ['hoodi'] }, 'returns vault details', async () => {
+  it('returns vault details', async function () {
+    disableHoodi.bind(this)()
+
     const { vault } = await staker.getVault({
       validatorAddress
     })

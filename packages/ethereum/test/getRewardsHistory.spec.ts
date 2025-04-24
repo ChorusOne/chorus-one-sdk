@@ -2,7 +2,7 @@ import { EthereumStaker } from '@chorus-one/ethereum'
 import { assert } from 'chai'
 import { Hex } from 'viem'
 import { prepareTests } from './lib/utils'
-import { itWrapped } from './lib/itWrapped'
+import { disableHoodi } from './lib/disableHoodi'
 
 describe('EthereumStaker.getRewards', () => {
   let validatorAddress: Hex
@@ -18,7 +18,9 @@ describe('EthereumStaker.getRewards', () => {
     staker = setup.staker
   })
 
-  itWrapped({ disableNetworks: ['hoodi'] }, 'returns correct rewards history for given period of time', async () => {
+  it('returns correct rewards history for given period of time', async function () {
+    disableHoodi.bind(this)()
+
     const rewards = await staker.getRewardsHistory({
       startTime: 1735689600000, // 2025-01-01
       endTime: 1738368000000, // 2025-02-01
