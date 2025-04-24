@@ -7,7 +7,7 @@
     "hardhat:start": "hardhat node & echo $! > hardhat.pid;",
     "hardhat:stop": "kill $(cat hardhat.pid) && rm hardhat.pid",
     "test:integration": "mocha --timeout 30000 '**/*.spec.ts'",
-    "test": "npm run hardhat:start > hardhat.log & sleep 5; npm run test:integration; status=$?; npm run hardhat:stop; exit $status"
+    "test": "NETWORK=hoodi npm run hardhat:start > hardhat.log & sleep 5; NETWORK=hoodi npm run test:integration; status=$?; npm run hardhat:stop; exit $status"
   },
   "main": "dist/cjs/index.js",
   "module": "dist/mjs/index.js",
