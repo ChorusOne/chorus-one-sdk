@@ -59,7 +59,7 @@ Now, we will focus on the main operation of our application: submitting a staki
 const stake = async ({
   userAddress, // Comes from wagmi
   walletClient, // Comes from wagmi
-  network, // Networks.Hoody
+  network, // Networks.Hoodi
   vault, // Vault address (can be provided by getDefaultVaults(...))
   amountToStake // Amount of ETH to deposit as string
 }: {
