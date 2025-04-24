@@ -11,7 +11,7 @@ To start, we need to initialize the `EthereumStaker` in the same manner as we di
 **Here's how you can write the code snippet for this process:**
 
 ```typescript
-const staker = new EthereumStaker({ network: 'holesky' })
+const staker = new EthereumStaker({ network: 'hoodi' })
 await staker.init()
 
 const txHistory = await staker.getTxHistory({
@@ -79,7 +79,7 @@ const Transactions = ({ transactions }) => {
             <tr key={index}>
               <td>{type}</td>
               <td>
-                <a href={`https://holesky.etherscan.io/tx/${hash}`}>{hash}</a>
+                <a href={`https://hoodi.etherscan.io/tx/${hash}`}>{hash}</a>
               </td>
               <td>{transaction.amount} ETH</td>
               <td>{date}</td>

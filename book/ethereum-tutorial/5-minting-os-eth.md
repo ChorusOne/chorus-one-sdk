@@ -11,7 +11,7 @@ Before minting, we need to check the maximum amount of shares that can be minted
 **This can be done using the** `getMint` **method:**
 
 ```typescript
-const staker = new EthereumStaker({ network: 'holesky' })
+const staker = new EthereumStaker({ network: 'hoodi' })
 await staker.init()
 
 const { maxMint } = await staker.getMaxMintForVault({

@@ -11,7 +11,7 @@ As with our previous tasks, we begin by initializing `EthereumStaker`. Then, we'
 **Below is a sample code snippet for fetching rewards history:**
 
 ```typescript
-const staker = new EthereumStaker({ network: 'holesky' })
+const staker = new EthereumStaker({ network: 'hoodi' })
 await staker.init()
 
 // Setting the date range: from 1 month ago to today

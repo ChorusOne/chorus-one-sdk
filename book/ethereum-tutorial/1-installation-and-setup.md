@@ -16,13 +16,13 @@ Once the SDK is installed, the next step is to import it into your codebase and 
 import { EthereumStaker } from '@chorus-one/ethereum'
 
 const staker = new EthereumStaker({
-  network: 'holesky'
+  network: 'hoodi'
 })
 
 await staker.init()
 ```
 
-In the above snippet, we import the `EthereumStaker` from the `@chorus-one/ethereum` package, and we create a new `EthereumStaker` instance for holesky network. After that, we initialize the staker by calling the `init` method.
+In the above snippet, we import the `EthereumStaker` from the `@chorus-one/ethereum` package, and we create a new `EthereumStaker` instance for hoodi network. After that, we initialize the staker by calling the `init` method.
 
 {% hint style="success" %}
 

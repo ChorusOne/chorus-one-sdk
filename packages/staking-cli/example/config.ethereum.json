@@ -17,7 +17,7 @@
   "networkType": "ethereum",
 
   "ethereum": {
-    "network": "holesky",
-    "rpcUrl": "https://ethereum-holesky-rpc.publicnode.com"
+    "network": "hoodi",
+    "rpcUrl": "https://ethereum-hoodi-rpc.publicnode.com"
   }
 }
