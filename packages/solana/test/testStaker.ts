@@ -71,6 +71,7 @@ export class SolanaTestStaker {
   /**
    * Get the current balance of the owner account and log it
    * @param address The address to check the balance for
+   * @returns The balance in SOL
    */
   async getBalance (address: PublicKey): Promise<number> {
     const balance = await this.connection.getBalance(address)
@@ -80,6 +81,10 @@ export class SolanaTestStaker {
 
   /**
    * Request an airdrop of SOL if the balance is below the threshold
+   * This operation is heavily rate-limited on the devnet, only the first request will be successful.
+   * @param address The address to check the balance for
+   * @param minBalance The minimum balance to maintain (default: 0.1 SOL)
+   * @param amount The amount to request (default: 2 SOL)
    */
   async requestAirdropIfNeeded (address: PublicKey, minBalance: number = 0.1, amount: number = 2): Promise<void> {
     const balance = await this.getBalance(address)
@@ -104,6 +109,8 @@ export class SolanaTestStaker {
 
   /**
    * Create and delegate a stake account
+   * @param amount The amount to delegate
+   * @returns The address of the created stake account
    */
   async createAndDelegateStake (amount: string): Promise<string> {
     const { tx, stakeAccountAddress } = await this.staker.buildStakeTx({
@@ -129,7 +136,9 @@ export class SolanaTestStaker {
   }
 
   /**
-   * Undelegate a stake account
+   * Undelegate a stake account. The unstake operation will undelegate the whole amount of the stake account.
+   * @param stakeAccountAddress The address of the stake account to undelegate
+   * @returns The status of the transaction
    */
   async undelegateStake (stakeAccountAddress: string): Promise<string> {
     const { tx } = await this.staker.buildUnstakeTx({
@@ -153,6 +162,8 @@ export class SolanaTestStaker {
 
   /**
    * Get all stake accounts for the owner
+   * @param stakeAccount The address of the stake account to get (optional). If `null` is passed, all stake accounts will be returned.
+   * @returns An object containing the stake accounts
    */
   async getStakeAccounts (stakeAccount: string | null): Promise<{
     accounts: StakeAccount[]
@@ -166,7 +177,9 @@ export class SolanaTestStaker {
     }
     const stakeAccountInfo = allStakeAccounts.accounts.find((account) => account.address === stakeAccount)
     if (!stakeAccountInfo) {
-      throw new Error(`Stake account ${stakeAccount} not found`)
+      return {
+        accounts: []
+      }
     }
     return {
       accounts: [stakeAccountInfo]
@@ -175,7 +188,8 @@ export class SolanaTestStaker {
 
   /**
    * Withdraw from a stake account
-   * Note: This will only work if the stake account has completed the cooldown period
+   * @param stakeAccountAddress The address of the stake account to withdraw from
+   * @returns The status of the transaction
    */
   async withdrawStake (stakeAccountAddress: string): Promise<string> {
     const { tx } = await this.staker.buildWithdrawStakeTx({
@@ -196,6 +210,19 @@ export class SolanaTestStaker {
     this.logger.info(`Withdraw transaction status: ${status}`)
     return status
   }
+
+  /**
+   * Split a stake account into two accounts. The amount used as a parameter is the amount to be deposited in the new account.
+   *
+   * Like any new account, the new account will need to be funded with the rent-exempt amount (taken from the owner's account), so the final balance of the new account will be:
+   *
+   * `the amount passed as a parameter + the rent-exempt amount`.
+   *
+   * The remaining amount will stay in the original account.
+   * @param stakeAccountAddress The address of the stake account to split
+   * @param amount The amount to deposit in the new account
+   * @returns The address of the new stake account and the status of the transaction
+   */
 
   async splitStake (
     stakeAccountAddress: string,
