@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "All-in-one toolkit for building staking dApps on Solana network",
   "scripts": {
-    "build": "rm -fr dist/* && tsc -p tsconfig.mjs.json --outDir dist/mjs && tsc -p tsconfig.cjs.json --outDir dist/cjs && bash ../../scripts/fix-package-json"
+    "build": "rm -fr dist/* && tsc -p tsconfig.mjs.json --outDir dist/mjs && tsc -p tsconfig.cjs.json --outDir dist/cjs && bash ../../scripts/fix-package-json",
+    "test:integration": "mocha 'test/integration/**/*.spec.ts'"
   },
   "main": "dist/cjs/index.js",
   "module": "dist/mjs/index.js",
