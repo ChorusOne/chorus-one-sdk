@@ -1,6 +1,6 @@
 {
   "name": "@chorus-one/staking-cli",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "All in one CLI for running staking operations on many blockchain networks",
   "scripts": {
     "build": "rm -fr dist/* && tsc -p tsconfig.cjs.json --outDir dist/cjs && chmod +x dist/cjs/index.js",
@@ -34,9 +34,9 @@
     "@chorus-one/signer-ledger-ton": "^1.0.0",
     "@chorus-one/signer-ledger-cosmos": "^1.0.0",
     "@chorus-one/signer-local": "^1.0.0",
-    "@chorus-one/solana": "^1.0.0",
+    "@chorus-one/solana": "^1.1.0",
     "@chorus-one/substrate": "^1.0.1",
-    "@chorus-one/ton": "^2.2.0",
+    "@chorus-one/ton": "^2.3.0",
     "@chorus-one/utils": "^1.0.1",
     "@commander-js/extra-typings": "^11.1.0",
     "@ledgerhq/hw-transport-node-hid": "^6.29.5",
