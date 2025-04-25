@@ -19,15 +19,13 @@ export const getConfig = (): {
   accounts: Account[]
   network: keyof typeof config.networks
 } => {
-  if (!process.env.NETWORK || !(process.env.NETWORK in config.networks)) {
-    throw new Error('NETWORK is not set')
-  }
+  const network = (process.env.NETWORK || 'ethereum') as keyof typeof config.networks
 
-  const networkConfig = config.networks[process.env.NETWORK as keyof typeof config.networks] as NetworkConfig
+  const networkConfig = config.networks[network] as NetworkConfig
 
   return {
     networkConfig,
     accounts: config.accounts,
-    network: process.env.NETWORK as keyof typeof config.networks
+    network
   }
 }

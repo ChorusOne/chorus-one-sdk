@@ -42,7 +42,6 @@ export class StakewiseConnector {
 
         this.baseAPI = 'https://hoodi-api.stakewise.io/graphql'
         this.baseGraph = 'https://graphs.stakewise.io/hoodi/subgraphs/name/stakewise/prod'
-        // this.baseGraph = 'https://graphs.stakewise.io/hoodi/subgraphs/name/stakewise/prod/graphql' // Reference: https://docs.stakewise.io/for-developers/networks/hoodi
         // Reference: https://docs.stakewise.io/for-developers/networks/hoodi
         this.keeper = '0xA7D1Ac9D6F32B404C75626874BA56f7654c1dC0f'
         this.priceOracle = '0xe8a222D887b468a71Ee8a27df4fa3b886A4B7BA1'

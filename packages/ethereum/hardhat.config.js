@@ -7,7 +7,7 @@ module.exports = {
   networks: {
     hardhat: {
       forking: {
-        url: process.env.NETWORK === 'ethereum' ? config.networks.ethereum.url : config.networks.hoodi.url
+        url: process.env.NETWORK === 'hoodi' ? config.networks.hoodi.url : config.networks.ethereum.url
       },
       accounts: config.accounts
     }
