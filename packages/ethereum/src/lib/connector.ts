@@ -1,5 +1,5 @@
 import { createPublicClient, PublicClient, http, Hex, Chain } from 'viem'
-import { holesky, mainnet } from 'viem/chains'
+import { hoodi, mainnet } from 'viem/chains'
 import { Networks } from './types/networks'
 
 // Represents a single request to a graphql backend
@@ -33,20 +33,20 @@ export class StakewiseConnector {
     // These parameters might need to be changed for Gnosis and Mainnet
     const transport = rpcUrl ? http(rpcUrl) : http()
     switch (network) {
-      case 'holesky':
-        this.chain = holesky
+      case 'hoodi':
+        this.chain = hoodi
         this.eth = createPublicClient({
-          chain: holesky,
+          chain: hoodi,
           transport
         })
 
-        this.baseAPI = 'https://holesky-api.stakewise.io/graphql'
-        this.baseGraph = 'https://graphs.stakewise.io/holesky/subgraphs/name/stakewise/prod'
-        // Stakewise keeper contract
-        this.keeper = '0xB580799Bf7d62721D1a523f0FDF2f5Ed7BA4e259'
-        this.priceOracle = '0xe31FAf135A6047Cbe595F91B4b6802cDB9B46E2b'
-        this.mintTokenConfig = '0x4483965Ed85cd5e67f2a7a0EB462aCcC37b23D72'
-        this.mintTokenController = '0x7BbC1733ee018f103A9a9052a18fA9273255Cf36'
+        this.baseAPI = 'https://hoodi-api.stakewise.io/graphql'
+        this.baseGraph = 'https://graphs.stakewise.io/hoodi/subgraphs/name/stakewise/prod'
+        // Reference: https://docs.stakewise.io/for-developers/networks/hoodi
+        this.keeper = '0xA7D1Ac9D6F32B404C75626874BA56f7654c1dC0f'
+        this.priceOracle = '0xe8a222D887b468a71Ee8a27df4fa3b886A4B7BA1'
+        this.mintTokenConfig = '0x5b817621EBE00622b9a71b53c942b392751c8197'
+        this.mintTokenController = '0x140Fc69Eabd77fFF91d9852B612B2323256f7Ac1'
         break
       case 'ethereum':
         this.chain = mainnet
@@ -57,7 +57,7 @@ export class StakewiseConnector {
 
         this.baseAPI = 'https://mainnet-api.stakewise.io/graphql'
         this.baseGraph = 'https://graphs.stakewise.io/mainnet-b/subgraphs/name/stakewise/prod'
-        // Stakewise keeper contract
+        // Reference: https://docs.stakewise.io/for-developers/networks/mainnet
         this.keeper = '0x6B5815467da09DaA7DC83Db21c9239d98Bb487b5'
         this.priceOracle = '0x8023518b2192FB5384DAdc596765B3dD1cdFe471'
         this.mintTokenConfig = '0xE8822246F8864DA92015813A39ae776087Fb1Cd5'

@@ -1,0 +1,24 @@
+{
+  "networks": {
+    "ethereum": {
+      "name": "ethereum",
+      "url": "https://ethereum-rpc.publicnode.com",
+      "addresses": {
+        "osEthToken": "0xf1C9acDc66974dFB6dEcB12aA385b9cD01190E38"
+      }
+    },
+    "hoodi": {
+      "name": "hoodi",
+      "url": "https://rpc.hoodi.ethpandaops.io",
+      "addresses": {
+        "osEthToken": "0x7345fC8268459413beE9e9dd327f31283C65Ee7e"
+      }
+    }
+  },
+  "accounts": [
+    {
+      "privateKey": "0x0e58eb1527ff536cdc667b47499e877f53778e91feacb4ed07337de0728d0026",
+      "balance": "10000000000000000000000"
+    }
+  ]
+}

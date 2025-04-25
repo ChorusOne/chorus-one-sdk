@@ -21,7 +21,7 @@ To begin, we need to establish the maximum amount that the user is permitted to 
 **Here's how you can implement it:**
 
 ```typescript
-const staker = new EthereumStaker({ network: 'holesky' })
+const staker = new EthereumStaker({ network: 'hoodi' })
 await staker.init()
 
 const { maxUnstake } = await staker.getStake({

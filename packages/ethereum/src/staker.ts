@@ -404,7 +404,7 @@ export class EthereumStaker {
    * @param params - Parameters for the request
    * @param params.stakeAmount - The amount of ETH staked
    * @param params.mintAmount - The amount of osETH minted
-   * @param params.validatorAddress - The validator (vault) address 
+   * @param params.validatorAddress - The validator (vault) address
    *
    * @returns Returns a promise that resolves to the mint health status('healthy' | 'risky' )
    */
@@ -454,6 +454,7 @@ export class EthereumStaker {
       ...baseChain,
       fees
     }
+
     const client = createWalletClient({
       chain,
       transport: http(),
@@ -465,7 +466,9 @@ export class EthereumStaker {
       account: signerAddress,
       to: tx.to,
       value: tx.value,
-      data: tx.data
+      data: tx.data,
+      // Pin tx type to avoid type conflict with serializeTransaction bellow
+      type: 'eip1559'
     })
 
     const message = keccak256(serializeTransaction(request)).slice(2)

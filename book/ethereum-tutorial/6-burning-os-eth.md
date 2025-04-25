@@ -11,7 +11,7 @@ First, we need to determine the maximum amount of osETH that can be burned. This
 **Here's a snippet illustrating this process:**
 
 ```typescript
-const staker = new EthereumStaker({ network: 'holesky' })
+const staker = new EthereumStaker({ network: 'hoodi' })
 await staker.init()
 
 const { balance: mintAmount } = await staker.getMaxMintForVault({

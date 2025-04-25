@@ -2,6 +2,7 @@ import { EthereumStaker } from '@chorus-one/ethereum'
 import { assert } from 'chai'
 import { Hex } from 'viem'
 import { prepareTests } from './lib/utils'
+import { disableHoodi } from './lib/disableHoodi'
 
 describe('EthereumStaker.getTxHistory', () => {
   let validatorAddress: Hex
@@ -15,7 +16,9 @@ describe('EthereumStaker.getTxHistory', () => {
     staker = setup.staker
   })
 
-  it('returns correct transaction history for given period of time', async () => {
+  it('returns correct transaction history for given period of time', async function () {
+    disableHoodi.bind(this)()
+
     const txHistory = await staker.getTxHistory({
       validatorAddress,
       delegatorAddress

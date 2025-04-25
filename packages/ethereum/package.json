@@ -7,7 +7,7 @@
     "hardhat:start": "hardhat node & echo $! > hardhat.pid;",
     "hardhat:stop": "kill $(cat hardhat.pid) && rm hardhat.pid",
     "test:integration": "mocha --timeout 30000 '**/*.spec.ts'",
-    "test": "npm run hardhat:start > hardhat.log & sleep 5; npm run test:integration; status=$?; npm run hardhat:stop; exit $status"
+    "test": "NETWORK=${NETWORK:-ethereum} npm run hardhat:start > hardhat.log & sleep 5; NETWORK=${NETWORK:-ethereum} npm run test:integration; status=$?; npm run hardhat:stop; exit $status"
   },
   "main": "dist/cjs/index.js",
   "module": "dist/mjs/index.js",
@@ -39,9 +39,9 @@
     "@chorus-one/signer": "^1.0.0",
     "decimal.js": "^10.4.3",
     "secp256k1": "^5.0.0",
-    "viem": "^2.17.4"
+    "viem": "^2.28.0"
   },
   "devDependencies": {
-    "hardhat": "2.22.13"
+    "hardhat": "^2.23.0"
   }
 }

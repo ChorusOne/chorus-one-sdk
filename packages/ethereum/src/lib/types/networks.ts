@@ -1,1 +1,1 @@
-export type Networks = 'ethereum' | 'holesky'
+export type Networks = 'ethereum' | 'hoodi'

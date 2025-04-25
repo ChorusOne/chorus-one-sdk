@@ -69,7 +69,7 @@ Unstaking allows users to withdraw their staked ETH from a Vault, stopping the 
 
 To get started with staking on the Ethereum network using the Chorus One SDK, you will first need to initialize the SDK.
 
-- **Note:** For testing purposes, we will use the Holesky testnet.
+- **Note:** For testing purposes, we will use the Hoodi testnet.
 
 First, create an instance of `EthereumStaker` with the necessary configuration:
 
@@ -77,14 +77,14 @@ First, create an instance of `EthereumStaker` with the necessary configuration:
 import { EthereumStaker } from '@chorus-one/ethereum'
 
 const staker = new EthereumStaker({
-  network: 'holesky',
-  rpcUrl: 'https://ethereum-holesky-rpc.publicnode.com'
+  network: 'hoodi',
+  rpcUrl: 'https://ethereum-hoodi-rpc.publicnode.com'
 })
 ```
 
 **Configuration Parameters**:
 
-- **network**: The Ethereum network to connect to. It can be `mainnet` or `holesky`.
+- **network**: The Ethereum network to connect to. It can be `mainnet` or `hoodi`.
 - **rpcUrl**: (Optional) The URL of the Ethereum network RPC endpoint. This is where the SDK will connect to interact with the network. If not provided, the SDK will use the public RPC endpoint for the specified network.
 
 ---
@@ -150,7 +150,7 @@ This ensures the `amountToStake` parameter is in the correct format for the stak
 
 ## Getting the Validator Address provided by Chorus One
 
-The `@chorus-one/ethereum` module includes a list of Chorus One validators for the Ethereum-compatible chains, organized by network(ethereum or holesky) and vault type. You can use these addresses when building transactions.
+The `@chorus-one/ethereum` module includes a list of Chorus One validators for the Ethereum-compatible chains, organized by network(ethereum or hoodi) and vault type. You can use these addresses when building transactions.
 
 ### Vault Types
 
@@ -161,7 +161,7 @@ The `@chorus-one/ethereum` module includes a list of Chorus One validators for t
 ```javascript
 import { CHORUS_ONE_ETHEREUM_VALIDATORS } from '@chorus-one/ethereum'
 
-const validatorAddress = CHORUS_ONE_ETHEREUM_VALIDATORS.holesky.mevMaxVault
+const validatorAddress = CHORUS_ONE_ETHEREUM_VALIDATORS.hoodi.mevMaxVault
 console.log(vaultAddress) // '0x95d0db03d59658e1af0d977ecfe142f178930ac5'
 ```
 
@@ -294,7 +294,7 @@ console.log(status) // 'success'
 
 ## Next Steps
 
-In this section you learned how to set up the Chorus One SDK for the Ethereum network using the Holesky testnet, which included how to build staking transactions, sign, broadcast, and track them.
+In this section you learned how to set up the Chorus One SDK for the Ethereum network using the Hoodi testnet, which included how to build staking transactions, sign, broadcast, and track them.
 
 - To learn more about the available methods on `EthereumStaker` continue to the [Methods](methods.md) section.
 

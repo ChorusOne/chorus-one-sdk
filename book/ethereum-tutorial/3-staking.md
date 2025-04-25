@@ -59,7 +59,7 @@ Now, we will focus on the main operation of our application: submitting a staki
 const stake = async ({
   userAddress, // Comes from wagmi
   walletClient, // Comes from wagmi
-  network, // Networks.Holesky
+  network, // Networks.Hoodi
   vault, // Vault address (can be provided by getDefaultVaults(...))
   amountToStake // Amount of ETH to deposit as string
 }: {
@@ -69,7 +69,7 @@ const stake = async ({
   vault: Hex
   amountToStake: string
 }): Promise<Hex> => {
-  const staker = new EthereumStaker({ network: 'holesky' })
+  const staker = new EthereumStaker({ network: 'hoodi' })
   await staker.init()
 
   const validatorAddress = CHORUS_ONE_ETHEREUM_VALIDATORS.ethereum.mevMaxVault
@@ -92,6 +92,7 @@ const stake = async ({
   await walletClient.sendTransaction(request)
 }
 ```
+
 {% hint style="info" %}
 
 **Delegation Tracking**
@@ -100,7 +101,6 @@ If you would like to learn how to track and attribute staking transactions to
 specific sources, such as marketing campaigns or integration partners, refer to the [Delegation Tracking](../build-your-staking-dapp/ethereum/delegation-tracking.md) section.
 
 {% endhint %}
-
 
 The `Transaction` object returned by `buildStakeTransaction` includes the following parameters:
 

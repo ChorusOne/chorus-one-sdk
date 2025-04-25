@@ -2,12 +2,12 @@ import { CHORUS_ONE_ETHEREUM_VALIDATORS, EthereumStaker } from '@chorus-one/ethe
 import { createWalletClient, http, createPublicClient, Hex, formatEther, PublicClient, WalletClient } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { hardhat } from 'viem/chains'
-
-import hardhatConfig from './hardhat.json'
+import { getConfig } from './getConfig'
 import { assert } from 'chai'
 
 export const prepareTests = async () => {
-  const privateKey = hardhatConfig.networks.hardhat.accounts[0].privateKey as Hex
+  const config = getConfig()
+  const privateKey = config.accounts[0].privateKey as Hex
   const account = privateKeyToAccount(privateKey)
   if (!account) throw new Error('Account not found')
   const walletClient = createWalletClient({
@@ -21,9 +21,9 @@ export const prepareTests = async () => {
   })
   const resetParams = {
     forking: {
-      jsonRpcUrl: hardhatConfig.networks.hardhat.forking.url
+      jsonRpcUrl: config.networkConfig.url
     },
-    accounts: hardhatConfig.networks.hardhat.accounts
+    accounts: config.accounts
   }
 
   await fetch('http://localhost:8545', {
@@ -32,19 +32,18 @@ export const prepareTests = async () => {
   })
 
   const staker = new EthereumStaker({
-    network: 'ethereum',
+    network: config.networkConfig.name,
     rpcUrl: hardhat.rpcUrls.default.http[0]
   })
   await staker.init()
 
-  const osEthTokenAddress = '0xf1C9acDc66974dFB6dEcB12aA385b9cD01190E38' as const
-
   return {
-    validatorAddress: CHORUS_ONE_ETHEREUM_VALIDATORS.ethereum.mevMaxVault,
+    validatorAddress: CHORUS_ONE_ETHEREUM_VALIDATORS[config.networkConfig.name].mevMaxVault,
     walletClient,
     publicClient,
     staker,
-    osEthTokenAddress
+    osEthTokenAddress: config.networkConfig.addresses.osEthToken,
+    network: config.network
   }
 }
 

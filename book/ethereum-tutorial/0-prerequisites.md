@@ -36,11 +36,11 @@ It's important to note that the Chorus One SDK does not inherently provide walle
 
 ### Network Configuration
 
-The SDK is compatible with the Ethereum mainnet and Holesky testnet. For the purposes of this tutorial, we use Holesky, allowing for safe experimentation without risking real assets.
+The SDK is compatible with the Ethereum mainnet and Hoodi testnet. For the purposes of this tutorial, we use Hoodi, allowing for safe experimentation without risking real assets.
 
-- More information about it can be found [here][holesky].
+- More information about it can be found [here][hoodi].
 
-Ensure that you configure your MetaMask wallet to connect to the Holesky network as instructed in the guide. Alternatively, you can use the Ethereum mainnet network, but remember to adjust the network settings in the code accordingly.
+Ensure that you configure your MetaMask wallet to connect to the Hoodi network as instructed in the guide. Alternatively, you can use the Ethereum mainnet network, but remember to adjust the network settings in the code accordingly.
 
 With these prerequisites, you'll be well-equipped to begin building your staking dApp with the Chorus One SDK. Let's embark on this journey of blockchain development!
 
@@ -51,5 +51,5 @@ Now that you have a good understanding of the foundation, you are ready to inst
 Please follow the instructions in the [Installation and Setup][installation] section to set up the SDK and prepare your development environment.
 
 [wagmi]: https://wagmi.sh
-[holesky]: https://github.com/eth-clients/holesky
+[hoodi]: https://github.com/eth-clients/hoodi
 [installation]: 1-installation-and-setup.md
