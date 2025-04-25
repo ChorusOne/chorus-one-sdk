@@ -60,7 +60,7 @@ export class StakewiseConnector {
         // Reference: https://docs.stakewise.io/for-developers/networks/mainnet
         this.keeper = '0x6B5815467da09DaA7DC83Db21c9239d98Bb487b5'
         this.priceOracle = '0x8023518b2192FB5384DAdc596765B3dD1cdFe471'
-        this.mintTokenConfig = '0x287d1e2A8dE183A8bf8f2b09Fa1340fBd766eb59'
+        this.mintTokenConfig = '0xE8822246F8864DA92015813A39ae776087Fb1Cd5'
         this.mintTokenController = '0x2A261e60FB14586B474C208b1B7AC6D0f5000306'
         break
       default:
