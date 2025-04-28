@@ -32,6 +32,15 @@ export class KeplrSigner {
     return account.pubkey
   }
 
+  async getAddress (): Promise<string> {
+    const walletKey = await this.signer.getKey(this.chainId)
+    if (walletKey === undefined) {
+      throw new Error('no key found')
+    }
+
+    return walletKey.bech32Address
+  }
+
   async sign (
     signerAddress: string,
     signerData: SignerData,
@@ -46,9 +55,9 @@ export class KeplrSigner {
     // if we allow to change the fees, the signature will be invalid as the
     // wallet will change the signDoc
     const signingResponse = await this.signer.signAmino(signDoc.chain_id, signerAddress, signDoc, {
-        preferNoSetFee: true,
-        preferNoSetMemo: true,
-        disableBalanceCheck: false
+      preferNoSetFee: true,
+      preferNoSetMemo: true,
+      disableBalanceCheck: false
     })
 
     const signature = signingResponse.signature.signature
