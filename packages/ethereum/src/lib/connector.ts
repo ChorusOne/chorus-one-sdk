@@ -24,8 +24,6 @@ export class StakewiseConnector {
   keeper: Hex
   /** Stakewise price oracle contract address */
   priceOracle: Hex
-  /** Stakewise mint token config contract address */
-  mintTokenConfig: Hex
   /** Stakewise mint token controller contract address */
   mintTokenController: Hex
 
@@ -45,7 +43,6 @@ export class StakewiseConnector {
         // Reference: https://docs.stakewise.io/for-developers/networks/hoodi
         this.keeper = '0xA7D1Ac9D6F32B404C75626874BA56f7654c1dC0f'
         this.priceOracle = '0xe8a222D887b468a71Ee8a27df4fa3b886A4B7BA1'
-        this.mintTokenConfig = '0x5b817621EBE00622b9a71b53c942b392751c8197'
         this.mintTokenController = '0x140Fc69Eabd77fFF91d9852B612B2323256f7Ac1'
         break
       case 'ethereum':
@@ -60,7 +57,6 @@ export class StakewiseConnector {
         // Reference: https://docs.stakewise.io/for-developers/networks/mainnet
         this.keeper = '0x6B5815467da09DaA7DC83Db21c9239d98Bb487b5'
         this.priceOracle = '0x8023518b2192FB5384DAdc596765B3dD1cdFe471'
-        this.mintTokenConfig = '0xE8822246F8864DA92015813A39ae776087Fb1Cd5'
         this.mintTokenController = '0x2A261e60FB14586B474C208b1B7AC6D0f5000306'
         break
       default:
