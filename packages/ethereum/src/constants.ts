@@ -23,12 +23,12 @@ export const CHORUS_ONE_ETHEREUM_VALIDATORS = {
    */
   hoodi: {
     /**
-     * Stakewise Genesis vault for testing.
+     * Testnet vault
      */
-    mevMaxVault: '0xba447498dc4c169f2b4f427b2c4d532320457e89',
+    mevMaxVault: '0x2148ffbc0a2d83f5e3605041f5b85d54305f803c',
     /**
-     * Stakewise Genesis vault for testing.
+     * Testnet vault
      */
-    obolDvVault: '0xba447498dc4c169f2b4f427b2c4d532320457e89'
+    obolDvVault: '0x2148ffbc0a2d83f5e3605041f5b85d54305f803c'
   }
 } as const
