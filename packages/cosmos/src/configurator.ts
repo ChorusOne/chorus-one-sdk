@@ -20,8 +20,9 @@ export class CosmosConfigurator {
    * @returns Returns an CosmosNetworkConfig object
    */
   static async genNetworkConfig (network: string, gas?: number, gasPrice?: string): Promise<CosmosNetworkConfig> {
+    const chainPath = network.includes('testnet') ? `testnets/` : ''
     const chainResponse = await fetch(
-      `https://raw.githubusercontent.com/cosmos/chain-registry/master/${network}/chain.json`
+      `https://raw.githubusercontent.com/cosmos/chain-registry/master/${chainPath}${network}/chain.json`
     )
     if (!chainResponse.ok) {
       throw new Error(`Failed to fetch chain.json: ${chainResponse.statusText}`)
@@ -90,8 +91,9 @@ export class CosmosConfigurator {
   }
 
   private static async getAssetList (network: string): Promise<AssetList> {
+    const chainPath = network.includes('testnet') ? `testnets/` : ''
     const assetResponse = await fetch(
-      `https://raw.githubusercontent.com/cosmos/chain-registry/master/${network}/assetlist.json`
+      `https://raw.githubusercontent.com/cosmos/chain-registry/master/${chainPath}${network}/assetlist.json`
     )
     if (!assetResponse.ok) {
       throw new Error(`Failed to fetch assetlist.json: ${assetResponse.statusText}`)
