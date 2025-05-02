@@ -1,4 +1,4 @@
-import axios, { AxiosAdapter, AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
+import axios, { AxiosAdapter, AxiosError, AxiosHeaders, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import type { Signer } from '@chorus-one/signer'
 import type {
   TonNetworkConfig,
@@ -178,7 +178,13 @@ export class TonBaseStaker {
       while (retries <= maxRetries) {
         try {
           // Send the request using the default adapter
-          return await defaultAdapter(config)
+          return await defaultAdapter({
+            ...config,
+            headers: AxiosHeaders.from({
+              ...(config.headers || {}),
+              'Content-Type': 'application/json'
+            })
+          })
         } catch (err) {
           const error = err as AxiosError
 
