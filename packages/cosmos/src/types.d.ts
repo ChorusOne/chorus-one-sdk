@@ -24,7 +24,7 @@ export interface CosmosNetworkConfig {
 
   // default TX maximum gas e.g 200000. If set to "auto", the gas will be
   // calculated automatically via RPC
-  gas: number | "auto"
+  gas: number | 'auto'
 
   // price per per gas unit (in micro-token e.g. uatom)
   // for example "0.025" (equivalent of "0.025 uatom" or "0.000000025 ATOM")

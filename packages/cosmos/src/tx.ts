@@ -199,7 +199,7 @@ export async function getGas (
     return Number(networkConfig.gas) + extraGas
   }
 
-  if (networkConfig.gas !== "auto") {
+  if (networkConfig.gas !== 'auto') {
     throw new Error('gas must be either a number or "auto"')
   }
 

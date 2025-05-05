@@ -79,7 +79,7 @@ export class CosmosStaker {
     bechPrefix: string
     denom: string
     denomMultiplier: string
-    gas: number | "auto"
+    gas: number | 'auto'
     gasPrice: string
     extraGas?: number
     fee?: string
@@ -369,7 +369,15 @@ export class CosmosStaker {
     const gas = await getGas(cosmosClient, this.networkConfig, signerAddress, signer, tx, memo)
 
     const acc = await getAccount(cosmosClient, this.networkConfig.lcdUrl, signerAddress)
-    const signDoc = await genSignableTx(this.networkConfig, chainID, tx, acc.accountNumber, acc.sequence, gas, memo ?? '')
+    const signDoc = await genSignableTx(
+      this.networkConfig,
+      chainID,
+      tx,
+      acc.accountNumber,
+      acc.sequence,
+      gas,
+      memo ?? ''
+    )
 
     const isEVM = this.networkConfig.isEVM ?? false
     const { sig, pk } = await genSignDocSignature(signer, acc, signDoc, isEVM)
