@@ -1,5 +1,6 @@
 import type { DeliverTxResponse } from '@cosmjs/stargate'
 import {
+  getGas,
   genSignedTx,
   genSignDocSignature,
   genSignableTx,
@@ -64,8 +65,9 @@ export class CosmosStaker {
    * @param params.bechPrefix - Address prefix (e.g. celestia)
    * @param params.denom - Coin denom (e.g `utia`)
    * @param params.denomMultiplier - Multiplier to convert the base coin unit to its smallest subunit (e.g., `1000000` for 1 TIA = 1000000 utia)
-   * @param params.gas - Default TX gas (e.g 200000)
+   * @param params.gas - Default TX gas (e.g 200000). If set to "auto", the gas will be automatically estimated via RPC node.
    * @param params.gasPrice - Gas price (e.g "0.4") See: [Chain registry - Celestia](https://github.com/cosmos/chain-registry/blob/master/celestia/chain.json)
+   * @param params.extraGas - (Optional) Additional "buffer" gas to be added to the gas limit (sometimes the gas estimation is not accurate, so this is a way to add a buffer)
    * @param params.fee - (Optional) Override with a fixed fee (e.g "5000" for "5000 uatom" or "0.005 ATOM")
    * @param params.isEVM - (Optional) Use different address derivation logic for EVM compatible chains (e.g. evmos, zetachain)
    *
@@ -77,8 +79,9 @@ export class CosmosStaker {
     bechPrefix: string
     denom: string
     denomMultiplier: string
-    gas: number
+    gas: number | "auto"
     gasPrice: string
+    extraGas?: number
     fee?: string
     isEVM?: boolean
   }) {
@@ -363,8 +366,10 @@ export class CosmosStaker {
 
     const { signer, signerAddress, tx, memo } = params
 
+    const gas = await getGas(cosmosClient, this.networkConfig, signerAddress, signer, tx, memo)
+
     const acc = await getAccount(cosmosClient, this.networkConfig.lcdUrl, signerAddress)
-    const signDoc = await genSignableTx(this.networkConfig, chainID, tx, acc.accountNumber, acc.sequence, memo ?? '')
+    const signDoc = await genSignableTx(this.networkConfig, chainID, tx, acc.accountNumber, acc.sequence, gas, memo ?? '')
 
     const isEVM = this.networkConfig.isEVM ?? false
     const { sig, pk } = await genSignDocSignature(signer, acc, signDoc, isEVM)

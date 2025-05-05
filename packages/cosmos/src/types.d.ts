@@ -22,8 +22,9 @@ export interface CosmosNetworkConfig {
   // Multiplier to convert the base coin unit to its smallest subunit (e.g., `1000000` for 1 TIA = 1000000 utia)
   denomMultiplier: string
 
-  // default TX maximum gas e.g 200000
-  gas: number
+  // default TX maximum gas e.g 200000. If set to "auto", the gas will be
+  // calculated automatically via RPC
+  gas: number | "auto"
 
   // price per per gas unit (in micro-token e.g. uatom)
   // for example "0.025" (equivalent of "0.025 uatom" or "0.000000025 ATOM")
@@ -35,6 +36,10 @@ export interface CosmosNetworkConfig {
   // To see current gas prices for Celestia (and other Cosmos-SDK networks), see:
   // https://github.com/cosmos/chain-registry/blob/master/celestia/chain.json
   gasPrice: string
+
+  // additional "buffer" gas to be added to the gas limit (sometimes the gas
+  // estimation is not accurate, so this is a way to add a buffer)
+  extraGas?: number
 
   // fixed fee paid for TX - this will override the gasPrice * gas = fee calculation
   // e.g "5000" (equivalent of "5000 uatom" or "0.005 ATOM")

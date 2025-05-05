@@ -28,9 +28,11 @@ import { MsgWithdrawDelegatorReward } from 'cosmjs-types/cosmos/distribution/v1b
 import { Int53 } from '@cosmjs/math'
 import type { Signature, Signer } from '@chorus-one/signer'
 import type { CosmosNetworkConfig, CosmosSigningData } from './types'
-import { Sha256, keccak256 } from '@cosmjs/crypto'
+import { Sha256, keccak256, Secp256k1 } from '@cosmjs/crypto'
+
 import { publicKeyConvert } from 'secp256k1'
 import { SafeJSONStringify, checkMaxDecimalPlaces } from '@chorus-one/utils'
+import { CosmosClient } from './client'
 import BigNumber from 'bignumber.js'
 
 import { Registry, encodePubkey, makeAuthInfoBytes } from '@cosmjs/proto-signing'
@@ -183,22 +185,59 @@ export function genBeginRedelegateMsg (
   return beginRedelegateMsg
 }
 
+export async function getGas (
+  client: CosmosClient,
+  networkConfig: CosmosNetworkConfig,
+  signerAddress: string,
+  signer: Signer,
+  msg: EncodeObject,
+  memo?: string
+): Promise<number> {
+  const extraGas = networkConfig.extraGas ? Number(networkConfig.extraGas) : 0
+
+  if (typeof networkConfig.gas === 'number' && networkConfig.gas > 0) {
+    return Number(networkConfig.gas) + extraGas
+  }
+
+  if (networkConfig.gas !== "auto") {
+    throw new Error('gas must be either a number or "auto"')
+  }
+
+  const registry = new Registry(defaultRegistryTypes)
+  const anyMsgs = [registry.encodeAsAny(msg)]
+
+  const signerPubkey = await signer.getPublicKey(signerAddress)
+  const pk = Secp256k1.compressPubkey(signerPubkey)
+  const pubkey = encodeSecp256k1Pubkey(pk)
+
+  const { sequence } = await client.getSequence(signerAddress)
+  const { gasInfo } = await client.getCosmosQueryClient().tx.simulate(anyMsgs, memo ?? '', pubkey, sequence)
+
+  if (gasInfo?.gasUsed === undefined) {
+    throw new Error('failed to get gas estimate')
+  }
+
+  // it's highly unlikely gas will reach the boundry of Number.MAX_SAFE_INTEGER
+  return BigNumber(gasInfo.gasUsed.toString(10), 10).toNumber() + extraGas
+}
+
 export async function genSignableTx (
   networkConfig: CosmosNetworkConfig,
   chainID: string,
   msg: EncodeObject,
   accountNumber: number,
   accountSequence: number,
+  gas: number,
   memo?: string
 ): Promise<StdSignDoc> {
   const aminoTypes = new AminoTypes(createDefaultTypes())
 
-  const feeAmt: bigint = networkConfig.fee
-    ? BigInt(networkConfig.fee)
-    : BigInt(Number(networkConfig.gasPrice) * networkConfig.gas)
+  const feeAmt: BigNumber = networkConfig.fee
+    ? BigNumber(networkConfig.fee)
+    : BigNumber(gas).multipliedBy(networkConfig.gasPrice)
   const fee: StdFee = {
-    amount: [coin(feeAmt.toString(), networkConfig.denom)],
-    gas: networkConfig.gas.toString()
+    amount: [coin(feeAmt.toFixed(0, BigNumber.ROUND_CEIL).toString(), networkConfig.denom)],
+    gas: gas.toString(10)
   }
 
   const signDoc = makeSignDocAmino(

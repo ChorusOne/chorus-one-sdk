@@ -19,7 +19,7 @@ export class CosmosConfigurator {
    *
    * @returns Returns an CosmosNetworkConfig object
    */
-  static async genNetworkConfig (network: string, gas?: number, gasPrice?: string): Promise<CosmosNetworkConfig> {
+  static async genNetworkConfig (network: string, gas?: number | 'auto', gasPrice?: string): Promise<CosmosNetworkConfig> {
     const chainPath = network.includes('testnet') ? `testnets/` : ''
     const chainResponse = await fetch(
       `https://raw.githubusercontent.com/cosmos/chain-registry/master/${chainPath}${network}/chain.json`
@@ -74,8 +74,16 @@ export class CosmosConfigurator {
       throw new Error(`No gas price found for ${network}`)
     }
 
-    const newGas = gas ?? 200000 // cosmos sdk default
-    const fee = newGas * newGasPrice
+    let newGas: number | 'auto' = 200000
+    let newFee: string | undefined = undefined
+
+    if (gas === 'auto') {
+      newGas = 'auto'
+      newFee = undefined
+    } else if (typeof gas === 'number') {
+      newGas = gas
+      newFee = (newGas * newGasPrice).toString(10)
+    }
 
     return {
       rpcUrl: chain.apis.rpc[0].address,
@@ -85,7 +93,7 @@ export class CosmosConfigurator {
       denomMultiplier: BigInt(10 ** macroDenoms[0].exponent).toString(10),
       gas: newGas,
       gasPrice: newGasPrice.toString(),
-      fee: fee.toString(),
+      fee: newFee,
       isEVM: chain.key_algos?.includes('ethsecp256k1')
     }
   }
