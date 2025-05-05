@@ -19,7 +19,11 @@ export class CosmosConfigurator {
    *
    * @returns Returns an CosmosNetworkConfig object
    */
-  static async genNetworkConfig (network: string, gas?: number | 'auto', gasPrice?: string): Promise<CosmosNetworkConfig> {
+  static async genNetworkConfig (
+    network: string,
+    gas?: number | 'auto',
+    gasPrice?: string
+  ): Promise<CosmosNetworkConfig> {
     const chainPath = network.includes('testnet') ? `testnets/` : ''
     const chainResponse = await fetch(
       `https://raw.githubusercontent.com/cosmos/chain-registry/master/${chainPath}${network}/chain.json`
