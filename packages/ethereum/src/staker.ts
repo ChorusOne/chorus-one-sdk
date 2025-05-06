@@ -344,14 +344,16 @@ export class EthereumStaker {
       vault: params.validatorAddress
     })
 
-    return queue.map((item) => ({
-      positionTicket: item.positionTicket.toString(),
-      exitQueueIndex: item.exitQueueIndex?.toString(),
-      timestamp: item.timestamp,
-      isWithdrawable: item.isWithdrawable,
-      totalAmount: formatEther(item.totalAssets),
-      withdrawableAmount: formatEther(item.totalAssets - item.exitedAssets)
-    }))
+    return queue
+      .filter((item) => !item.wasWithdrawn)
+      .map((item) => ({
+        positionTicket: item.positionTicket.toString(),
+        exitQueueIndex: item.exitQueueIndex?.toString(),
+        timestamp: item.timestamp,
+        isWithdrawable: item.isWithdrawable,
+        totalAmount: formatEther(item.totalAssets),
+        withdrawableAmount: formatEther(item.exitedAssets)
+      }))
   }
 
   /**
