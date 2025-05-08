@@ -132,7 +132,7 @@ export class TonPoolStaker extends TonBaseStaker {
           toNano(amount),
           minElectionStake,
           currentPoolBalances,
-          currentUserStakes,
+          currentUserStakes
         )
 
         validatorAddresses.forEach((validatorAddress, index) => {
@@ -227,7 +227,7 @@ export class TonPoolStaker extends TonBaseStaker {
         msgs.push(genUnstakeMsg(validatorAddress, toNano(amount), data.withdrawFee, data.receiptPrice))
       })
     } else {
-      const { minElectionStake, currentPoolBalances, currentUserStakes } = await this.getPoolDataForDelegator(
+      const { minElectionStake, currentPoolBalances, userMaxUnstakeAmounts } = await this.getPoolDataForDelegator(
         delegatorAddress,
         validatorAddresses
       )
@@ -236,7 +236,7 @@ export class TonPoolStaker extends TonBaseStaker {
         toNano(amount),
         minElectionStake,
         currentPoolBalances,
-        currentUserStakes
+        userMaxUnstakeAmounts
       )
 
       // sanity check
@@ -387,10 +387,19 @@ export class TonPoolStaker extends TonBaseStaker {
             0n
           ]
 
+    const userMaxUnstakeAmounts: [bigint, bigint] =
+      validatorAddresses.length === 2
+        ? [
+            toNano(userStake[0].balance) + toNano(userStake[0].pendingDeposit) + toNano(userStake[0].withdraw),
+            toNano(userStake[1].balance) + toNano(userStake[1].pendingDeposit) + toNano(userStake[1].withdraw)
+          ]
+        : [toNano(userStake[0].balance) + toNano(userStake[0].pendingDeposit) + toNano(userStake[0].withdraw), 0n]
+
     return {
       minElectionStake,
       currentPoolBalances,
-      currentUserStakes
+      currentUserStakes,
+      userMaxUnstakeAmounts
     }
   }
 
@@ -529,13 +538,13 @@ export class TonPoolStaker extends TonBaseStaker {
     amount: bigint, // amount to unstake
     minStake: bigint, // minimum stake for participation (to be in the set)
     currentPoolBalances: [bigint, bigint], // current stake balances of the pools
-    currentUserStakes: [bigint, bigint] // current user stakes in the pools
+    userMaxUnstakeAmounts: [bigint, bigint] // maximum user stake that can be unstaked from the pools
   ): [bigint, bigint] {
     const [balancePool1, balancePool2] = currentPoolBalances
-    const [stakeUser1, stakeUser2] = currentUserStakes
+    const [maxUnstakeUser1, maxUnstakeUser2] = userMaxUnstakeAmounts
 
     // check if the requested withdrawal amount exceeds the available user stakes
-    const totalUserStake = stakeUser1 + stakeUser2
+    const totalUserStake = maxUnstakeUser1 + maxUnstakeUser2
     if (amount > totalUserStake) {
       throw new Error('requested withdrawal amount exceeds available user stakes')
     }
@@ -545,8 +554,8 @@ export class TonPoolStaker extends TonBaseStaker {
 
     // sorting pools based on balance (highest balance first)
     const pools = [
-      { index: 0, balance: balancePool1, userStake: stakeUser1 },
-      { index: 1, balance: balancePool2, userStake: stakeUser2 }
+      { index: 0, balance: balancePool1, userMaxUnstake: maxUnstakeUser1 },
+      { index: 1, balance: balancePool2, userMaxUnstake: maxUnstakeUser2 }
     ].sort((a, b) => Number(b.balance - a.balance))
 
     let remainingAmount = amount
@@ -556,7 +565,7 @@ export class TonPoolStaker extends TonBaseStaker {
       if (remainingAmount === 0n) break
 
       // maximum that can be withdrawn from this pool without deactivating it
-      let maxWithdraw = pool.userStake
+      let maxWithdraw = pool.userMaxUnstake
       if (!willRemainActive(pool.balance, maxWithdraw)) {
         maxWithdraw = pool.balance - minStake
       }
