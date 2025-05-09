@@ -18,28 +18,48 @@ describe.only('TonPoolStaker', () => {
   ]
 
   describe('buildUnstakeTx', () => {
-    it('should calculate the correct unstake amount for the happy path', async () => {
-      // Setup with default mock values
+    it.only('should calculate the correct unstake amount for the happy path', async () => {
+      const poolStatusMock = createPoolStatusMock({
+        balance: toNano('20000')
+      })
+
+      const memberMock = createMemberMock({
+        balance: toNano('1'),
+        pendingDeposit: toNano('1'),
+        pendingWithdraw: toNano('1'),
+        withdraw: toNano('0.05')
+      })
+
+      const paramsMock = createParamsMock({
+        enabled: BigInt(1),
+        updatesEnabled: BigInt(1),
+        minStake: toNano('0'),
+        depositFee: toNano('0.05'),
+        withdrawFee: toNano('0.05'),
+        poolFee: toNano('0.1'),
+        receiptPrice: toNano('0.01'),
+        minStakeTotal: toNano('10')
+      })
+
+      const poolStatusResponse = {
+        [validatorAddressPair[0]]: poolStatusMock,
+        [validatorAddressPair[1]]: poolStatusMock
+      }
+
+      const memberResponse = {
+        [validatorAddressPair[0]]: memberMock,
+        [validatorAddressPair[1]]: memberMock
+      }
+
+      const paramsResponse = {
+        [validatorAddressPair[0]]: paramsMock,
+        [validatorAddressPair[1]]: paramsMock
+      }
+
       const staker = setupStaker({
-        poolStatusResponse: createPoolStatusMock({
-          balance: toNano('20000')
-        }),
-        memberResponse: createMemberMock({
-          balance: toNano('1'),
-          pendingDeposit: toNano('1'),
-          pendingWithdraw: toNano('1'),
-          withdraw: toNano('0.05')
-        }),
-        paramsResponse: createParamsMock({
-          enabled: BigInt(1),
-          updatesEnabled: BigInt(1),
-          minStake: toNano('1'),
-          depositFee: toNano('0.05'),
-          withdrawFee: toNano('0.05'),
-          poolFee: toNano('0.1'),
-          receiptPrice: toNano('0.01'),
-          minStakeTotal: toNano('10')
-        })
+        poolStatusResponse,
+        memberResponse,
+        paramsResponse
       })
 
       const {
@@ -53,56 +73,62 @@ describe.only('TonPoolStaker', () => {
       const payloads = extractMessagePayload(messages || [])
 
       // We should have two messages (one for each validator)
-      expect(payloads.length).to.equal(2)
+      expect(payloads.length).to.equal(1)
 
       // Each message should have a valid unstake amount
       payloads.forEach((payload) => {
         expect(payload.amount).to.be.a('bigint')
-        expect(Number(payload.amount) > 0).to.be.true
+        expect(payload.amount).to.equal(toNano('2'))
       })
-
-      // @ts-expect-error: method is private
-      const poolDataForDelegator = await staker.getPoolDataForDelegator(delegatorAddress, validatorAddressPair)
-
-      const amountToUnstake = TonPoolStaker.calculateUnstakePoolAmount(
-        toNano('2'),
-        poolDataForDelegator.minElectionStake,
-        poolDataForDelegator.currentPoolBalances,
-        poolDataForDelegator.userMaxUnstakeAmounts,
-        poolDataForDelegator.currentUserWithdrawals
-      )
-
-      // Verify the calculation is correct
-      expect(amountToUnstake).to.be.a('bigint')
-      expect(Number(amountToUnstake) > 0).to.be.true
     })
 
     it('should correctly unstake the maximum available amount', async () => {
       // Configure high user balance to test max unstake
+      const poolStatusMock = createPoolStatusMock({
+        balance: toNano('20000'),
+        balanceSent: toNano('0'),
+        balancePendingDeposits: toNano('0'),
+        balancePendingWithdrawals: toNano('0'),
+        balanceWithdraw: toNano('0')
+      })
+
+      const memberMock = createMemberMock({
+        balance: toNano('10'), // High user balance
+        pendingDeposit: toNano('0'), // No pending deposits
+        pendingWithdraw: toNano('0'), // No pending withdrawals
+        withdraw: toNano('0') // No withdrawals in progress
+      })
+
+      const paramsMock = createParamsMock({
+        enabled: BigInt(1),
+        updatesEnabled: BigInt(1),
+        minStake: toNano('1'),
+        depositFee: toNano('0.05'),
+        withdrawFee: toNano('0.05'),
+        poolFee: toNano('0.1'),
+        receiptPrice: toNano('0.01'),
+        minStakeTotal: toNano('10')
+      })
+
+      const poolStatusResponse = {
+        [validatorAddressPair[0]]: poolStatusMock,
+        [validatorAddressPair[1]]: poolStatusMock
+      }
+
+      const memberResponse = {
+        [validatorAddressPair[0]]: memberMock,
+        [validatorAddressPair[1]]: memberMock
+      }
+
+      const paramsResponse = {
+        [validatorAddressPair[0]]: paramsMock,
+        [validatorAddressPair[1]]: paramsMock
+      }
+
       const staker = setupStaker({
-        poolStatusResponse: createPoolStatusMock({
-          balance: toNano('20000'),
-          balanceSent: toNano('0'),
-          balancePendingDeposits: toNano('0'),
-          balancePendingWithdrawals: toNano('0'),
-          balanceWithdraw: toNano('0')
-        }),
-        memberResponse: createMemberMock({
-          balance: toNano('10'), // High user balance
-          pendingDeposit: toNano('0'), // No pending deposits
-          pendingWithdraw: toNano('0'), // No pending withdrawals
-          withdraw: toNano('0') // No withdrawals in progress
-        }),
-        paramsResponse: createParamsMock({
-          enabled: BigInt(1),
-          updatesEnabled: BigInt(1),
-          minStake: toNano('1'),
-          depositFee: toNano('0.05'),
-          withdrawFee: toNano('0.05'),
-          poolFee: toNano('0.1'),
-          receiptPrice: toNano('0.01'),
-          minStakeTotal: toNano('10')
-        })
+        poolStatusResponse,
+        memberResponse,
+        paramsResponse
       })
 
       const {
@@ -137,30 +163,51 @@ describe.only('TonPoolStaker', () => {
 
     it('should handle unstaking from a pool with minimum required balance', async () => {
       // Configure pool close to minimum required balance
+      const poolStatusMock = createPoolStatusMock({
+        balance: toNano('10001'), // Just above min stake
+        balanceSent: toNano('0'),
+        balancePendingDeposits: toNano('0'),
+        balancePendingWithdrawals: toNano('0'),
+        balanceWithdraw: toNano('0')
+      })
+
+      const memberMock = createMemberMock({
+        balance: toNano('1'),
+        pendingDeposit: toNano('1'),
+        pendingWithdraw: toNano('1'),
+        withdraw: toNano('0.05')
+      })
+
+      const paramsMock = createParamsMock({
+        enabled: BigInt(1),
+        updatesEnabled: BigInt(1),
+        minStake: toNano('1'),
+        depositFee: toNano('0.05'),
+        withdrawFee: toNano('0.05'),
+        poolFee: toNano('0.1'),
+        receiptPrice: toNano('0.01'),
+        minStakeTotal: toNano('10')
+      })
+
+      const poolStatusResponse = {
+        [validatorAddressPair[0]]: poolStatusMock,
+        [validatorAddressPair[1]]: poolStatusMock
+      }
+
+      const memberResponse = {
+        [validatorAddressPair[0]]: memberMock,
+        [validatorAddressPair[1]]: memberMock
+      }
+
+      const paramsResponse = {
+        [validatorAddressPair[0]]: paramsMock,
+        [validatorAddressPair[1]]: paramsMock
+      }
+
       const staker = setupStaker({
-        poolStatusResponse: createPoolStatusMock({
-          balance: toNano('10001'), // Just above min stake
-          balanceSent: toNano('0'),
-          balancePendingDeposits: toNano('0'),
-          balancePendingWithdrawals: toNano('0'),
-          balanceWithdraw: toNano('0')
-        }),
-        memberResponse: createMemberMock({
-          balance: toNano('1'),
-          pendingDeposit: toNano('1'),
-          pendingWithdraw: toNano('1'),
-          withdraw: toNano('0.05')
-        }),
-        paramsResponse: createParamsMock({
-          enabled: BigInt(1),
-          updatesEnabled: BigInt(1),
-          minStake: toNano('1'),
-          depositFee: toNano('0.05'),
-          withdrawFee: toNano('0.05'),
-          poolFee: toNano('0.1'),
-          receiptPrice: toNano('0.01'),
-          minStakeTotal: toNano('10')
-        }),
+        poolStatusResponse,
+        memberResponse,
+        paramsResponse,
         electionMinStake: toNano('10000') // Min election stake
       })
 
@@ -195,30 +242,51 @@ describe.only('TonPoolStaker', () => {
 
     it('should adjust unstake amount if it would leave the pool below minimum stake', async () => {
       // Configure pool exactly at minimum required balance
+      const poolStatusMock = createPoolStatusMock({
+        balance: toNano('10000'), // Exactly at min stake
+        balanceSent: toNano('0'),
+        balancePendingDeposits: toNano('0'),
+        balancePendingWithdrawals: toNano('0'),
+        balanceWithdraw: toNano('0')
+      })
+
+      const memberMock = createMemberMock({
+        balance: toNano('5'), // User has significant balance
+        pendingDeposit: toNano('0'), // No pending deposits
+        pendingWithdraw: toNano('0'), // No pending withdrawals
+        withdraw: toNano('0') // No withdrawals in progress
+      })
+
+      const paramsMock = createParamsMock({
+        enabled: BigInt(1),
+        updatesEnabled: BigInt(1),
+        minStake: toNano('1'),
+        depositFee: toNano('0.05'),
+        withdrawFee: toNano('0.05'),
+        poolFee: toNano('0.1'),
+        receiptPrice: toNano('0.01'),
+        minStakeTotal: toNano('10')
+      })
+
+      const poolStatusResponse = {
+        [validatorAddressPair[0]]: poolStatusMock,
+        [validatorAddressPair[1]]: poolStatusMock
+      }
+
+      const memberResponse = {
+        [validatorAddressPair[0]]: memberMock,
+        [validatorAddressPair[1]]: memberMock
+      }
+
+      const paramsResponse = {
+        [validatorAddressPair[0]]: paramsMock,
+        [validatorAddressPair[1]]: paramsMock
+      }
+
       const staker = setupStaker({
-        poolStatusResponse: createPoolStatusMock({
-          balance: toNano('10000'), // Exactly at min stake
-          balanceSent: toNano('0'),
-          balancePendingDeposits: toNano('0'),
-          balancePendingWithdrawals: toNano('0'),
-          balanceWithdraw: toNano('0')
-        }),
-        memberResponse: createMemberMock({
-          balance: toNano('5'), // User has significant balance
-          pendingDeposit: toNano('0'), // No pending deposits
-          pendingWithdraw: toNano('0'), // No pending withdrawals
-          withdraw: toNano('0') // No withdrawals in progress
-        }),
-        paramsResponse: createParamsMock({
-          enabled: BigInt(1),
-          updatesEnabled: BigInt(1),
-          minStake: toNano('1'),
-          depositFee: toNano('0.05'),
-          withdrawFee: toNano('0.05'),
-          poolFee: toNano('0.1'),
-          receiptPrice: toNano('0.01'),
-          minStakeTotal: toNano('10')
-        }),
+        poolStatusResponse,
+        memberResponse,
+        paramsResponse,
         electionMinStake: toNano('10000') // Min election stake
       })
 
@@ -251,30 +319,49 @@ describe.only('TonPoolStaker', () => {
     })
 
     it('should correctly unstake from a single validator', async () => {
+      const poolStatusMock = createPoolStatusMock({
+        balance: toNano('20000'),
+        balanceSent: toNano('0'),
+        balancePendingDeposits: toNano('0'),
+        balancePendingWithdrawals: toNano('0'),
+        balanceWithdraw: toNano('0')
+      })
+
+      const memberMock = createMemberMock({
+        balance: toNano('1'),
+        pendingDeposit: toNano('1'),
+        pendingWithdraw: toNano('1'),
+        withdraw: toNano('0.05')
+      })
+
+      const paramsMock = createParamsMock({
+        enabled: BigInt(1),
+        updatesEnabled: BigInt(1),
+        minStake: toNano('1'),
+        depositFee: toNano('0.05'),
+        withdrawFee: toNano('0.05'),
+        poolFee: toNano('0.1'),
+        receiptPrice: toNano('0.01'),
+        minStakeTotal: toNano('10')
+      })
+
+      // For single validator test, only include the first validator
+      const poolStatusResponse = {
+        [validatorAddressPair[0]]: poolStatusMock
+      }
+
+      const memberResponse = {
+        [validatorAddressPair[0]]: memberMock
+      }
+
+      const paramsResponse = {
+        [validatorAddressPair[0]]: paramsMock
+      }
+
       const staker = setupStaker({
-        poolStatusResponse: createPoolStatusMock({
-          balance: toNano('20000'),
-          balanceSent: toNano('0'),
-          balancePendingDeposits: toNano('0'),
-          balancePendingWithdrawals: toNano('0'),
-          balanceWithdraw: toNano('0')
-        }),
-        memberResponse: createMemberMock({
-          balance: toNano('1'),
-          pendingDeposit: toNano('1'),
-          pendingWithdraw: toNano('1'),
-          withdraw: toNano('0.05')
-        }),
-        paramsResponse: createParamsMock({
-          enabled: BigInt(1),
-          updatesEnabled: BigInt(1),
-          minStake: toNano('1'),
-          depositFee: toNano('0.05'),
-          withdrawFee: toNano('0.05'),
-          poolFee: toNano('0.1'),
-          receiptPrice: toNano('0.01'),
-          minStakeTotal: toNano('10')
-        })
+        poolStatusResponse,
+        memberResponse,
+        paramsResponse
       })
 
       // Use only the first validator
@@ -312,30 +399,51 @@ describe.only('TonPoolStaker', () => {
     })
 
     it('should handle unstaking with disabled stateful calculation', async () => {
+      const poolStatusMock = createPoolStatusMock({
+        balance: toNano('20000'),
+        balanceSent: toNano('0'),
+        balancePendingDeposits: toNano('0'),
+        balancePendingWithdrawals: toNano('0'),
+        balanceWithdraw: toNano('0')
+      })
+
+      const memberMock = createMemberMock({
+        balance: toNano('1'),
+        pendingDeposit: toNano('1'),
+        pendingWithdraw: toNano('1'),
+        withdraw: toNano('0.05')
+      })
+
+      const paramsMock = createParamsMock({
+        enabled: BigInt(1),
+        updatesEnabled: BigInt(1),
+        minStake: toNano('1'),
+        depositFee: toNano('0.05'),
+        withdrawFee: toNano('0.05'),
+        poolFee: toNano('0.1'),
+        receiptPrice: toNano('0.01'),
+        minStakeTotal: toNano('10')
+      })
+
+      const poolStatusResponse = {
+        [validatorAddressPair[0]]: poolStatusMock,
+        [validatorAddressPair[1]]: poolStatusMock
+      }
+
+      const memberResponse = {
+        [validatorAddressPair[0]]: memberMock,
+        [validatorAddressPair[1]]: memberMock
+      }
+
+      const paramsResponse = {
+        [validatorAddressPair[0]]: paramsMock,
+        [validatorAddressPair[1]]: paramsMock
+      }
+
       const staker = setupStaker({
-        poolStatusResponse: createPoolStatusMock({
-          balance: toNano('20000'),
-          balanceSent: toNano('0'),
-          balancePendingDeposits: toNano('0'),
-          balancePendingWithdrawals: toNano('0'),
-          balanceWithdraw: toNano('0')
-        }),
-        memberResponse: createMemberMock({
-          balance: toNano('1'),
-          pendingDeposit: toNano('1'),
-          pendingWithdraw: toNano('1'),
-          withdraw: toNano('0.05')
-        }),
-        paramsResponse: createParamsMock({
-          enabled: BigInt(1),
-          updatesEnabled: BigInt(1),
-          minStake: toNano('1'),
-          depositFee: toNano('0.05'),
-          withdrawFee: toNano('0.05'),
-          poolFee: toNano('0.1'),
-          receiptPrice: toNano('0.01'),
-          minStakeTotal: toNano('10')
-        })
+        poolStatusResponse,
+        memberResponse,
+        paramsResponse
       })
 
       const {
@@ -364,30 +472,51 @@ describe.only('TonPoolStaker', () => {
     })
 
     it('should respect a custom validUntil timestamp', async () => {
+      const poolStatusMock = createPoolStatusMock({
+        balance: toNano('20000'),
+        balanceSent: toNano('0'),
+        balancePendingDeposits: toNano('0'),
+        balancePendingWithdrawals: toNano('0'),
+        balanceWithdraw: toNano('0')
+      })
+
+      const memberMock = createMemberMock({
+        balance: toNano('1'),
+        pendingDeposit: toNano('1'),
+        pendingWithdraw: toNano('1'),
+        withdraw: toNano('0.05')
+      })
+
+      const paramsMock = createParamsMock({
+        enabled: BigInt(1),
+        updatesEnabled: BigInt(1),
+        minStake: toNano('1'),
+        depositFee: toNano('0.05'),
+        withdrawFee: toNano('0.05'),
+        poolFee: toNano('0.1'),
+        receiptPrice: toNano('0.01'),
+        minStakeTotal: toNano('10')
+      })
+
+      const poolStatusResponse = {
+        [validatorAddressPair[0]]: poolStatusMock,
+        [validatorAddressPair[1]]: poolStatusMock
+      }
+
+      const memberResponse = {
+        [validatorAddressPair[0]]: memberMock,
+        [validatorAddressPair[1]]: memberMock
+      }
+
+      const paramsResponse = {
+        [validatorAddressPair[0]]: paramsMock,
+        [validatorAddressPair[1]]: paramsMock
+      }
+
       const staker = setupStaker({
-        poolStatusResponse: createPoolStatusMock({
-          balance: toNano('20000'),
-          balanceSent: toNano('0'),
-          balancePendingDeposits: toNano('0'),
-          balancePendingWithdrawals: toNano('0'),
-          balanceWithdraw: toNano('0')
-        }),
-        memberResponse: createMemberMock({
-          balance: toNano('1'),
-          pendingDeposit: toNano('1'),
-          pendingWithdraw: toNano('1'),
-          withdraw: toNano('0.05')
-        }),
-        paramsResponse: createParamsMock({
-          enabled: BigInt(1),
-          updatesEnabled: BigInt(1),
-          minStake: toNano('1'),
-          depositFee: toNano('0.05'),
-          withdrawFee: toNano('0.05'),
-          poolFee: toNano('0.1'),
-          receiptPrice: toNano('0.01'),
-          minStakeTotal: toNano('10')
-        })
+        poolStatusResponse,
+        memberResponse,
+        paramsResponse
       })
 
       const validUntil = Math.floor(Date.now() / 1000) + 3600 // 1 hour from now

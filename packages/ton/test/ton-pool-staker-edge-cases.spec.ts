@@ -19,31 +19,52 @@ describe('TonPoolStaker EdgeCases', () => {
 
   describe('buildUnstakeTx edge cases', () => {
     it('should handle zero unstake amount gracefully', async () => {
+      const poolStatusMock = createPoolStatusMock({
+        balance: toNano('20000'),
+        balanceSent: toNano('0'),
+        balancePendingDeposits: toNano('0'),
+        balancePendingWithdrawals: toNano('0'),
+        balanceWithdraw: toNano('0')
+      })
+
+      const memberMock = createMemberMock({
+        balance: toNano('1'),
+        pendingDeposit: toNano('1'),
+        pendingWithdraw: toNano('1'),
+        withdraw: toNano('0.05')
+      })
+
+      const paramsMock = createParamsMock({
+        enabled: BigInt(1),
+        updatesEnabled: BigInt(1),
+        minStake: toNano('1'),
+        depositFee: toNano('0.05'),
+        withdrawFee: toNano('0.05'),
+        poolFee: toNano('0.1'),
+        receiptPrice: toNano('0.01'),
+        minStakeTotal: toNano('10')
+      })
+
+      // Create address maps for each response type
+      const poolStatusResponse = {
+        [validatorAddressPair[0]]: poolStatusMock,
+        [validatorAddressPair[1]]: poolStatusMock
+      }
+
+      const memberResponse = {
+        [validatorAddressPair[0]]: memberMock,
+        [validatorAddressPair[1]]: memberMock
+      }
+
+      const paramsResponse = {
+        [validatorAddressPair[0]]: paramsMock,
+        [validatorAddressPair[1]]: paramsMock
+      }
+
       const staker = setupStaker({
-        poolStatusResponse: createPoolStatusMock({
-          balance: toNano('20000'),
-          balanceSent: toNano('0'),
-          balancePendingDeposits: toNano('0'),
-          balancePendingWithdrawals: toNano('0'),
-          balanceWithdraw: toNano('0')
-        }),
-        memberResponse: createMemberMock({
-          balance: toNano('1'),
-          pendingDeposit: toNano('1'),
-          pendingWithdraw: toNano('1'),
-          withdraw: toNano('0.05')
-        }),
-        paramsResponse: createParamsMock({
-          enabled: BigInt(1),
-          updatesEnabled: BigInt(1),
-          minStake: toNano('1'),
-          depositFee: toNano('0.05'),
-          withdrawFee: toNano('0.05'),
-          poolFee: toNano('0.1'),
-          receiptPrice: toNano('0.01'),
-          minStakeTotal: toNano('10')
-        }),
-        options: { spies }
+        poolStatusResponse,
+        memberResponse,
+        paramsResponse
       })
 
       // Trying to unstake zero should be safe (but might be rejected in the actual
@@ -66,32 +87,53 @@ describe('TonPoolStaker EdgeCases', () => {
 
     it('should handle unstaking with pool at exact min election stake threshold', async () => {
       // Set up a pool that's exactly at the minimum election stake
+      const poolStatusMock = createPoolStatusMock({
+        balance: toNano('10000'), // Exactly at min stake
+        balanceSent: toNano('0'),
+        balancePendingDeposits: toNano('0'),
+        balancePendingWithdrawals: toNano('0'),
+        balanceWithdraw: toNano('0')
+      })
+
+      const memberMock = createMemberMock({
+        balance: toNano('10'), // User has significant balance
+        pendingDeposit: toNano('0'), // No pending deposits
+        pendingWithdraw: toNano('0'), // No pending withdrawals
+        withdraw: toNano('0') // No withdrawals in progress
+      })
+
+      const paramsMock = createParamsMock({
+        enabled: BigInt(1),
+        updatesEnabled: BigInt(1),
+        minStake: toNano('1'),
+        depositFee: toNano('0.05'),
+        withdrawFee: toNano('0.05'),
+        poolFee: toNano('0.1'),
+        receiptPrice: toNano('0.01'),
+        minStakeTotal: toNano('10')
+      })
+
+      // Create address maps
+      const poolStatusResponse = {
+        [validatorAddressPair[0]]: poolStatusMock,
+        [validatorAddressPair[1]]: poolStatusMock
+      }
+
+      const memberResponse = {
+        [validatorAddressPair[0]]: memberMock,
+        [validatorAddressPair[1]]: memberMock
+      }
+
+      const paramsResponse = {
+        [validatorAddressPair[0]]: paramsMock,
+        [validatorAddressPair[1]]: paramsMock
+      }
+
       const staker = setupStaker({
-        poolStatusResponse: createPoolStatusMock({
-          balance: toNano('10000'), // Exactly at min stake
-          balanceSent: toNano('0'),
-          balancePendingDeposits: toNano('0'),
-          balancePendingWithdrawals: toNano('0'),
-          balanceWithdraw: toNano('0')
-        }),
-        memberResponse: createMemberMock({
-          balance: toNano('10'), // User has significant balance
-          pendingDeposit: toNano('0'), // No pending deposits
-          pendingWithdraw: toNano('0'), // No pending withdrawals
-          withdraw: toNano('0') // No withdrawals in progress
-        }),
-        paramsResponse: createParamsMock({
-          enabled: BigInt(1),
-          updatesEnabled: BigInt(1),
-          minStake: toNano('1'),
-          depositFee: toNano('0.05'),
-          withdrawFee: toNano('0.05'),
-          poolFee: toNano('0.1'),
-          receiptPrice: toNano('0.01'),
-          minStakeTotal: toNano('10')
-        }),
-        electionMinStake: toNano('10000'), // Min election stake = pool balance
-        options: { spies }
+        poolStatusResponse,
+        memberResponse,
+        paramsResponse,
+        electionMinStake: toNano('10000') // Min election stake = pool balance
       })
 
       const { tx } = await staker.buildUnstakeTx({
@@ -122,31 +164,52 @@ describe('TonPoolStaker EdgeCases', () => {
 
     it('should handle unstaking when user has large pending withdrawals', async () => {
       // Create a user with large pending withdrawals already
+      const poolStatusMock = createPoolStatusMock({
+        balance: toNano('20000'),
+        balanceSent: toNano('0'),
+        balancePendingDeposits: toNano('0'),
+        balancePendingWithdrawals: toNano('0'),
+        balanceWithdraw: toNano('0')
+      })
+
+      const memberMock = createMemberMock({
+        balance: toNano('5'), // Regular balance
+        pendingDeposit: toNano('0'), // No pending deposits
+        pendingWithdraw: toNano('10'), // Large pending withdrawals - key part of test
+        withdraw: toNano('0') // No withdrawals in progress
+      })
+
+      const paramsMock = createParamsMock({
+        enabled: BigInt(1),
+        updatesEnabled: BigInt(1),
+        minStake: toNano('1'),
+        depositFee: toNano('0.05'),
+        withdrawFee: toNano('0.05'),
+        poolFee: toNano('0.1'),
+        receiptPrice: toNano('0.01'),
+        minStakeTotal: toNano('10')
+      })
+
+      // Create address maps
+      const poolStatusResponse = {
+        [validatorAddressPair[0]]: poolStatusMock,
+        [validatorAddressPair[1]]: poolStatusMock
+      }
+
+      const memberResponse = {
+        [validatorAddressPair[0]]: memberMock,
+        [validatorAddressPair[1]]: memberMock
+      }
+
+      const paramsResponse = {
+        [validatorAddressPair[0]]: paramsMock,
+        [validatorAddressPair[1]]: paramsMock
+      }
+
       const staker = setupStaker({
-        poolStatusResponse: createPoolStatusMock({
-          balance: toNano('20000'),
-          balanceSent: toNano('0'),
-          balancePendingDeposits: toNano('0'),
-          balancePendingWithdrawals: toNano('0'),
-          balanceWithdraw: toNano('0')
-        }),
-        memberResponse: createMemberMock({
-          balance: toNano('5'), // Regular balance
-          pendingDeposit: toNano('0'), // No pending deposits
-          pendingWithdraw: toNano('10'), // Large pending withdrawals - key part of test
-          withdraw: toNano('0') // No withdrawals in progress
-        }),
-        paramsResponse: createParamsMock({
-          enabled: BigInt(1),
-          updatesEnabled: BigInt(1),
-          minStake: toNano('1'),
-          depositFee: toNano('0.05'),
-          withdrawFee: toNano('0.05'),
-          poolFee: toNano('0.1'),
-          receiptPrice: toNano('0.01'),
-          minStakeTotal: toNano('10')
-        }),
-        options: { spies }
+        poolStatusResponse,
+        memberResponse,
+        paramsResponse
       })
 
       const { tx } = await staker.buildUnstakeTx({
@@ -177,31 +240,52 @@ describe('TonPoolStaker EdgeCases', () => {
 
     it('should handle unstaking more than available balance', async () => {
       // User has limited balance
+      const poolStatusMock = createPoolStatusMock({
+        balance: toNano('20000'),
+        balanceSent: toNano('0'),
+        balancePendingDeposits: toNano('0'),
+        balancePendingWithdrawals: toNano('0'),
+        balanceWithdraw: toNano('0')
+      })
+
+      const memberMock = createMemberMock({
+        balance: toNano('2'), // Small user balance - key part of test
+        pendingDeposit: toNano('0'), // No pending deposits
+        pendingWithdraw: toNano('0'), // No pending withdrawals
+        withdraw: toNano('0') // No withdrawals in progress
+      })
+
+      const paramsMock = createParamsMock({
+        enabled: BigInt(1),
+        updatesEnabled: BigInt(1),
+        minStake: toNano('1'),
+        depositFee: toNano('0.05'),
+        withdrawFee: toNano('0.05'),
+        poolFee: toNano('0.1'),
+        receiptPrice: toNano('0.01'),
+        minStakeTotal: toNano('10')
+      })
+
+      // Create address maps
+      const poolStatusResponse = {
+        [validatorAddressPair[0]]: poolStatusMock,
+        [validatorAddressPair[1]]: poolStatusMock
+      }
+
+      const memberResponse = {
+        [validatorAddressPair[0]]: memberMock,
+        [validatorAddressPair[1]]: memberMock
+      }
+
+      const paramsResponse = {
+        [validatorAddressPair[0]]: paramsMock,
+        [validatorAddressPair[1]]: paramsMock
+      }
+
       const staker = setupStaker({
-        poolStatusResponse: createPoolStatusMock({
-          balance: toNano('20000'),
-          balanceSent: toNano('0'),
-          balancePendingDeposits: toNano('0'),
-          balancePendingWithdrawals: toNano('0'),
-          balanceWithdraw: toNano('0')
-        }),
-        memberResponse: createMemberMock({
-          balance: toNano('2'), // Small user balance - key part of test
-          pendingDeposit: toNano('0'), // No pending deposits
-          pendingWithdraw: toNano('0'), // No pending withdrawals
-          withdraw: toNano('0') // No withdrawals in progress
-        }),
-        paramsResponse: createParamsMock({
-          enabled: BigInt(1),
-          updatesEnabled: BigInt(1),
-          minStake: toNano('1'),
-          depositFee: toNano('0.05'),
-          withdrawFee: toNano('0.05'),
-          poolFee: toNano('0.1'),
-          receiptPrice: toNano('0.01'),
-          minStakeTotal: toNano('10')
-        }),
-        options: { spies }
+        poolStatusResponse,
+        memberResponse,
+        paramsResponse
       })
 
       try {
@@ -244,6 +328,7 @@ describe('TonPoolStaker EdgeCases', () => {
         balancePendingWithdrawals: toNano('0'),
         balanceWithdraw: toNano('0')
       })
+
       const poolStatusMock2 = createPoolStatusMock({
         balance: toNano('10500'), // Second pool with fewer funds
         balanceSent: toNano('0'),
@@ -252,77 +337,45 @@ describe('TonPoolStaker EdgeCases', () => {
         balanceWithdraw: toNano('0')
       })
 
-      let currentGetPoolStatusCall = 0
-      const poolStatusMockResponses = [poolStatusMock1, poolStatusMock2]
+      const memberMock = createMemberMock({
+        balance: toNano('5'), // Regular balance
+        pendingDeposit: toNano('0'), // No pending deposits
+        pendingWithdraw: toNano('0'), // No pending withdrawals
+        withdraw: toNano('0') // No withdrawals in progress
+      })
+
+      const paramsMock = createParamsMock({
+        enabled: BigInt(1),
+        updatesEnabled: BigInt(1),
+        minStake: toNano('1'),
+        depositFee: toNano('0.05'),
+        withdrawFee: toNano('0.05'),
+        poolFee: toNano('0.1'),
+        receiptPrice: toNano('0.01'),
+        minStakeTotal: toNano('10')
+      })
+
+      // Create address-specific pool status responses
+      const poolStatusResponse = {
+        [validatorAddressPair[0]]: poolStatusMock1,
+        [validatorAddressPair[1]]: poolStatusMock2
+      }
+
+      const memberResponse = {
+        [validatorAddressPair[0]]: memberMock,
+        [validatorAddressPair[1]]: memberMock
+      }
+
+      const paramsResponse = {
+        [validatorAddressPair[0]]: paramsMock,
+        [validatorAddressPair[1]]: paramsMock
+      }
 
       const staker = setupStaker({
-        poolStatusResponse: poolStatusMockResponses[0], // This will be overridden by our custom mock below
-        memberResponse: createMemberMock({
-          balance: toNano('5'), // Regular balance
-          pendingDeposit: toNano('0'), // No pending deposits
-          pendingWithdraw: toNano('0'), // No pending withdrawals
-          withdraw: toNano('0') // No withdrawals in progress
-        }),
-        paramsResponse: createParamsMock({
-          enabled: BigInt(1),
-          updatesEnabled: BigInt(1),
-          minStake: toNano('1'),
-          depositFee: toNano('0.05'),
-          withdrawFee: toNano('0.05'),
-          poolFee: toNano('0.1'),
-          receiptPrice: toNano('0.01'),
-          minStakeTotal: toNano('10')
-        }),
-        options: { spies }
+        poolStatusResponse,
+        memberResponse,
+        paramsResponse
       })
-
-      // Override the getClient mock to return different responses for each validator
-      spies.on(staker, ['getClient'], () => {
-        return {
-          provider: () => ({
-            get: async (methodName: string) => {
-              if (methodName === 'get_pool_status') {
-                // Alternate between the two responses
-                const response = poolStatusMockResponses[currentGetPoolStatusCall % 2]
-                currentGetPoolStatusCall++
-                return { stack: response }
-              }
-              throw new Error(`Unknown method: ${methodName}`)
-            }
-          }),
-          runMethod: async (_address, methodName) => {
-            if (methodName === 'get_member') {
-              return {
-                stack: createMemberMock({
-                  balance: toNano('5'), // Regular balance
-                  pendingDeposit: toNano('0'), // No pending deposits
-                  pendingWithdraw: toNano('0'), // No pending withdrawals
-                  withdraw: toNano('0') // No withdrawals in progress
-                })
-              }
-            }
-            if (methodName === 'get_params') {
-              return {
-                stack: createParamsMock({
-                  enabled: BigInt(1),
-                  updatesEnabled: BigInt(1),
-                  minStake: toNano('1'),
-                  depositFee: toNano('0.05'),
-                  withdrawFee: toNano('0.05'),
-                  poolFee: toNano('0.1'),
-                  receiptPrice: toNano('0.01'),
-                  minStakeTotal: toNano('10')
-                })
-              }
-            }
-            throw new Error(`Unknown method: ${methodName}`)
-          }
-        }
-      })
-
-      // We need to re-add the other spies that were set in setupStaker
-      spies.on(staker, ['checkIfAddressTestnetFlagMatches'], () => {})
-      spies.on(staker, ['getElectionMinStake'], async () => toNano('10000'))
 
       const { tx } = await staker.buildUnstakeTx({
         delegatorAddress,

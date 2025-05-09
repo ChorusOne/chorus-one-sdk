@@ -5,6 +5,10 @@ import { toNano } from '@ton/ton'
 // @ts-expect-error: spy it's exported from chai
 import { spy } from 'chai'
 
+type AddressMap<T> = {
+  [address: string]: T
+}
+
 /**
  * Sets up a staker instance with mocked responses for testing
  */
@@ -14,9 +18,9 @@ export const setupStaker = ({
   paramsResponse,
   electionMinStake = toNano('10000')
 }: {
-  poolStatusResponse: TupleItem[] | TupleReader
-  memberResponse: TupleItem[] | TupleReader
-  paramsResponse: TupleItem[] | TupleReader
+  poolStatusResponse: AddressMap<TupleItem[]>
+  memberResponse: AddressMap<TupleItem[]>
+  paramsResponse: AddressMap<TupleItem[]>
   electionMinStake?: bigint
 }) => {
   const staker = new TonPoolStaker({
@@ -33,40 +37,53 @@ export const setupStaker = ({
 
   spy.on(staker, ['getClient'], () => {
     return {
-      provider: () => ({
+      provider: (address: Address) => ({
         get: async (methodName: string): Promise<{ stack: TupleReader }> => {
-          let stackMock: TupleItem[] | TupleReader
+          let stackMock: TupleItem[]
+          const addressStr = address.toString({
+            bounceable: true,
+            urlSafe: true,
+            testOnly: true
+          })
 
           switch (methodName) {
-            case 'get_pool_status':
-              stackMock = poolStatusResponse
+            case 'get_pool_status': {
+              stackMock = poolStatusResponse[addressStr] || []
               break
+            }
             default:
               throw new Error(`Unknown method: ${methodName}`)
           }
 
           return {
-            stack: stackMock instanceof TupleReader ? stackMock : new TupleReader(stackMock)
+            stack: new TupleReader(stackMock)
           }
         }
       }),
 
-      runMethod: async (_address: Address, methodName: string): Promise<{ stack: TupleReader }> => {
-        let stackMock: TupleItem[] | TupleReader
+      runMethod: async (address: Address, methodName: string): Promise<{ stack: TupleReader }> => {
+        let stackMock: TupleItem[]
+        const addressStr = address.toString({
+          bounceable: true,
+          urlSafe: true,
+          testOnly: true
+        })
 
         switch (methodName) {
-          case 'get_member':
-            stackMock = memberResponse
+          case 'get_member': {
+            stackMock = memberResponse[addressStr] || []
             break
-          case 'get_params':
-            stackMock = paramsResponse
+          }
+          case 'get_params': {
+            stackMock = paramsResponse[addressStr] || []
             break
+          }
           default:
             throw new Error(`Unknown method: ${methodName}`)
         }
 
         return {
-          stack: stackMock instanceof TupleReader ? stackMock : new TupleReader(stackMock)
+          stack: new TupleReader(stackMock)
         }
       }
     }
