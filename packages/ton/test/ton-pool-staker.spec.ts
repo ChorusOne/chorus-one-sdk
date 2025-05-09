@@ -131,7 +131,8 @@ describe.only('TonPoolStaker', () => {
       toNano('2'),
       poolDataForDelegator.minElectionStake,
       poolDataForDelegator.currentPoolBalances,
-      poolDataForDelegator.userMaxUnstakeAmounts
+      poolDataForDelegator.userMaxUnstakeAmounts,
+      poolDataForDelegator.currentUserWithdrawals
     )
 
     console.log({ amountToUnstake })
