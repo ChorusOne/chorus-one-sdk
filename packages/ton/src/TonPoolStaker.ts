@@ -587,10 +587,7 @@ export class TonPoolStaker extends TonBaseStaker {
     const [poolOneBalance, poolTwoBalance] = currentPoolBalances
     const [minPoolOne, minPoolTwo] = minPoolStakes
 
-    // Investigate if user can stake less than minStake, if the staked balance is already greater than the minStake.
-    // Check contract code:
-    // 1 - User stakes 1.2TON (= minStake)
-    // 2 - User stakes 0.7 (<minStake, shall it succeed or fail?)
+    // Every stake has to be greater than the minStake, not only the user balance: https://github.com/ChorusOne/ton-pool-contracts/blob/fa98fb53556bad6f03db2adf84476a16502de6bf/nominators.fc#L958
     if (amount < minPoolOne || amount < minPoolTwo) {
       throw new Error('amount is less than the minimum required to stake')
     }
