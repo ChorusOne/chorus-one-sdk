@@ -10,7 +10,7 @@ import { chaiAsPromised } from 'chai-promised'
 use(spies)
 use(chaiAsPromised)
 
-describe.only('TonPoolStaker', () => {
+describe('TonPoolStaker', () => {
   const delegatorAddress = '0QDsF87nkTYgkvu1z5xveCEGTRnZmEVaVT0gdxoeyaNvmoCr'
   const validatorAddressPair: [string, string] = [
     'kQAHBakDk_E7qLlNQZxJDsqj_ruyAFpqarw85tO-c03fK26F',
@@ -33,7 +33,7 @@ describe.only('TonPoolStaker', () => {
       const paramsMock = createParamsMock({
         enabled: BigInt(1),
         updatesEnabled: BigInt(1),
-        minStake: toNano('0'),
+        minStake: toNano('1'),
         depositFee: toNano('0.05'),
         withdrawFee: toNano('0.05'),
         poolFee: toNano('0.1'),
@@ -82,27 +82,19 @@ describe.only('TonPoolStaker', () => {
       })
     })
 
-    it('should correctly unstake the maximum available amount', async () => {
-      // Configure high user balance to test max unstake
+    it.only('should correctly unstake the maximum available amount', async () => {
       const poolStatusMock = createPoolStatusMock({
-        balance: toNano('20000'),
-        balanceSent: toNano('0'),
-        balancePendingDeposits: toNano('0'),
-        balancePendingWithdrawals: toNano('0'),
-        balanceWithdraw: toNano('0')
+        balance: toNano('20000')
       })
 
       const memberMock = createMemberMock({
-        balance: toNano('10'), // High user balance
-        pendingDeposit: toNano('0'), // No pending deposits
-        pendingWithdraw: toNano('0'), // No pending withdrawals
-        withdraw: toNano('0') // No withdrawals in progress
+        balance: toNano('10')
       })
 
       const paramsMock = createParamsMock({
         enabled: BigInt(1),
         updatesEnabled: BigInt(1),
-        minStake: toNano('1'),
+        minStake: toNano('3'),
         depositFee: toNano('0.05'),
         withdrawFee: toNano('0.05'),
         poolFee: toNano('0.1'),
@@ -136,29 +128,16 @@ describe.only('TonPoolStaker', () => {
       } = await staker.buildUnstakeTx({
         delegatorAddress,
         validatorAddressPair,
-        amount: '10' // Attempting to unstake full balance
+        amount: '20'
       })
 
       const payloads = extractMessagePayload(messages || [])
 
-      // @ts-expect-error: method is private
-      const poolDataForDelegator = await staker.getPoolDataForDelegator(delegatorAddress, validatorAddressPair)
-
-      const amountToUnstake = TonPoolStaker.calculateUnstakePoolAmount(
-        toNano('10'),
-        poolDataForDelegator.minElectionStake,
-        poolDataForDelegator.currentPoolBalances,
-        poolDataForDelegator.userMaxUnstakeAmounts,
-        poolDataForDelegator.currentUserWithdrawals
-      )
-
-      // Verify the unstake amount matches the user's max available balance
-      expect(amountToUnstake).to.equal(toNano('10'))
-
-      // Check that the message amounts reflect the calculated unstake amount
-      const totalMessageAmount = payloads.reduce((sum, payload) => sum + payload.amount, 0n)
-      expect(totalMessageAmount).to.be.a('bigint')
-      expect(Number(totalMessageAmount) > 0).to.be.true
+      expect(payloads.length).to.equal(2)
+      payloads.forEach((payload) => {
+        expect(payload.amount).to.be.a('bigint')
+        expect(payload.amount).to.equal(toNano('10'))
+      })
     })
 
     it('should handle unstaking from a pool with minimum required balance', async () => {

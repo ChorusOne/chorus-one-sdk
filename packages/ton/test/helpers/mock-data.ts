@@ -17,7 +17,7 @@ export interface PoolStatusParams {
  */
 export const createPoolStatusMock = (params: PoolStatusParams = {}): TupleItem[] => {
   const {
-    balance = toNano('20000'),
+    balance = toNano('0'),
     balanceSent = toNano('0'),
     balancePendingDeposits = toNano('0'),
     balancePendingWithdrawals = toNano('0'),
@@ -48,10 +48,10 @@ export interface MemberParams {
  */
 export const createMemberMock = (params: MemberParams = {}): TupleItem[] => {
   const {
-    balance = toNano('1'),
-    pendingDeposit = toNano('1'),
-    pendingWithdraw = toNano('1'),
-    withdraw = toNano('0.05')
+    balance = toNano('0'),
+    pendingDeposit = toNano('0'),
+    pendingWithdraw = toNano('0'),
+    withdraw = toNano('0')
   } = params
 
   return [
@@ -83,12 +83,12 @@ export const createParamsMock = (params: ParamsData = {}): TupleItem[] => {
   const {
     enabled = BigInt(1),
     updatesEnabled = BigInt(1),
-    minStake = toNano('1'),
-    depositFee = toNano('0.05'),
-    withdrawFee = toNano('0.05'),
-    poolFee = toNano('0.1'),
-    receiptPrice = toNano('0.01'),
-    minStakeTotal = toNano('10')
+    minStake = toNano('0'),
+    depositFee = toNano('0'),
+    withdrawFee = toNano('0'),
+    poolFee = toNano('0'),
+    receiptPrice = toNano('0'),
+    minStakeTotal = toNano('0')
   } = params
 
   return [
