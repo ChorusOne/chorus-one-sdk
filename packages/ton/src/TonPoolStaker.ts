@@ -13,9 +13,6 @@ import {
 import { defaultValidUntil, getDefaultGas, getRandomQueryId, TonBaseStaker } from './TonBaseStaker'
 import { UnsignedTx, Election, FrozenSet, PoolStatus, Message, TonTxStatus } from './types'
 
-// TODO felipe: The Balance should exist as it's own class and enable calculations of currentBalance, nextCycleBalance, maxWithdraw...
-// The user and pool balance should be instances of this class.
-
 export class TonPoolStaker extends TonBaseStaker {
   /**
    * Builds a staking transaction for TON Pool contract. It uses 2 pool solution, and picks the best pool
@@ -87,7 +84,7 @@ export class TonPoolStaker extends TonBaseStaker {
       }
     }
 
-    const { minElectionStake, currentPoolBalances, currentUserStakes } = await this.getPoolDataForDelegator(
+    const { minElectionStake, currentPoolBalances } = await this.getPoolDataForDelegator(
       delegatorAddress,
       validatorAddresses
     )
@@ -95,9 +92,6 @@ export class TonPoolStaker extends TonBaseStaker {
     const poolParams = await Promise.all(
       validatorAddresses.map((validatorAddress) => this.getPoolParamsUnformatted({ validatorAddress }))
     )
-
-    console.log({ poolParams })
-    console.log({ minElectionStake, currentPoolBalances, currentUserStakes })
 
     const lowestMinStake: bigint = poolParams
       .filter((param) => param.minStake !== 0n)
@@ -116,8 +110,6 @@ export class TonPoolStaker extends TonBaseStaker {
       validatorAddresses.length,
       lowestMinStake
     )
-
-    console.log({ selectedStrategy })
 
     const msgs: Message[] = []
     switch (selectedStrategy) {
@@ -141,9 +133,7 @@ export class TonPoolStaker extends TonBaseStaker {
           toNano(amount),
           minElectionStake,
           currentPoolBalances,
-          // TODO felipe: This should be the minStake amount for each pool, not the currentUserStakes.
-          // It should be pool.minStake
-          currentUserStakes
+          [poolParams[0].minStake, poolParams[1].minStake]
         )
 
         validatorAddresses.forEach((validatorAddress, index) => {
@@ -238,16 +228,15 @@ export class TonPoolStaker extends TonBaseStaker {
         msgs.push(genUnstakeMsg(validatorAddress, toNano(amount), data.withdrawFee, data.receiptPrice))
       })
     } else {
-      const { minElectionStake, currentPoolBalances, userMaxUnstakeAmounts } = await this.getPoolDataForDelegator(
-        delegatorAddress,
-        validatorAddresses
-      )
+      const { minElectionStake, currentPoolBalances, userMaxUnstakeAmounts, currentUserWithdrawals } =
+        await this.getPoolDataForDelegator(delegatorAddress, validatorAddresses)
 
       const unstakeAmountPerPool = TonPoolStaker.calculateUnstakePoolAmount(
         toNano(amount),
         minElectionStake,
         currentPoolBalances,
-        userMaxUnstakeAmounts
+        userMaxUnstakeAmounts,
+        currentUserWithdrawals
       )
 
       // sanity check
@@ -385,23 +374,12 @@ export class TonPoolStaker extends TonBaseStaker {
     ])
 
     const currentPoolBalances: [bigint, bigint] =
-      validatorAddresses.length === 2
-        ? [
-            poolStatus[0].balance + poolStatus[0].balancePendingDeposits - poolStatus[0].balancePendingWithdrawals,
-            poolStatus[1].balance + poolStatus[1].balancePendingDeposits - poolStatus[1].balancePendingWithdrawals
-          ]
-        : [poolStatus[0].balance + poolStatus[0].balancePendingDeposits - poolStatus[0].balancePendingWithdrawals, 0n]
+      validatorAddresses.length === 2 ? [poolStatus[0].balance, poolStatus[1].balance] : [poolStatus[0].balance, 0n]
 
-    const currentUserStakes: [bigint, bigint] =
+    const currentUserWithdrawals: [bigint, bigint] =
       validatorAddresses.length === 2
-        ? [
-            toNano(userStake[0].balance) + toNano(userStake[0].pendingDeposit) - toNano(userStake[0].pendingWithdraw),
-            toNano(userStake[1].balance) + toNano(userStake[1].pendingDeposit) - toNano(userStake[1].pendingWithdraw)
-          ]
-        : [
-            toNano(userStake[0].balance) + toNano(userStake[0].pendingDeposit) - toNano(userStake[0].pendingWithdraw),
-            0n
-          ]
+        ? [toNano(userStake[0].withdraw), toNano(userStake[1].withdraw)]
+        : [toNano(userStake[0].withdraw), 0n]
 
     const userMaxUnstakeAmounts: [bigint, bigint] =
       validatorAddresses.length === 2
@@ -414,7 +392,7 @@ export class TonPoolStaker extends TonBaseStaker {
     return {
       minElectionStake,
       currentPoolBalances,
-      currentUserStakes,
+      currentUserWithdrawals,
       userMaxUnstakeAmounts
     }
   }
@@ -554,7 +532,8 @@ export class TonPoolStaker extends TonBaseStaker {
     amount: bigint, // amount to unstake
     minStake: bigint, // minimum stake for participation (to be in the set)
     currentPoolBalances: [bigint, bigint], // current stake balances of the pools
-    userMaxUnstakeAmounts: [bigint, bigint] // maximum user stake that can be unstaked from the pools
+    userMaxUnstakeAmounts: [bigint, bigint], // maximum user stake that can be unstaked from the pools
+    userCurrentWithdrawals: [bigint, bigint] // current user withdrawals from the pools
   ): [bigint, bigint] {
     const [balancePool1, balancePool2] = currentPoolBalances
     const [maxUnstakeUser1, maxUnstakeUser2] = userMaxUnstakeAmounts
@@ -583,10 +562,10 @@ export class TonPoolStaker extends TonBaseStaker {
       // maximum that can be withdrawn from this pool without deactivating it
       let maxWithdraw = pool.userMaxUnstake
       if (!willRemainActive(pool.balance, maxWithdraw)) {
-        // TODO felipe: This is taking into account only the balance but not the pendingDeposits and pendingWithdrawals, that should be considered for the balance on the next validation cycle.
-        // This should also likely take into account the user withdrawable amount
-        // The formula should be: pool.balance + pool.pendingDeposits - pool.pendingWithdrawals - minStake + user.withdraw
-        maxWithdraw = pool.balance - minStake
+        // Formula for current cycle balance: pool.balance - minStake + user.withdraw
+        // Formula for next cycle balance: pool.balance + pool.pendingDeposits - pool.pendingWithdrawals - minStake + user.withdraw
+        // Using current cycle balance to avoid making calculation on predicted balance.
+        maxWithdraw = pool.balance - minStake + userCurrentWithdrawals[pool.index]
       }
       maxWithdraw = maxWithdraw < 0n ? 0n : maxWithdraw
 
@@ -608,8 +587,10 @@ export class TonPoolStaker extends TonBaseStaker {
     const [poolOneBalance, poolTwoBalance] = currentPoolBalances
     const [minPoolOne, minPoolTwo] = minPoolStakes
 
-    // TODO felipe: If the user has already staked the min amount, can't he stake less than the minAmount on the next staking?
-    // Because this function takes useCurrentStake instead of minStake, the function will throw if the user tries to stake an amount less than what's currently staked. So it's not checking for the minAmount but if the user is staking more than it has staked
+    // Investigate if user can stake less than minStake, if the staked balance is already greater than the minStake.
+    // Check contract code:
+    // 1 - User stakes 1.2TON (= minStake)
+    // 2 - User stakes 0.7 (<minStake, shall it succeed or fail?)
     if (amount < minPoolOne || amount < minPoolTwo) {
       throw new Error('amount is less than the minimum required to stake')
     }
