@@ -236,7 +236,8 @@ export class TonPoolStaker extends TonBaseStaker {
         minElectionStake,
         currentPoolBalances,
         userMaxUnstakeAmounts,
-        currentUserWithdrawals
+        currentUserWithdrawals,
+        [poolParamsData[0].minStake, poolParamsData[1].minStake]
       )
 
       // sanity check
@@ -530,10 +531,11 @@ export class TonPoolStaker extends TonBaseStaker {
   /** @ignore */
   static calculateUnstakePoolAmount(
     amount: bigint, // amount to unstake
-    minStake: bigint, // minimum stake for participation (to be in the set)
+    minElectionStake: bigint, // minimum stake for participation (to be in the set)
     currentPoolBalances: [bigint, bigint], // current stake balances of the pools
     userMaxUnstakeAmounts: [bigint, bigint], // maximum user stake that can be unstaked from the pools
-    userCurrentWithdrawals: [bigint, bigint] // current user withdrawals from the pools
+    userCurrentWithdrawals: [bigint, bigint], // current user withdrawals from the pools
+    minUserStake: [bigint, bigint] // minimum user stake that can be unstaked from the pools
   ): [bigint, bigint] {
     const [balancePool1, balancePool2] = currentPoolBalances
     const [maxUnstakeUser1, maxUnstakeUser2] = userMaxUnstakeAmounts
@@ -545,7 +547,12 @@ export class TonPoolStaker extends TonBaseStaker {
     }
 
     // check if the pool will remain active after withdrawal
-    const willRemainActive = (balance: bigint, withdraw: bigint): boolean => balance - withdraw >= minStake
+    const willRemainActive = (balance: bigint, withdraw: bigint, userCurrentWithdrawals: bigint): boolean =>
+      balance - withdraw + userCurrentWithdrawals >= minElectionStake
+
+    // Check if user staked is not bellow minStake
+    const isValidStake = (userMaxUnstake: bigint, minUserStake: bigint, amount: bigint): boolean =>
+      userMaxUnstake - amount >= minUserStake || userMaxUnstake - amount <= 0n
 
     // sorting pools based on balance (highest balance first)
     const pools = [
@@ -561,11 +568,22 @@ export class TonPoolStaker extends TonBaseStaker {
 
       // maximum that can be withdrawn from this pool without deactivating it
       let maxWithdraw = pool.userMaxUnstake
-      if (!willRemainActive(pool.balance, maxWithdraw)) {
+      if (!willRemainActive(pool.balance, amount, userCurrentWithdrawals[pool.index])) {
         // Formula for current cycle balance: pool.balance - minStake + user.withdraw
         // Formula for next cycle balance: pool.balance + pool.pendingDeposits - pool.pendingWithdrawals - minStake + user.withdraw
         // Using current cycle balance to avoid making calculation on predicted balance.
-        maxWithdraw = pool.balance - minStake + userCurrentWithdrawals[pool.index]
+        const currMaxWithdraw = pool.balance - minElectionStake + userCurrentWithdrawals[pool.index]
+        if (currMaxWithdraw < maxWithdraw) {
+          maxWithdraw = currMaxWithdraw
+        }
+      }
+
+      // Check if user stake is not bellow minStake
+      if (!isValidStake(pool.userMaxUnstake, minUserStake[pool.index], amount)) {
+        const currMaxWithdraw = pool.userMaxUnstake - minUserStake[pool.index]
+        if (currMaxWithdraw < maxWithdraw) {
+          maxWithdraw = currMaxWithdraw
+        }
       }
       maxWithdraw = maxWithdraw < 0n ? 0n : maxWithdraw
 

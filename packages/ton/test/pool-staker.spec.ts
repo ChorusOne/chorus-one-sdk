@@ -25,45 +25,45 @@ describe('TonPoolStaker_calculateUnstakePoolAmount', () => {
   const minStake = 10n
 
   it('should withdraw from the highest balance pool first', () => {
-    const result = fn(5n, minStake, [15n, 20n], [10n, 10n])
+    const result = fn(5n, minStake, [15n, 20n], [10n, 10n], [0n, 0n])
     expect(result).to.deep.equal([0n, 5n])
   })
 
   it('should not split withdraw to two pools if not required', () => {
-    const result = fn(10n, minStake, [20n, 20n], [10n, 10n])
+    const result = fn(10n, minStake, [20n, 20n], [10n, 10n], [0n, 0n])
     expect(result).to.deep.equal([10n, 0n])
   })
 
   it('should split withdraw to avoid pool deactivation', () => {
-    const result = fn(10n, minStake, [15n, 15n], [10n, 10n])
+    const result = fn(10n, minStake, [15n, 15n], [10n, 10n], [0n, 0n])
     expect(result).to.deep.equal([5n, 5n])
   })
 
   it('should withdraw from multiple pools if needed', () => {
-    const result = fn(15n, minStake, [20n, 20n], [10n, 10n])
+    const result = fn(15n, minStake, [20n, 20n], [10n, 10n], [0n, 0n])
     expect(result).to.deep.equal([10n, 5n])
   })
 
   it('should not withdraw if user stake is zero', () => {
-    const result = fn(5n, minStake, [15n, 20n], [0n, 10n])
+    const result = fn(5n, minStake, [15n, 20n], [0n, 10n], [0n, 0n])
     expect(result).to.deep.equal([0n, 5n])
   })
 
   it('should handle exact balance matches', () => {
-    const result = fn(10n, minStake, [20n, 20n], [10n, 5n])
+    const result = fn(10n, minStake, [20n, 20n], [10n, 5n], [0n, 0n])
     expect(result).to.deep.equal([10n, 0n])
   })
 
   it('should withdraw if one pool is empty', () => {
-    let result = fn(5n, minStake, [0n, 20n], [0n, 5n])
+    let result = fn(5n, minStake, [0n, 20n], [0n, 5n], [0n, 0n])
     expect(result).to.deep.equal([0n, 5n])
 
-    result = fn(5n, minStake, [20n, 10n], [5n, 0n])
+    result = fn(5n, minStake, [20n, 10n], [5n, 0n], [0n, 0n])
     expect(result).to.deep.equal([5n, 0n])
   })
 
   it('should throw error if user wants to withdraw more than available', () => {
-    expect(() => fn(21n, 10n, [20n, 20n], [10n, 10n])).to.throw(
+    expect(() => fn(21n, 10n, [20n, 20n], [10n, 10n], [0n, 0n])).to.throw(
       'requested withdrawal amount exceeds available user stakes'
     )
   })
@@ -71,7 +71,7 @@ describe('TonPoolStaker_calculateUnstakePoolAmount', () => {
 
 describe('TonPoolStaker_calculateStakeAmount', () => {
   const fn = TonPoolStaker.calculateStakePoolAmount
-  const minPoolStakes = [1n, 1n]
+  const minPoolStakes = [1n, 1n] as [bigint, bigint]
 
   it('should equalize the pool stake if both pools are above min', () => {
     // strategy: both pools are above minStake, so our goal is to optimize the
