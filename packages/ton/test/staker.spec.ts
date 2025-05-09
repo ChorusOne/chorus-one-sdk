@@ -1,6 +1,7 @@
 import { TonNominatorPoolStaker } from '@chorus-one/ton'
 import { Address, TupleItem, TupleReader } from '@ton/core'
 import { describe, it } from 'mocha'
+// @ts-expect-error: spy it's exported from chai
 import { use, assert, expect, spy } from 'chai'
 import { chaiAsPromised } from 'chai-promised'
 import spies from 'chai-spies'
@@ -19,7 +20,8 @@ describe('TonStaker', () => {
       workchain: 0,
       bounceable: false,
       testOnly: true,
-      urlSafe: true
+      urlSafe: true,
+      isBIP39: false
     }
   })
 
@@ -81,10 +83,13 @@ describe('TonStaker', () => {
       amount: '0.5'
     })
 
-    assert.equal(tx.messages[0]?.amount, BigInt('500000000'))
-    assert.equal(tx.messages[0]?.bounceable, true)
-    assert.equal(tx.messages[0]?.payload, 'd')
-    assert.equal(tx.messages[0]?.address, 'kf8SWCvzf6eJK4Q0ZOe14PqDdsT5wk0_Ni0wAThL0cVorNVU')
+    assert.isDefined(tx.messages, 'tx.messages should be defined')
+    if (tx.messages) {
+      assert.equal(tx.messages[0]?.amount, BigInt('500000000'))
+      assert.equal(tx.messages[0]?.bounceable, true)
+      assert.equal(tx.messages[0]?.payload, 'd')
+      assert.equal(tx.messages[0]?.address, 'kf8SWCvzf6eJK4Q0ZOe14PqDdsT5wk0_Ni0wAThL0cVorNVU')
+    }
   })
 
   it('should handle amount fuzzing correctly', async () => {
