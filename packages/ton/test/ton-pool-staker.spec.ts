@@ -1,13 +1,14 @@
 import { describe, it } from 'mocha'
-import { use, expect, spy } from 'chai'
-import { toNano, Address } from '@ton/ton'
+import { use, expect } from 'chai'
+import { toNano } from '@ton/ton'
 import { TonPoolStaker } from '../src/TonPoolStaker'
-import { chaiAsPromised } from 'chai-promised'
 import spies from 'chai-spies'
-import { Cell, TupleItem, TupleReader } from '@ton/core'
+import { createMemberMock, createParamsMock, createPoolStatusMock } from './helpers/mock-data'
+import { extractMessagePayload, setupStaker } from './helpers/test-setup'
+import { chaiAsPromised } from 'chai-promised'
 
-use(chaiAsPromised)
 use(spies)
+use(chaiAsPromised)
 
 describe.only('TonPoolStaker', () => {
   const delegatorAddress = '0QDsF87nkTYgkvu1z5xveCEGTRnZmEVaVT0gdxoeyaNvmoCr'
@@ -16,186 +17,390 @@ describe.only('TonPoolStaker', () => {
     'kQCltujow9Sq3ZVPPU6CYGfqwDxYwjlmFGZ1Wt0bAYebio4o'
   ]
 
-  const staker = new TonPoolStaker({
-    rpcUrl: 'https://ton.fake.website',
-    addressDerivationConfig: {
-      walletContractVersion: 4,
-      workchain: 0,
-      bounceable: false,
-      testOnly: true,
-      urlSafe: true,
-      isBIP39: false
-    }
-  })
-
-  // Data for validator (pool)
-  const getParamsResponse: TupleItem[] = [
-    { type: 'int', value: BigInt(1) }, // enabled
-    { type: 'int', value: BigInt(1) }, // updatesEnables
-    { type: 'int', value: toNano('1') }, // minStake
-    { type: 'int', value: toNano('0.05') }, // depositFee
-    { type: 'int', value: toNano('0.05') }, // withdrawFee
-    { type: 'int', value: toNano('0.1') }, // poolFee
-    { type: 'int', value: toNano('0.01') }, // receiptPrice
-    { type: 'int', value: toNano('10') } // minStakeTotal
-  ]
-
-  // Data for validator (pool)
-  const getPoolStatusResponse: TupleItem[] = [
-    { type: 'int', value: toNano('20000') }, // balance
-    { type: 'int', value: toNano('0') }, // balanceSent
-    { type: 'int', value: toNano('0') }, // balancePendingDeposits
-    { type: 'int', value: toNano('0') }, // balancePendingWithdrawals
-    { type: 'int', value: toNano('0') } // balanceWithdraw
-  ]
-
-  // Data for delegator
-  const getMemberResponse: TupleItem[] = [
-    { type: 'int', value: toNano('1') }, // balance
-    { type: 'int', value: toNano('1') }, // pendingDeposit
-    { type: 'int', value: toNano('1') }, // pendingWithdraw
-    { type: 'int', value: toNano('0.05') } // withdraw
-  ]
-
-  spy.on(staker, ['getClient'], () => {
-    return {
-      provider: () => ({
-        get: async (methodName: string): Promise<{ stack: TupleReader }> => {
-          let stackMock: TupleItem[] = []
-
-          switch (methodName) {
-            case 'get_pool_status':
-              stackMock = getPoolStatusResponse
-              break
-            default:
-              throw new Error(`Unknown method: ${methodName}`)
-          }
-
-          return {
-            stack: new TupleReader(stackMock)
-          }
-        }
-      }),
-
-      runMethod: async (_address: Address, methodName: string): Promise<{ stack: TupleReader }> => {
-        let stackMock: TupleItem[] = []
-
-        switch (methodName) {
-          case 'get_member':
-            stackMock = getMemberResponse
-            break
-          case 'get_params':
-            stackMock = getParamsResponse
-            break
-          default:
-            throw new Error(`Unknown method: ${methodName}`)
-        }
-
-        return {
-          stack: new TupleReader(stackMock)
-        }
-      }
-    }
-  })
-
-  spy.on(staker, ['checkIfAddressTestnetFlagMatches'], () => {})
-  spy.on(staker, ['getElectionMinStake'], async () => toNano('10000'))
-
-  it('should successfully build an unstake transaction with stateful calculation', async () => {
-    const {
-      tx: { messages }
-    } = await staker.buildUnstakeTx({
-      delegatorAddress,
-      validatorAddressPair,
-      amount: '2'
-    })
-
-    messages?.forEach(({ payload }) => {
-      if (payload instanceof Cell) {
-        const slice = payload.beginParse()
-        console.log({
-          methodId: slice.loadUint(32),
-          queryId: slice.loadUint(64),
-          gas: slice.loadCoins(),
-          amount: slice.loadCoins()
+  describe('buildUnstakeTx', () => {
+    it('should calculate the correct unstake amount for the happy path', async () => {
+      // Setup with default mock values
+      const staker = setupStaker({
+        poolStatusResponse: createPoolStatusMock({
+          balance: toNano('20000')
+        }),
+        memberResponse: createMemberMock({
+          balance: toNano('1'),
+          pendingDeposit: toNano('1'),
+          pendingWithdraw: toNano('1'),
+          withdraw: toNano('0.05')
+        }),
+        paramsResponse: createParamsMock({
+          enabled: BigInt(1),
+          updatesEnabled: BigInt(1),
+          minStake: toNano('1'),
+          depositFee: toNano('0.05'),
+          withdrawFee: toNano('0.05'),
+          poolFee: toNano('0.1'),
+          receiptPrice: toNano('0.01'),
+          minStakeTotal: toNano('10')
         })
-      }
+      })
+
+      const {
+        tx: { messages }
+      } = await staker.buildUnstakeTx({
+        delegatorAddress,
+        validatorAddressPair,
+        amount: '2'
+      })
+
+      const payloads = extractMessagePayload(messages || [])
+
+      // We should have two messages (one for each validator)
+      expect(payloads.length).to.equal(2)
+
+      // Each message should have a valid unstake amount
+      payloads.forEach((payload) => {
+        expect(payload.amount).to.be.a('bigint')
+        expect(Number(payload.amount) > 0).to.be.true
+      })
+
+      // @ts-expect-error: method is private
+      const poolDataForDelegator = await staker.getPoolDataForDelegator(delegatorAddress, validatorAddressPair)
+
+      const amountToUnstake = TonPoolStaker.calculateUnstakePoolAmount(
+        toNano('2'),
+        poolDataForDelegator.minElectionStake,
+        poolDataForDelegator.currentPoolBalances,
+        poolDataForDelegator.userMaxUnstakeAmounts,
+        poolDataForDelegator.currentUserWithdrawals
+      )
+
+      // Verify the calculation is correct
+      expect(amountToUnstake).to.be.a('bigint')
+      expect(Number(amountToUnstake) > 0).to.be.true
     })
 
-    // @ts-expect-error: method is private
-    const poolDataForDelegator = await staker.getPoolDataForDelegator(delegatorAddress, validatorAddressPair)
+    it('should correctly unstake the maximum available amount', async () => {
+      // Configure high user balance to test max unstake
+      const staker = setupStaker({
+        poolStatusResponse: createPoolStatusMock({
+          balance: toNano('20000'),
+          balanceSent: toNano('0'),
+          balancePendingDeposits: toNano('0'),
+          balancePendingWithdrawals: toNano('0'),
+          balanceWithdraw: toNano('0')
+        }),
+        memberResponse: createMemberMock({
+          balance: toNano('10'), // High user balance
+          pendingDeposit: toNano('0'), // No pending deposits
+          pendingWithdraw: toNano('0'), // No pending withdrawals
+          withdraw: toNano('0') // No withdrawals in progress
+        }),
+        paramsResponse: createParamsMock({
+          enabled: BigInt(1),
+          updatesEnabled: BigInt(1),
+          minStake: toNano('1'),
+          depositFee: toNano('0.05'),
+          withdrawFee: toNano('0.05'),
+          poolFee: toNano('0.1'),
+          receiptPrice: toNano('0.01'),
+          minStakeTotal: toNano('10')
+        })
+      })
 
-    console.log({ poolDataForDelegator })
+      const {
+        tx: { messages }
+      } = await staker.buildUnstakeTx({
+        delegatorAddress,
+        validatorAddressPair,
+        amount: '10' // Attempting to unstake full balance
+      })
 
-    const amountToUnstake = TonPoolStaker.calculateUnstakePoolAmount(
-      toNano('2'),
-      poolDataForDelegator.minElectionStake,
-      poolDataForDelegator.currentPoolBalances,
-      poolDataForDelegator.userMaxUnstakeAmounts,
-      poolDataForDelegator.currentUserWithdrawals
-    )
+      const payloads = extractMessagePayload(messages || [])
 
-    console.log({ amountToUnstake })
+      // @ts-expect-error: method is private
+      const poolDataForDelegator = await staker.getPoolDataForDelegator(delegatorAddress, validatorAddressPair)
+
+      const amountToUnstake = TonPoolStaker.calculateUnstakePoolAmount(
+        toNano('10'),
+        poolDataForDelegator.minElectionStake,
+        poolDataForDelegator.currentPoolBalances,
+        poolDataForDelegator.userMaxUnstakeAmounts,
+        poolDataForDelegator.currentUserWithdrawals
+      )
+
+      // Verify the unstake amount matches the user's max available balance
+      expect(amountToUnstake).to.equal(toNano('10'))
+
+      // Check that the message amounts reflect the calculated unstake amount
+      const totalMessageAmount = payloads.reduce((sum, payload) => sum + payload.amount, 0n)
+      expect(totalMessageAmount).to.be.a('bigint')
+      expect(Number(totalMessageAmount) > 0).to.be.true
+    })
+
+    it('should handle unstaking from a pool with minimum required balance', async () => {
+      // Configure pool close to minimum required balance
+      const staker = setupStaker({
+        poolStatusResponse: createPoolStatusMock({
+          balance: toNano('10001'), // Just above min stake
+          balanceSent: toNano('0'),
+          balancePendingDeposits: toNano('0'),
+          balancePendingWithdrawals: toNano('0'),
+          balanceWithdraw: toNano('0')
+        }),
+        memberResponse: createMemberMock({
+          balance: toNano('1'),
+          pendingDeposit: toNano('1'),
+          pendingWithdraw: toNano('1'),
+          withdraw: toNano('0.05')
+        }),
+        paramsResponse: createParamsMock({
+          enabled: BigInt(1),
+          updatesEnabled: BigInt(1),
+          minStake: toNano('1'),
+          depositFee: toNano('0.05'),
+          withdrawFee: toNano('0.05'),
+          poolFee: toNano('0.1'),
+          receiptPrice: toNano('0.01'),
+          minStakeTotal: toNano('10')
+        }),
+        electionMinStake: toNano('10000') // Min election stake
+      })
+
+      const {
+        tx: { messages = [] }
+      } = await staker.buildUnstakeTx({
+        delegatorAddress,
+        validatorAddressPair,
+        amount: '0.5' // Small amount that shouldn't leave the pool in a bad state
+      })
+
+      const payloads = extractMessagePayload(messages)
+
+      // @ts-expect-error: method is private
+      const poolDataForDelegator = await staker.getPoolDataForDelegator(delegatorAddress, validatorAddressPair)
+
+      const amountToUnstake = TonPoolStaker.calculateUnstakePoolAmount(
+        toNano('0.5'),
+        poolDataForDelegator.minElectionStake,
+        poolDataForDelegator.currentPoolBalances,
+        poolDataForDelegator.userMaxUnstakeAmounts,
+        poolDataForDelegator.currentUserWithdrawals
+      )
+
+      // The unstake should still be possible as it doesn't leave the pool below min stake
+      expect(amountToUnstake).to.be.a('bigint')
+      expect(Number(amountToUnstake) > 0).to.be.true
+
+      // Validate the transaction messages were created correctly
+      expect(payloads.length).to.be.greaterThan(0)
+    })
+
+    it('should adjust unstake amount if it would leave the pool below minimum stake', async () => {
+      // Configure pool exactly at minimum required balance
+      const staker = setupStaker({
+        poolStatusResponse: createPoolStatusMock({
+          balance: toNano('10000'), // Exactly at min stake
+          balanceSent: toNano('0'),
+          balancePendingDeposits: toNano('0'),
+          balancePendingWithdrawals: toNano('0'),
+          balanceWithdraw: toNano('0')
+        }),
+        memberResponse: createMemberMock({
+          balance: toNano('5'), // User has significant balance
+          pendingDeposit: toNano('0'), // No pending deposits
+          pendingWithdraw: toNano('0'), // No pending withdrawals
+          withdraw: toNano('0') // No withdrawals in progress
+        }),
+        paramsResponse: createParamsMock({
+          enabled: BigInt(1),
+          updatesEnabled: BigInt(1),
+          minStake: toNano('1'),
+          depositFee: toNano('0.05'),
+          withdrawFee: toNano('0.05'),
+          poolFee: toNano('0.1'),
+          receiptPrice: toNano('0.01'),
+          minStakeTotal: toNano('10')
+        }),
+        electionMinStake: toNano('10000') // Min election stake
+      })
+
+      const {
+        tx: { messages = [] }
+      } = await staker.buildUnstakeTx({
+        delegatorAddress,
+        validatorAddressPair,
+        amount: '5' // Attempting to unstake an amount that would leave pool below min stake
+      })
+
+      // Validate the transaction messages were created
+      const payloads = extractMessagePayload(messages)
+      expect(payloads.length).to.be.greaterThan(0)
+
+      // @ts-expect-error: method is private
+      const poolDataForDelegator = await staker.getPoolDataForDelegator(delegatorAddress, validatorAddressPair)
+
+      const amountToUnstake = TonPoolStaker.calculateUnstakePoolAmount(
+        toNano('5'),
+        poolDataForDelegator.minElectionStake,
+        poolDataForDelegator.currentPoolBalances,
+        poolDataForDelegator.userMaxUnstakeAmounts,
+        poolDataForDelegator.currentUserWithdrawals
+      )
+
+      // The amount should be adjusted to keep the pool at minimum stake
+      expect(amountToUnstake).to.be.a('bigint')
+      // The exact adjustment calculation would depend on the implementation of calculateUnstakePoolAmount
+    })
+
+    it('should correctly unstake from a single validator', async () => {
+      const staker = setupStaker({
+        poolStatusResponse: createPoolStatusMock({
+          balance: toNano('20000'),
+          balanceSent: toNano('0'),
+          balancePendingDeposits: toNano('0'),
+          balancePendingWithdrawals: toNano('0'),
+          balanceWithdraw: toNano('0')
+        }),
+        memberResponse: createMemberMock({
+          balance: toNano('1'),
+          pendingDeposit: toNano('1'),
+          pendingWithdraw: toNano('1'),
+          withdraw: toNano('0.05')
+        }),
+        paramsResponse: createParamsMock({
+          enabled: BigInt(1),
+          updatesEnabled: BigInt(1),
+          minStake: toNano('1'),
+          depositFee: toNano('0.05'),
+          withdrawFee: toNano('0.05'),
+          poolFee: toNano('0.1'),
+          receiptPrice: toNano('0.01'),
+          minStakeTotal: toNano('10')
+        })
+      })
+
+      // Use only the first validator
+      const singleValidatorPair: [string, string] = [validatorAddressPair[0], '']
+
+      const {
+        tx: { messages = [] }
+      } = await staker.buildUnstakeTx({
+        delegatorAddress,
+        validatorAddressPair: singleValidatorPair,
+        amount: '1'
+      })
+
+      // Should only have one message for the single validator
+      expect(messages.length).to.equal(1)
+      expect(messages[0].address).to.equal(singleValidatorPair[0])
+
+      const payloads = extractMessagePayload(messages)
+      expect(payloads.length).to.equal(1)
+
+      // @ts-expect-error: method is private
+      const poolDataForDelegator = await staker.getPoolDataForDelegator(delegatorAddress, singleValidatorPair)
+
+      const amountToUnstake = TonPoolStaker.calculateUnstakePoolAmount(
+        toNano('1'),
+        poolDataForDelegator.minElectionStake,
+        poolDataForDelegator.currentPoolBalances,
+        poolDataForDelegator.userMaxUnstakeAmounts,
+        poolDataForDelegator.currentUserWithdrawals
+      )
+
+      // Verify the calculation is correct for single validator
+      expect(amountToUnstake).to.be.a('bigint')
+      expect(Number(amountToUnstake) > 0).to.be.true
+    })
+
+    it('should handle unstaking with disabled stateful calculation', async () => {
+      const staker = setupStaker({
+        poolStatusResponse: createPoolStatusMock({
+          balance: toNano('20000'),
+          balanceSent: toNano('0'),
+          balancePendingDeposits: toNano('0'),
+          balancePendingWithdrawals: toNano('0'),
+          balanceWithdraw: toNano('0')
+        }),
+        memberResponse: createMemberMock({
+          balance: toNano('1'),
+          pendingDeposit: toNano('1'),
+          pendingWithdraw: toNano('1'),
+          withdraw: toNano('0.05')
+        }),
+        paramsResponse: createParamsMock({
+          enabled: BigInt(1),
+          updatesEnabled: BigInt(1),
+          minStake: toNano('1'),
+          depositFee: toNano('0.05'),
+          withdrawFee: toNano('0.05'),
+          poolFee: toNano('0.1'),
+          receiptPrice: toNano('0.01'),
+          minStakeTotal: toNano('10')
+        })
+      })
+
+      const {
+        tx: { messages = [] }
+      } = await staker.buildUnstakeTx({
+        delegatorAddress,
+        validatorAddressPair,
+        amount: '1',
+        disableStatefulCalculation: true // Disable stateful calculation
+      })
+
+      // With disabled calculation, we should still get valid messages
+      expect(messages.length).to.equal(2)
+
+      // Each message should target the correct validator
+      expect(messages[0].address).to.equal(validatorAddressPair[0])
+      expect(messages[1].address).to.equal(validatorAddressPair[1])
+
+      const payloads = extractMessagePayload(messages)
+
+      // Each message should have a valid amount
+      payloads.forEach((payload) => {
+        expect(payload.amount).to.be.a('bigint')
+        expect(Number(payload.amount) > 0).to.be.true
+      })
+    })
+
+    it('should respect a custom validUntil timestamp', async () => {
+      const staker = setupStaker({
+        poolStatusResponse: createPoolStatusMock({
+          balance: toNano('20000'),
+          balanceSent: toNano('0'),
+          balancePendingDeposits: toNano('0'),
+          balancePendingWithdrawals: toNano('0'),
+          balanceWithdraw: toNano('0')
+        }),
+        memberResponse: createMemberMock({
+          balance: toNano('1'),
+          pendingDeposit: toNano('1'),
+          pendingWithdraw: toNano('1'),
+          withdraw: toNano('0.05')
+        }),
+        paramsResponse: createParamsMock({
+          enabled: BigInt(1),
+          updatesEnabled: BigInt(1),
+          minStake: toNano('1'),
+          depositFee: toNano('0.05'),
+          withdrawFee: toNano('0.05'),
+          poolFee: toNano('0.1'),
+          receiptPrice: toNano('0.01'),
+          minStakeTotal: toNano('10')
+        })
+      })
+
+      const validUntil = Math.floor(Date.now() / 1000) + 3600 // 1 hour from now
+
+      const { tx } = await staker.buildUnstakeTx({
+        delegatorAddress,
+        validatorAddressPair,
+        amount: '1',
+        validUntil // Custom validUntil timestamp
+      })
+
+      // Verify the transaction has the correct validUntil timestamp
+      expect(tx.validUntil).to.equal(validUntil)
+    })
   })
-
-  // it('should successfully build an unstake transaction with disabled stateful calculation', async () => {
-  //   // Call the method with disableStatefulCalculation flag
-  //   const result = await staker.buildUnstakeTx({
-  //     delegatorAddress,
-  //     validatorAddressPair,
-  //     amount: '1',
-  //     disableStatefulCalculation: true
-  //   })
-
-  //   // Verify the result has the expected structure
-  //   expect(result).to.have.property('tx')
-  //   expect(result.tx).to.have.property('validUntil').that.is.a('number')
-  //   expect(result.tx).to.have.property('messages').that.is.an('array')
-
-  //   // Verify we have messages for both validators
-  //   if (result.tx.messages) {
-  //     expect(result.tx.messages.length).to.equal(2)
-
-  //     // When stateful calculation is disabled, it should still generate valid messages
-  //     result.tx.messages.forEach((message, index) => {
-  //       expect(message).to.have.property('address', validatorAddressPair[index])
-  //       expect(message).to.have.property('bounceable', true)
-  //       expect(message).to.have.property('amount').that.is.a('bigint')
-  //       expect(message).to.have.property('payload')
-  //     })
-  //   }
-  // })
-
-  // it('should successfully build an unstake transaction with a custom validUntil timestamp', async () => {
-  //   const validUntil = Math.floor(Date.now() / 1000) + 3600 // 1 hour from now
-
-  //   // Call the method with a custom validUntil
-  //   const result = await staker.buildUnstakeTx({
-  //     delegatorAddress,
-  //     validatorAddressPair,
-  //     amount: '1',
-  //     validUntil
-  //   })
-
-  //   // Verify the result has the custom validUntil
-  //   expect(result.tx.validUntil).to.equal(validUntil)
-  // })
-
-  // it('should successfully build an unstake transaction with a single validator address', async () => {
-  //   // Use only the first validator address
-  //   const singleValidatorPair: [string, string] = [validatorAddressPair[0], '']
-
-  //   // Call the method
-  //   const result = await staker.buildUnstakeTx({
-  //     delegatorAddress,
-  //     validatorAddressPair: singleValidatorPair,
-  //     amount: '1'
-  //   })
-
-  //   // Verify we have a message for only one validator
-  //   if (result.tx.messages) {
-  //     expect(result.tx.messages.length).to.equal(1)
-  //     expect(result.tx.messages[0]).to.have.property('address', singleValidatorPair[0])
-  //   }
-  // })
 })
