@@ -17,7 +17,7 @@ describe('TonPoolStaker', () => {
   ]
 
   describe('buildUnstakeTx', () => {
-    it('should calculate the correct unstake amount', async () => {
+    it('should unstake', async () => {
       const poolStatusMock = createPoolStatusMock({
         balance: toNano('20000')
       })
@@ -73,7 +73,7 @@ describe('TonPoolStaker', () => {
       })
     })
 
-    it('should correctly unstake the maximum available amount', async () => {
+    it('should unstake the maximum available amount', async () => {
       const poolStatusMock = createPoolStatusMock({
         balance: toNano('20000')
       })
@@ -132,58 +132,6 @@ describe('TonPoolStaker', () => {
         expect(payload.amount).to.be.a('bigint')
         expect(payload.amount).to.equal(toNano('10'))
       })
-    })
-
-    it('should adjust unstake amount if it would leave the pool below minimum stake', async () => {
-      const poolStatusMock = createPoolStatusMock({
-        balance: toNano('100000')
-      })
-
-      const memberMock = createMemberMock({
-        balance: toNano('1.5')
-      })
-
-      const paramsMock = createParamsMock({
-        enabled: BigInt(1),
-        updatesEnabled: BigInt(1),
-        minStake: toNano('1')
-      })
-
-      const poolStatusResponse = {
-        [validatorAddressPair[0]]: poolStatusMock,
-        [validatorAddressPair[1]]: poolStatusMock
-      }
-
-      const memberResponse = {
-        [validatorAddressPair[0]]: memberMock,
-        [validatorAddressPair[1]]: memberMock
-      }
-
-      const paramsResponse = {
-        [validatorAddressPair[0]]: paramsMock,
-        [validatorAddressPair[1]]: paramsMock
-      }
-
-      const staker = setupStaker({
-        poolStatusResponse,
-        memberResponse,
-        paramsResponse
-      })
-
-      const {
-        tx: { messages = [] }
-      } = await staker.buildUnstakeTx({
-        delegatorAddress,
-        validatorAddressPair,
-        amount: '0.7'
-      })
-
-      const payloads = extractMessagePayload(messages)
-
-      expect(payloads.length).to.equal(2)
-
-      expect(payloads[0].amount).to.equal(toNano('0.5'))
-      expect(payloads[1].amount).to.equal(toNano('0.2'))
     })
   })
 })

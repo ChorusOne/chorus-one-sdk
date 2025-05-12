@@ -62,6 +62,16 @@ describe('TonPoolStaker_calculateUnstakePoolAmount', () => {
     expect(result).to.deep.equal([5n, 0n])
   })
 
+  it('should withdraw from withdrawable amount even if the pool is empty', () => {
+    const result = fn(5n, 0n, [0n, 0n], [5n, 0n], [5n, 0n])
+    expect(result).to.deep.equal([5n, 0n])
+  })
+
+  it('should withdraw max amount if the pool is empty', () => {
+    const result = fn(30n, 0n, [10n, 10n], [15n, 15n], [5n, 5n])
+    expect(result).to.deep.equal([15n, 15n])
+  })
+
   it('should throw error if user wants to withdraw more than available', () => {
     expect(() => fn(21n, 10n, [20n, 20n], [10n, 10n], [0n, 0n])).to.throw(
       'requested withdrawal amount exceeds available user stakes'

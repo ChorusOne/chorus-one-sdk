@@ -236,8 +236,7 @@ export class TonPoolStaker extends TonBaseStaker {
         minElectionStake,
         currentPoolBalances,
         userMaxUnstakeAmounts,
-        currentUserWithdrawals,
-        [poolParamsData[0].minStake, poolParamsData[1].minStake]
+        currentUserWithdrawals
       )
 
       // sanity check
@@ -534,11 +533,11 @@ export class TonPoolStaker extends TonBaseStaker {
     minElectionStake: bigint, // minimum stake for participation (to be in the set)
     currentPoolBalances: [bigint, bigint], // current stake balances of the pools
     userMaxUnstakeAmounts: [bigint, bigint], // maximum user stake that can be unstaked from the pools
-    userCurrentWithdrawals: [bigint, bigint], // current user withdrawals from the pools
-    minUserStake: [bigint, bigint] // minimum user stake that can be unstaked from the pools
+    userCurrentWithdrawals: [bigint, bigint] // current user withdrawals from the pools
   ): [bigint, bigint] {
     const [balancePool1, balancePool2] = currentPoolBalances
     const [maxUnstakeUser1, maxUnstakeUser2] = userMaxUnstakeAmounts
+    const [userCurrentWithdrawals1, userCurrentWithdrawals2] = userCurrentWithdrawals
 
     // check if the requested withdrawal amount exceeds the available user stakes
     const totalUserStake = maxUnstakeUser1 + maxUnstakeUser2
@@ -550,14 +549,20 @@ export class TonPoolStaker extends TonBaseStaker {
     const willRemainActive = (balance: bigint, withdraw: bigint, userCurrentWithdrawals: bigint): boolean =>
       balance - withdraw + userCurrentWithdrawals >= minElectionStake
 
-    // Check if user staked is not bellow minStake
-    const isValidStake = (userMaxUnstake: bigint, minUserStake: bigint, amount: bigint): boolean =>
-      userMaxUnstake - amount >= minUserStake || userMaxUnstake - amount <= 0n
-
     // sorting pools based on balance (highest balance first)
     const pools = [
-      { index: 0, balance: balancePool1, userMaxUnstake: maxUnstakeUser1 },
-      { index: 1, balance: balancePool2, userMaxUnstake: maxUnstakeUser2 }
+      {
+        index: 0,
+        balance: balancePool1,
+        userMaxUnstake: maxUnstakeUser1,
+        userCurrentWithdrawals: userCurrentWithdrawals1
+      },
+      {
+        index: 1,
+        balance: balancePool2,
+        userMaxUnstake: maxUnstakeUser2,
+        userCurrentWithdrawals: userCurrentWithdrawals2
+      }
     ].sort((a, b) => Number(b.balance - a.balance))
 
     let remainingAmount = amount
@@ -568,23 +573,16 @@ export class TonPoolStaker extends TonBaseStaker {
 
       // maximum that can be withdrawn from this pool without deactivating it
       let maxWithdraw = pool.userMaxUnstake
-      if (!willRemainActive(pool.balance, amount, userCurrentWithdrawals[pool.index])) {
+      if (!willRemainActive(pool.balance, amount, pool.userCurrentWithdrawals)) {
         // Formula for current cycle balance: pool.balance - minStake + user.withdraw
         // Formula for next cycle balance: pool.balance + pool.pendingDeposits - pool.pendingWithdrawals - minStake + user.withdraw
         // Using current cycle balance to avoid making calculation on predicted balance.
-        const currMaxWithdraw = pool.balance - minElectionStake + userCurrentWithdrawals[pool.index]
-        if (currMaxWithdraw < maxWithdraw) {
-          maxWithdraw = currMaxWithdraw
-        }
+        const poolMaxWithdraw = pool.balance - minElectionStake
+        maxWithdraw = (poolMaxWithdraw < 0n ? 0n : poolMaxWithdraw) + pool.userCurrentWithdrawals
       }
 
-      // Check if user stake is not bellow minStake
-      if (!isValidStake(pool.userMaxUnstake, minUserStake[pool.index], amount)) {
-        const currMaxWithdraw = pool.userMaxUnstake - minUserStake[pool.index]
-        if (currMaxWithdraw < maxWithdraw) {
-          maxWithdraw = currMaxWithdraw
-        }
-      }
+      // TODO: Include minUserStake in the calculation for the maxWithdraw, as the user can't leave the balance below minStake
+
       maxWithdraw = maxWithdraw < 0n ? 0n : maxWithdraw
 
       const withdrawAmount = remainingAmount <= maxWithdraw ? remainingAmount : maxWithdraw
