@@ -33,7 +33,7 @@ export class TonPoolStaker extends TonBaseStaker {
    *
    * @returns Returns a promise that resolves to a TON nominator pool staking transaction.
    */
-  async buildStakeTx(params: {
+  async buildStakeTx (params: {
     delegatorAddress: string
     validatorAddressPair: [string, string]
     amount: string
@@ -165,7 +165,7 @@ export class TonPoolStaker extends TonBaseStaker {
    *
    * @returns Returns a promise that resolves to a TON nominator pool staking transaction.
    */
-  async buildUnstakeTx(params: {
+  async buildUnstakeTx (params: {
     delegatorAddress: string
     validatorAddressPair: [string, string]
     amount: string
@@ -274,7 +274,7 @@ export class TonPoolStaker extends TonBaseStaker {
    *
    * @returns Returns a promise that resolves to the staking information for the specified delegator.
    */
-  async getStake(params: { delegatorAddress: string; validatorAddress: string }) {
+  async getStake (params: { delegatorAddress: string; validatorAddress: string }) {
     const { delegatorAddress, validatorAddress } = params
     const client = this.getClient()
 
@@ -298,7 +298,7 @@ export class TonPoolStaker extends TonBaseStaker {
    *
    * @returns Returns a promise that resolves to the staking information for the specified pool.
    */
-  async getPoolParams(params: { validatorAddress: string }) {
+  async getPoolParams (params: { validatorAddress: string }) {
     const result = await this.getPoolParamsUnformatted(params)
 
     return {
@@ -322,7 +322,7 @@ export class TonPoolStaker extends TonBaseStaker {
    *
    * @returns A promise that resolves to an object containing the transaction status.
    */
-  async getTxStatus(params: { address: string; txHash: string; limit?: number }): Promise<TonTxStatus> {
+  async getTxStatus (params: { address: string; txHash: string; limit?: number }): Promise<TonTxStatus> {
     const transaction = await this.getTransactionByHash(params)
 
     if (transaction === undefined) {
@@ -344,7 +344,7 @@ export class TonPoolStaker extends TonBaseStaker {
     return this.matchTransactionStatus(transaction)
   }
 
-  private async getPoolParamsUnformatted(params: { validatorAddress: string }) {
+  private async getPoolParamsUnformatted (params: { validatorAddress: string }) {
     const { validatorAddress } = params
     const client = this.getClient()
     const response = await client.runMethod(Address.parse(validatorAddress), 'get_params', [])
@@ -366,7 +366,7 @@ export class TonPoolStaker extends TonBaseStaker {
   }
 
   /** @ignore */
-  private async getPoolDataForDelegator(delegatorAddress: string, validatorAddresses: string[]) {
+  private async getPoolDataForDelegator (delegatorAddress: string, validatorAddresses: string[]) {
     const [poolStatus, userStake, minElectionStake] = await Promise.all([
       Promise.all(validatorAddresses.map((validatorAddress) => this.getPoolStatus(validatorAddress))),
       Promise.all(validatorAddresses.map((validatorAddress) => this.getStake({ delegatorAddress, validatorAddress }))),
@@ -397,7 +397,7 @@ export class TonPoolStaker extends TonBaseStaker {
     }
   }
 
-  async getElectionMinStake(): Promise<bigint> {
+  async getElectionMinStake (): Promise<bigint> {
     // elector contract address
     const elections = await this.getPastElections('Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF')
 
@@ -414,7 +414,7 @@ export class TonPoolStaker extends TonBaseStaker {
     return minStake
   }
 
-  async getPoolStatus(validatorAddress: string): Promise<PoolStatus> {
+  async getPoolStatus (validatorAddress: string): Promise<PoolStatus> {
     const client = this.getClient()
     const provider = client.provider(Address.parse(validatorAddress))
     const res = await provider.get('get_pool_status', [])
@@ -428,16 +428,16 @@ export class TonPoolStaker extends TonBaseStaker {
     }
   }
 
-  async getPastElections(electorContractAddress: string): Promise<Election[]> {
+  async getPastElections (electorContractAddress: string): Promise<Election[]> {
     const client = this.getClient()
     const provider = client.provider(Address.parse(electorContractAddress))
     const res = await provider.get('past_elections', [])
 
     const FrozenDictValue: DictionaryValue<FrozenSet> = {
-      serialize(_src: FrozenSet, _builder: Builder) {
+      serialize (_src: FrozenSet, _builder: Builder) {
         throw Error('not implemented')
       },
-      parse(src: Slice): FrozenSet {
+      parse (src: Slice): FrozenSet {
         const address = new Address(-1, src.loadBuffer(32))
         const weight = src.loadUintBig(64)
         const stake = src.loadCoins()
@@ -477,7 +477,7 @@ export class TonPoolStaker extends TonBaseStaker {
   }
 
   /** @ignore */
-  static selectPool(
+  static selectPool (
     minStake: bigint, // minimum stake for participation (to be in the set)
     currentBalances: [bigint, bigint] // current stake balances of the pools
   ): number {
@@ -500,7 +500,7 @@ export class TonPoolStaker extends TonBaseStaker {
   }
 
   /** @ignore */
-  static selectStrategy(
+  static selectStrategy (
     preferredStrategy: string | undefined,
     amount: bigint,
     totalValidators: number,
@@ -528,7 +528,7 @@ export class TonPoolStaker extends TonBaseStaker {
   }
 
   /** @ignore */
-  static calculateUnstakePoolAmount(
+  static calculateUnstakePoolAmount (
     amount: bigint, // amount to unstake
     minElectionStake: bigint, // minimum stake for participation (to be in the set)
     currentPoolBalances: [bigint, bigint], // current stake balances of the pools
@@ -594,7 +594,7 @@ export class TonPoolStaker extends TonBaseStaker {
   }
 
   /** @ignore */
-  static calculateStakePoolAmount(
+  static calculateStakePoolAmount (
     amount: bigint, // amount to stake
     minStake: bigint, // minimum stake for participation (to be in the set)
     currentPoolBalances: [bigint, bigint], // current stake balances of the pools
