@@ -1,7 +1,6 @@
 import { TonNominatorPoolStaker } from '@chorus-one/ton'
 import { Address, TupleItem, TupleReader } from '@ton/core'
 import { describe, it } from 'mocha'
-// @ts-expect-error: spy it's exported from chai
 import { use, assert, expect, spy } from 'chai'
 import { chaiAsPromised } from 'chai-promised'
 import spies from 'chai-spies'

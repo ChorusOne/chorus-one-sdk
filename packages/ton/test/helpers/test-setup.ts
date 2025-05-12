@@ -2,7 +2,6 @@ import { TonPoolStaker } from '../../src/TonPoolStaker'
 import { Address } from '@ton/ton'
 import { TupleItem, TupleReader } from '@ton/core'
 import { toNano } from '@ton/ton'
-// @ts-expect-error: spy it's exported from chai
 import { spy } from 'chai'
 
 type AddressMap<T> = {
