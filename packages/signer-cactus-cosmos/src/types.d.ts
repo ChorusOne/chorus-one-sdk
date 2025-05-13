@@ -11,15 +11,15 @@ export interface Key {
 }
 
 export interface SignAminoResponse {
-    signature: {
-        signature: string
-        pub_key: {
-            type: string
-            value: string
-        }
+  signature: {
+    signature: string
+    pub_key: {
+      type: string
+      value: string
     }
+  }
 
-    signed: any
+  signed: any
 }
 
 export interface CactusLinkCosmos {
