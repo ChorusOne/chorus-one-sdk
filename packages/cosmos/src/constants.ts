@@ -14,7 +14,7 @@ export const CHORUS_ONE_COSMOS_VALIDATORS = {
   KYVE: 'kyve16pj5gljqnqs0ajxakccfjhu05yczp9873u49y3',
   MARS: 'marsvaloper16pj5gljqnqs0ajxakccfjhu05yczp9870ral7t',
   ONOMY: 'onomy16pj5gljqnqs0ajxakccfjhu05yczp987unv97s',
-  OSMO: 'osmovaloper15urq2dtp9qce4fyc85m6upwm9xul3049wh9czc',
+  OSMOSIS: 'osmovaloper15urq2dtp9qce4fyc85m6upwm9xul3049wh9czc',
   PASG: 'pasgvaloper16pj5gljqnqs0ajxakccfjhu05yczp987kktprk',
   PERSISTENCE: 'persistencevaloper15urq2dtp9qce4fyc85m6upwm9xul3049mnc9ys',
   QUICK: 'quickvaloper16pj5gljqnqs0ajxakccfjhu05yczp987nmxvcw',
