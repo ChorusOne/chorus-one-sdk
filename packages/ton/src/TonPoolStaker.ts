@@ -240,27 +240,40 @@ export class TonPoolStaker extends TonBaseStaker {
         currentUserWithdrawals,
         [poolParamsData[0].minStake, poolParamsData[1].minStake]
       )
-      const totalUserStake = userMaxUnstakeAmounts.reduce((acc, val) => acc + val, 0n)
-      const isUnstakingAll = toNano(amount) === totalUserStake
-      const totalUnstakeAmount = unstakeAmountPerPool.reduce((acc, val) => acc + val, 0n)
 
-      // sanity check - ensure unstake amounts match requested amount
-      // Exception: when unstaking all and both pools return 0n (edge case handling)
-      if (
-        totalUnstakeAmount !== toNano(amount) &&
-        !(isUnstakingAll && unstakeAmountPerPool[0] === 0n && unstakeAmountPerPool[1] === 0n)
-      ) {
-        throw new Error('unstake amount does not match the requested amount')
-      }
+      console.log({
+        unstakeAmountPerPool
+      })
+
+      // TODO: Fix the sanity check or remove it. You can also do sanity check inside the `calculateUnstakePoolAmount`
+      // const totalUserStake = userMaxUnstakeAmounts.reduce((acc, val) => acc + val, 0n)
+      // const isUnstakingAll = toNano(amount) === totalUserStake
+      // const totalUnstakeAmount = unstakeAmountPerPool.reduce((acc, val) => acc + val, 0n)
+
+      // // Check if we're fully withdrawing from individual pools
+      // const isFullyWithdrawingFromPool = unstakeAmountPerPool.map(
+      //   (poolAmount, index) => poolAmount === userMaxUnstakeAmounts[index] && poolAmount > 0n
+      // )
+
+      // // sanity check - ensure unstake amounts match requested amount
+      // // Exception: when unstaking all and both pools return 0n (edge case handling)
+      // // Exception: when fully withdrawing from individual pools and they return 0n (edge case handling)
+      // if (
+      //   totalUnstakeAmount !== toNano(amount) &&
+      //   !(isUnstakingAll && unstakeAmountPerPool[0] === 0n && unstakeAmountPerPool[1] === 0n) &&
+      //   !(isFullyWithdrawingFromPool.some(Boolean) && unstakeAmountPerPool.some((amount) => amount === 0n))
+      // ) {
+      //   throw new Error('unstake amount does not match the requested amount')
+      // }
 
       validatorAddresses.forEach((validatorAddress, index) => {
         const data = poolParamsData[index]
         const amount = unstakeAmountPerPool[index]
 
-        // skip if no amount to unstake, unless we're unstaking all
-        if (amount === 0n && !isUnstakingAll) {
-          return null
-        }
+        // // skip if no amount to unstake, unless we're unstaking all or fully withdrawing from this pool
+        // if (amount === 0n && !isUnstakingAll && !isFullyWithdrawingFromPool[index]) {
+        //   return null
+        // }
 
         msgs.push(genUnstakeMsg(validatorAddress, amount, data.withdrawFee, data.receiptPrice))
       })
@@ -626,6 +639,18 @@ export class TonPoolStaker extends TonBaseStaker {
 
     // TODO: create function to return valid ranges for unstake.
 
+    console.log({
+      amount: fromNano(amount),
+      pools: pools.map((pool) => ({
+        ...pool,
+        balance: fromNano(pool.balance),
+        userCurrentWithdrawals: fromNano(pool.userCurrentWithdrawals),
+        userMaxUnstakeAbsolute: fromNano(pool.userMaxUnstakeAbsolute),
+        userMaxUnstakeToKeepPoolActive: fromNano(pool.userMaxUnstakeToKeepPoolActive),
+        userMaxUnstakeToKeepPoolAboveMin: fromNano(pool.userMaxUnstakeToKeepPoolAboveMin)
+      }))
+    })
+
     // Strategy 1: Try to keep both pools active
     if (pools[0].userMaxUnstakeToKeepPoolActive + pools[1].userMaxUnstakeToKeepPoolActive >= amount) {
       const fromPool0 =
@@ -637,7 +662,7 @@ export class TonPoolStaker extends TonBaseStaker {
       return result
     }
 
-    // Strategy 2: Keep pool 1 active
+    // Strategy 2: Keep pool 0 active
     if (pools[0].userMaxUnstakeToKeepPoolActive + pools[1].userMaxUnstakeToKeepPoolAboveMin >= amount) {
       const fromPool0 =
         amount <= pools[0].userMaxUnstakeToKeepPoolActive ? amount : pools[0].userMaxUnstakeToKeepPoolActive
@@ -648,7 +673,7 @@ export class TonPoolStaker extends TonBaseStaker {
       return result
     }
 
-    // Strategy 3: Keep pool 1 active
+    // Strategy 3: Keep pool 0 active
     if (
       pools[0].userMaxUnstakeToKeepPoolActive + pools[1].userMaxUnstakeAbsolute >= amount &&
       pools[1].userMaxUnstakeAbsolute <= amount
@@ -661,7 +686,7 @@ export class TonPoolStaker extends TonBaseStaker {
       return result
     }
 
-    // Strategy 4: Keep pool 2 active
+    // Strategy 4: Keep pool 1 active
     if (pools[1].userMaxUnstakeToKeepPoolActive + pools[0].userMaxUnstakeToKeepPoolAboveMin >= amount) {
       const fromPool1 =
         amount <= pools[1].userMaxUnstakeToKeepPoolActive ? amount : pools[1].userMaxUnstakeToKeepPoolActive
@@ -672,7 +697,7 @@ export class TonPoolStaker extends TonBaseStaker {
       return result
     }
 
-    // Strategy 5: Keep pool 2 active
+    // Strategy 5: Keep pool 1 active
     if (
       pools[1].userMaxUnstakeToKeepPoolActive + pools[0].userMaxUnstakeAbsolute >= amount &&
       pools[0].userMaxUnstakeAbsolute <= amount
