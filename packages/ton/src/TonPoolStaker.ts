@@ -12,6 +12,7 @@ import {
 } from '@ton/ton'
 import { defaultValidUntil, getDefaultGas, getRandomQueryId, TonBaseStaker } from './TonBaseStaker'
 import { UnsignedTx, Election, FrozenSet, PoolStatus, Message, TonTxStatus } from './types'
+import { minBigInt } from './utils'
 
 export class TonPoolStaker extends TonBaseStaker {
   /**
@@ -33,7 +34,7 @@ export class TonPoolStaker extends TonBaseStaker {
    *
    * @returns Returns a promise that resolves to a TON nominator pool staking transaction.
    */
-  async buildStakeTx (params: {
+  async buildStakeTx(params: {
     delegatorAddress: string
     validatorAddressPair: [string, string]
     amount: string
@@ -165,7 +166,7 @@ export class TonPoolStaker extends TonBaseStaker {
    *
    * @returns Returns a promise that resolves to a TON nominator pool staking transaction.
    */
-  async buildUnstakeTx (params: {
+  async buildUnstakeTx(params: {
     delegatorAddress: string
     validatorAddressPair: [string, string]
     amount: string
@@ -236,7 +237,8 @@ export class TonPoolStaker extends TonBaseStaker {
         minElectionStake,
         currentPoolBalances,
         userMaxUnstakeAmounts,
-        currentUserWithdrawals
+        currentUserWithdrawals,
+        [poolParamsData[0].minStake, poolParamsData[1].minStake]
       )
 
       // sanity check
@@ -274,7 +276,7 @@ export class TonPoolStaker extends TonBaseStaker {
    *
    * @returns Returns a promise that resolves to the staking information for the specified delegator.
    */
-  async getStake (params: { delegatorAddress: string; validatorAddress: string }) {
+  async getStake(params: { delegatorAddress: string; validatorAddress: string }) {
     const { delegatorAddress, validatorAddress } = params
     const client = this.getClient()
 
@@ -298,7 +300,7 @@ export class TonPoolStaker extends TonBaseStaker {
    *
    * @returns Returns a promise that resolves to the staking information for the specified pool.
    */
-  async getPoolParams (params: { validatorAddress: string }) {
+  async getPoolParams(params: { validatorAddress: string }) {
     const result = await this.getPoolParamsUnformatted(params)
 
     return {
@@ -322,7 +324,7 @@ export class TonPoolStaker extends TonBaseStaker {
    *
    * @returns A promise that resolves to an object containing the transaction status.
    */
-  async getTxStatus (params: { address: string; txHash: string; limit?: number }): Promise<TonTxStatus> {
+  async getTxStatus(params: { address: string; txHash: string; limit?: number }): Promise<TonTxStatus> {
     const transaction = await this.getTransactionByHash(params)
 
     if (transaction === undefined) {
@@ -344,7 +346,7 @@ export class TonPoolStaker extends TonBaseStaker {
     return this.matchTransactionStatus(transaction)
   }
 
-  private async getPoolParamsUnformatted (params: { validatorAddress: string }) {
+  private async getPoolParamsUnformatted(params: { validatorAddress: string }) {
     const { validatorAddress } = params
     const client = this.getClient()
     const response = await client.runMethod(Address.parse(validatorAddress), 'get_params', [])
@@ -366,7 +368,7 @@ export class TonPoolStaker extends TonBaseStaker {
   }
 
   /** @ignore */
-  private async getPoolDataForDelegator (delegatorAddress: string, validatorAddresses: string[]) {
+  private async getPoolDataForDelegator(delegatorAddress: string, validatorAddresses: string[]) {
     const [poolStatus, userStake, minElectionStake] = await Promise.all([
       Promise.all(validatorAddresses.map((validatorAddress) => this.getPoolStatus(validatorAddress))),
       Promise.all(validatorAddresses.map((validatorAddress) => this.getStake({ delegatorAddress, validatorAddress }))),
@@ -397,7 +399,7 @@ export class TonPoolStaker extends TonBaseStaker {
     }
   }
 
-  async getElectionMinStake (): Promise<bigint> {
+  async getElectionMinStake(): Promise<bigint> {
     // elector contract address
     const elections = await this.getPastElections('Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF')
 
@@ -414,7 +416,7 @@ export class TonPoolStaker extends TonBaseStaker {
     return minStake
   }
 
-  async getPoolStatus (validatorAddress: string): Promise<PoolStatus> {
+  async getPoolStatus(validatorAddress: string): Promise<PoolStatus> {
     const client = this.getClient()
     const provider = client.provider(Address.parse(validatorAddress))
     const res = await provider.get('get_pool_status', [])
@@ -428,16 +430,16 @@ export class TonPoolStaker extends TonBaseStaker {
     }
   }
 
-  async getPastElections (electorContractAddress: string): Promise<Election[]> {
+  async getPastElections(electorContractAddress: string): Promise<Election[]> {
     const client = this.getClient()
     const provider = client.provider(Address.parse(electorContractAddress))
     const res = await provider.get('past_elections', [])
 
     const FrozenDictValue: DictionaryValue<FrozenSet> = {
-      serialize (_src: FrozenSet, _builder: Builder) {
+      serialize(_src: FrozenSet, _builder: Builder) {
         throw Error('not implemented')
       },
-      parse (src: Slice): FrozenSet {
+      parse(src: Slice): FrozenSet {
         const address = new Address(-1, src.loadBuffer(32))
         const weight = src.loadUintBig(64)
         const stake = src.loadCoins()
@@ -477,7 +479,7 @@ export class TonPoolStaker extends TonBaseStaker {
   }
 
   /** @ignore */
-  static selectPool (
+  static selectPool(
     minStake: bigint, // minimum stake for participation (to be in the set)
     currentBalances: [bigint, bigint] // current stake balances of the pools
   ): number {
@@ -500,7 +502,7 @@ export class TonPoolStaker extends TonBaseStaker {
   }
 
   /** @ignore */
-  static selectStrategy (
+  static selectStrategy(
     preferredStrategy: string | undefined,
     amount: bigint,
     totalValidators: number,
@@ -527,74 +529,207 @@ export class TonPoolStaker extends TonBaseStaker {
     return strategy
   }
 
+  /*
+   * Scenarios
+   * 1. User balance must be >= minUserStake or 0
+   * 2. Each pool stake is completely separated from the other pool stake
+   * 3. Prioritize keeping pools active
+   * 4. If it's not possible to keep both pools active
+   *  4.1 ||| 2 active: Unstake the majority from the pool with highest balance
+   *  4.2 ||| 1 active, 1 inactive: Unstake as most as possible from the active pool (keep it active if possible), then unstake the rest from the inactive pool
+   *  4.3 ||| 2 inactive: Unstake the majority from the pool with the lowest balance, then unstake the rest from the pool with lowest balance
+   *
+   * Recommended approach:
+   * 1. Calculate the maxEffectiveUnstake for each pool, considering the minUserStake and pool activity
+   * 2. Do a permutation of the the userMaxUnstakeAmount, maxEffectiveUnstake
+   */
   /** @ignore */
-  static calculateUnstakePoolAmount (
+  static calculateUnstakePoolAmount(
     amount: bigint, // amount to unstake
     minElectionStake: bigint, // minimum stake for participation (to be in the set)
     currentPoolBalances: [bigint, bigint], // current stake balances of the pools
     userMaxUnstakeAmounts: [bigint, bigint], // maximum user stake that can be unstaked from the pools
-    userCurrentWithdrawals: [bigint, bigint] // current user withdrawals from the pools
+    userCurrentWithdrawals: [bigint, bigint], // current user withdrawals from the pools
+    userMinStake: [bigint, bigint] // minimum user stake to keep the pool active
   ): [bigint, bigint] {
     const [balancePool1, balancePool2] = currentPoolBalances
-    const [maxUnstakeUser1, maxUnstakeUser2] = userMaxUnstakeAmounts
+    const [userMaxUnstake1, userMaxUnstake2] = userMaxUnstakeAmounts
     const [userCurrentWithdrawals1, userCurrentWithdrawals2] = userCurrentWithdrawals
+    const [userMinStake1, userMinStake2] = userMinStake
 
     // check if the requested withdrawal amount exceeds the available user stakes
-    const totalUserStake = maxUnstakeUser1 + maxUnstakeUser2
+    const totalUserStake = userMaxUnstake1 + userMaxUnstake2
     if (amount > totalUserStake) {
       throw new Error('requested withdrawal amount exceeds available user stakes')
     }
 
-    // check if the pool will remain active after withdrawal
-    const willRemainActive = (balance: bigint, withdraw: bigint, userCurrentWithdrawals: bigint): boolean =>
-      balance - withdraw + userCurrentWithdrawals >= minElectionStake
+    const getMaxUnstakeToKeepPoolActive = (balance: bigint, userCurrentWithdrawals: bigint): bigint =>
+      balance - minElectionStake + userCurrentWithdrawals > 0 ? balance - minElectionStake + userCurrentWithdrawals : 0n
 
-    // sorting pools based on balance (highest balance first)
+    const getMaxUnstakeToKeepPoolAboveMin = (userMaxUnstake: bigint, userMinStake: bigint): bigint =>
+      userMaxUnstake - userMinStake > 0 ? userMaxUnstake - userMinStake : 0n
+
     const pools = [
       {
         index: 0,
         balance: balancePool1,
-        userMaxUnstake: maxUnstakeUser1,
-        userCurrentWithdrawals: userCurrentWithdrawals1
+        userCurrentWithdrawals: userCurrentWithdrawals1,
+        userMaxUnstakeAbsolute: userMaxUnstake1,
+        userMaxUnstakeToKeepPoolActive: getMaxUnstakeToKeepPoolActive(balancePool1, userCurrentWithdrawals1),
+        userMaxUnstakeToKeepPoolAboveMin: getMaxUnstakeToKeepPoolAboveMin(userMaxUnstake1, userMinStake1),
+        isActive: balancePool1 > minElectionStake
       },
       {
         index: 1,
         balance: balancePool2,
-        userMaxUnstake: maxUnstakeUser2,
-        userCurrentWithdrawals: userCurrentWithdrawals2
+        userCurrentWithdrawals: userCurrentWithdrawals2,
+        userMaxUnstakeAbsolute: userMaxUnstake2,
+        userMaxUnstakeToKeepPoolActive: getMaxUnstakeToKeepPoolActive(balancePool2, userCurrentWithdrawals2),
+        userMaxUnstakeToKeepPoolAboveMin: getMaxUnstakeToKeepPoolAboveMin(userMaxUnstake2, userMinStake2),
+        isActive: balancePool2 > minElectionStake
       }
-    ].sort((a, b) => Number(b.balance - a.balance))
+    ]
+      .map((p) => {
+        return {
+          ...p,
+          userMaxUnstakeToKeepPoolActive: minBigInt(
+            p.userMaxUnstakeToKeepPoolActive,
+            p.userMaxUnstakeToKeepPoolAboveMin
+          )
+        }
+      })
+      .sort((a, b) => (a.balance > b.balance ? -1 : 1)) // Sort by balance (pool 1 highest -> pool 2 lowest)
 
-    let remainingAmount = amount
     const result: [bigint, bigint] = [0n, 0n]
 
-    for (const pool of pools) {
-      if (remainingAmount === 0n) break
+    // Try to withdraw from the best pairs first, do the permutation of: userMaxUnstakeToKeepPoolActive, userMaxUnstakeToKeepPoolAboveMin, userMaxUnstakeAbsolute
+    // Best scenario keep both pools active
+    // userMaxUnstakeToKeepPoolActive1, userMaxUnstakeToKeepPoolActive2
+    // Keep pool 1 active
+    // userMaxUnstakeToKeepPoolActive1, userMaxUnstakeAbsolute2
+    // userMaxUnstakeToKeepPoolActive1, userMaxUnstakeToKeepAboveMin2
+    // Keep pool 2 active
+    // userMaxUnstakeToKeepPoolActive2, userMaxUnstakeToKeepAboveMin1
+    // userMaxUnstakeToKeepPoolActive2, userMaxUnstakeAbsolute1
+    // Deactivate both pools
+    // userMaxUnstakeToKeepAboveMin1, userMaxUnstakeToKeepAboveMin2
+    // userMaxUnstakeAbsolute1, userMaxUnstakeAbsolute2
+    // ------------------------------------------------------------
+    // Best scenario keep both pools active
+    // userMaxUnstakeToKeepPoolActive1, userMaxUnstakeToKeepPoolActive2
+    // Sort pools by balance (pool 1 highest -> pool 2 lowest) - This will automatically try to keep 1 pool active
+    // userMaxUnstakeAbsolute1, remainingFromPool2 (>minPoolStake || maxUserUnstake)
+    // userMaxUnstakeToKeepAboveMin1, remainingFromPool2 (>minPoolStake || maxUserUnstake)
 
-      // maximum that can be withdrawn from this pool without deactivating it
-      let maxWithdraw = pool.userMaxUnstake
-      if (!willRemainActive(pool.balance, amount, pool.userCurrentWithdrawals)) {
-        // Formula for current cycle balance: pool.balance - minStake + user.withdraw
-        // Formula for next cycle balance: pool.balance + pool.pendingDeposits - pool.pendingWithdrawals - minStake + user.withdraw
-        // Using current cycle balance to avoid making calculation on predicted balance.
-        const poolMaxWithdraw = pool.balance - minElectionStake
-        maxWithdraw = (poolMaxWithdraw < 0n ? 0n : poolMaxWithdraw) + pool.userCurrentWithdrawals
-      }
+    // TODO: create function to return valid ranges for unstake.
 
-      // TODO: Include minUserStake in the calculation for the maxWithdraw, as the user can't leave the balance below minStake
+    // Strategy 1: Try to keep both pools active
+    if (pools[0].userMaxUnstakeToKeepPoolActive + pools[1].userMaxUnstakeToKeepPoolActive >= amount) {
+      const fromPool0 =
+        amount <= pools[0].userMaxUnstakeToKeepPoolActive ? amount : pools[0].userMaxUnstakeToKeepPoolActive
+      const fromPool1 = amount - fromPool0
 
-      maxWithdraw = maxWithdraw < 0n ? 0n : maxWithdraw
-
-      const withdrawAmount = remainingAmount <= maxWithdraw ? remainingAmount : maxWithdraw
-      result[pool.index] = withdrawAmount
-      remainingAmount -= withdrawAmount
+      result[pools[0].index] = fromPool0
+      result[pools[1].index] = fromPool1
+      return result
     }
 
-    return result
+    // Strategy 2: Keep pool 1 active
+    if (pools[0].userMaxUnstakeToKeepPoolActive + pools[1].userMaxUnstakeToKeepPoolAboveMin >= amount) {
+      const fromPool0 =
+        amount <= pools[0].userMaxUnstakeToKeepPoolActive ? amount : pools[0].userMaxUnstakeToKeepPoolActive
+      const fromPool1 = amount - fromPool0
+
+      result[pools[0].index] = fromPool0
+      result[pools[1].index] = fromPool1
+      return result
+    }
+
+    // Strategy 3: Keep pool 1 active
+    if (
+      pools[0].userMaxUnstakeToKeepPoolActive + pools[1].userMaxUnstakeAbsolute >= amount &&
+      pools[1].userMaxUnstakeAbsolute <= amount
+    ) {
+      const fromPool1 = pools[1].userMaxUnstakeAbsolute
+      const fromPool0 = amount - fromPool1
+
+      result[pools[0].index] = fromPool0
+      result[pools[1].index] = fromPool1
+      return result
+    }
+
+    // Strategy 4: Keep pool 2 active
+    if (pools[1].userMaxUnstakeToKeepPoolActive + pools[0].userMaxUnstakeToKeepPoolAboveMin >= amount) {
+      const fromPool1 =
+        amount <= pools[1].userMaxUnstakeToKeepPoolActive ? amount : pools[1].userMaxUnstakeToKeepPoolActive
+      const fromPool0 = amount - fromPool1
+
+      result[pools[0].index] = fromPool0
+      result[pools[1].index] = fromPool1
+      return result
+    }
+
+    // Strategy 5: Keep pool 2 active
+    if (
+      pools[1].userMaxUnstakeToKeepPoolActive + pools[0].userMaxUnstakeAbsolute >= amount &&
+      pools[0].userMaxUnstakeAbsolute <= amount
+    ) {
+      const fromPool0 = pools[0].userMaxUnstakeAbsolute
+      const fromPool1 = amount - fromPool0
+
+      result[pools[0].index] = fromPool0
+      result[pools[1].index] = fromPool1
+      return result
+    }
+
+    // Strategy 6: Deactivate both pools - keep above minimum
+    if (pools[0].userMaxUnstakeToKeepPoolAboveMin + pools[1].userMaxUnstakeToKeepPoolAboveMin >= amount) {
+      const fromPool0 =
+        amount <= pools[0].userMaxUnstakeToKeepPoolAboveMin ? amount : pools[0].userMaxUnstakeToKeepPoolAboveMin
+      const fromPool1 = amount - fromPool0
+
+      result[pools[0].index] = fromPool0
+      result[pools[1].index] = fromPool1
+      return result
+    }
+
+    // Strategy 6.5: Deactivate both pools - mix of above minimum and absolute
+    if (
+      pools[0].userMaxUnstakeToKeepPoolAboveMin + pools[1].userMaxUnstakeAbsolute >= amount &&
+      pools[1].userMaxUnstakeAbsolute <= amount
+    ) {
+      const fromPool1 = pools[1].userMaxUnstakeAbsolute
+      const fromPool0 = amount - fromPool1
+
+      result[pools[0].index] = fromPool0
+      result[pools[1].index] = fromPool1
+      return result
+    }
+
+    // Strategy 6.6: Deactivate both pools - mix of absolute and above minimum
+    if (
+      pools[0].userMaxUnstakeAbsolute + pools[1].userMaxUnstakeToKeepPoolAboveMin >= amount &&
+      pools[0].userMaxUnstakeAbsolute <= amount
+    ) {
+      const fromPool0 = pools[0].userMaxUnstakeAbsolute
+      const fromPool1 = amount - fromPool0
+
+      result[pools[0].index] = fromPool0
+      result[pools[1].index] = fromPool1
+      return result
+    }
+
+    // Strategy 7: Absolute maximum
+    if (pools[0].userMaxUnstakeAbsolute + pools[1].userMaxUnstakeAbsolute === amount) {
+      return [pools[0].userMaxUnstakeAbsolute, pools[1].userMaxUnstakeAbsolute]
+    }
+
+    // If we reach here, the amount is too large to unstake
+    throw new Error('Amount exceeds maximum unstakeable amount')
   }
 
   /** @ignore */
-  static calculateStakePoolAmount (
+  static calculateStakePoolAmount(
     amount: bigint, // amount to stake
     minStake: bigint, // minimum stake for participation (to be in the set)
     currentPoolBalances: [bigint, bigint], // current stake balances of the pools
