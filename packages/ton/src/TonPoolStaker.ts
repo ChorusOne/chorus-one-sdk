@@ -240,9 +240,16 @@ export class TonPoolStaker extends TonBaseStaker {
         currentUserWithdrawals,
         [poolParamsData[0].minStake, poolParamsData[1].minStake]
       )
+      const totalUserStake = userMaxUnstakeAmounts.reduce((acc, val) => acc + val, 0n)
+      const isUnstakingAll = toNano(amount) === totalUserStake
+      const totalUnstakeAmount = unstakeAmountPerPool.reduce((acc, val) => acc + val, 0n)
 
-      // sanity check
-      if (unstakeAmountPerPool.reduce((acc, val) => acc + val, 0n) !== toNano(amount)) {
+      // sanity check - ensure unstake amounts match requested amount
+      // Exception: when unstaking all and both pools return 0n (edge case handling)
+      if (
+        totalUnstakeAmount !== toNano(amount) &&
+        !(isUnstakingAll && unstakeAmountPerPool[0] === 0n && unstakeAmountPerPool[1] === 0n)
+      ) {
         throw new Error('unstake amount does not match the requested amount')
       }
 
@@ -250,8 +257,8 @@ export class TonPoolStaker extends TonBaseStaker {
         const data = poolParamsData[index]
         const amount = unstakeAmountPerPool[index]
 
-        // skip if no amount to unstake
-        if (amount === 0n) {
+        // skip if no amount to unstake, unless we're unstaking all
+        if (amount === 0n && !isUnstakingAll) {
           return null
         }
 
@@ -529,19 +536,15 @@ export class TonPoolStaker extends TonBaseStaker {
     return strategy
   }
 
-  /*
-   * Scenarios
-   * 1. User balance must be >= minUserStake or 0
-   * 2. Each pool stake is completely separated from the other pool stake
-   * 3. Prioritize keeping pools active
-   * 4. If it's not possible to keep both pools active
-   *  4.1 ||| 2 active: Unstake the majority from the pool with highest balance
-   *  4.2 ||| 1 active, 1 inactive: Unstake as most as possible from the active pool (keep it active if possible), then unstake the rest from the inactive pool
-   *  4.3 ||| 2 inactive: Unstake the majority from the pool with the lowest balance, then unstake the rest from the pool with lowest balance
+  /**
+   * Calculates the optimal unstake amounts from multiple pools.
    *
-   * Recommended approach:
-   * 1. Calculate the maxEffectiveUnstake for each pool, considering the minUserStake and pool activity
-   * 2. Do a permutation of the the userMaxUnstakeAmount, maxEffectiveUnstake
+   * The function uses multiple strategies in order of preference:
+   * 1. Keep both pools active while respecting minimum stakes
+   * 2. Deactivate one pool while keeping the other active
+   * 3. Deactivate both pools while maintaining minimum user stakes
+   * 4. Complete withdrawal (returns 0n for both pools as signal to unstake all)
+   *    This avoids state synchronization issues by letting the contract handle the exact amounts
    */
   /** @ignore */
   static calculateUnstakePoolAmount(
@@ -654,7 +657,7 @@ export class TonPoolStaker extends TonBaseStaker {
       const fromPool0 = amount - fromPool1
 
       result[pools[0].index] = fromPool0
-      result[pools[1].index] = fromPool1
+      result[pools[1].index] = 0n
       return result
     }
 
@@ -677,12 +680,12 @@ export class TonPoolStaker extends TonBaseStaker {
       const fromPool0 = pools[0].userMaxUnstakeAbsolute
       const fromPool1 = amount - fromPool0
 
-      result[pools[0].index] = fromPool0
+      result[pools[0].index] = 0n
       result[pools[1].index] = fromPool1
       return result
     }
 
-    // Strategy 6: Deactivate both pools - keep above minimum
+    // Strategy 6: Deactivate both pools - keep above minimum stake
     if (pools[0].userMaxUnstakeToKeepPoolAboveMin + pools[1].userMaxUnstakeToKeepPoolAboveMin >= amount) {
       const fromPool0 =
         amount <= pools[0].userMaxUnstakeToKeepPoolAboveMin ? amount : pools[0].userMaxUnstakeToKeepPoolAboveMin
@@ -693,7 +696,7 @@ export class TonPoolStaker extends TonBaseStaker {
       return result
     }
 
-    // Strategy 6.5: Deactivate both pools - mix of above minimum and absolute
+    // Strategy 7: Deactivate both pools
     if (
       pools[0].userMaxUnstakeToKeepPoolAboveMin + pools[1].userMaxUnstakeAbsolute >= amount &&
       pools[1].userMaxUnstakeAbsolute <= amount
@@ -702,11 +705,11 @@ export class TonPoolStaker extends TonBaseStaker {
       const fromPool0 = amount - fromPool1
 
       result[pools[0].index] = fromPool0
-      result[pools[1].index] = fromPool1
+      result[pools[1].index] = 0n
       return result
     }
 
-    // Strategy 6.6: Deactivate both pools - mix of absolute and above minimum
+    // Strategy 8: Deactivate both pools
     if (
       pools[0].userMaxUnstakeAbsolute + pools[1].userMaxUnstakeToKeepPoolAboveMin >= amount &&
       pools[0].userMaxUnstakeAbsolute <= amount
@@ -714,18 +717,19 @@ export class TonPoolStaker extends TonBaseStaker {
       const fromPool0 = pools[0].userMaxUnstakeAbsolute
       const fromPool1 = amount - fromPool0
 
-      result[pools[0].index] = fromPool0
+      result[pools[0].index] = 0n
       result[pools[1].index] = fromPool1
       return result
     }
 
-    // Strategy 7: Absolute maximum
+    // Strategy 9: Absolute maximum
     if (pools[0].userMaxUnstakeAbsolute + pools[1].userMaxUnstakeAbsolute === amount) {
-      return [pools[0].userMaxUnstakeAbsolute, pools[1].userMaxUnstakeAbsolute]
+      // Return 0n for both pools instead of actual amounts to avoid state synchronization issues.
+      // The contract interprets 0n as a signal to unstake all available funds from each pool.
+      return [0n, 0n]
     }
 
-    // If we reach here, the amount is too large to unstake
-    throw new Error('Amount exceeds maximum unstakeable amount')
+    throw new Error('No valid combination to unstake requested amount')
   }
 
   /** @ignore */
