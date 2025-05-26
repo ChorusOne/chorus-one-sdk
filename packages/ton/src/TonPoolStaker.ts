@@ -232,14 +232,14 @@ export class TonPoolStaker extends TonBaseStaker {
       const { minElectionStake, currentPoolBalances, userMaxUnstakeAmounts, userCurrentWithdrawals } =
         await this.getPoolDataForDelegator(delegatorAddress, validatorAddresses)
 
-      const unstakeAmountPerPool = TonPoolStaker.calculateUnstakePoolAmount({
-        amount: toNano(amount),
+      const unstakeAmountPerPool = TonPoolStaker.calculateUnstakePoolAmount(
+        toNano(amount),
         minElectionStake,
         currentPoolBalances,
         userMaxUnstakeAmounts,
         userCurrentWithdrawals,
-        userMinStake: [poolParamsData[0].minStake, poolParamsData[1].minStake]
-      })
+        [poolParamsData[0].minStake, poolParamsData[1].minStake]
+      )
 
       if (unstakeAmountPerPool[0] + unstakeAmountPerPool[1] !== toNano(amount)) {
         throw new Error('unstake amount does not match the requested amount')
@@ -539,21 +539,14 @@ export class TonPoolStaker extends TonBaseStaker {
    *    This avoids state synchronization issues by letting the contract handle the exact amounts
    */
   /** @ignore */
-  static calculateUnstakePoolAmount({
-    amount,
-    minElectionStake,
-    currentPoolBalances,
-    userMaxUnstakeAmounts,
-    userCurrentWithdrawals,
-    userMinStake
-  }: {
-    amount: bigint // amount to unstake
-    minElectionStake: bigint // minimum stake for participation (to be in the set)
-    currentPoolBalances: [bigint, bigint] // current stake balances of the pools
-    userMaxUnstakeAmounts: [bigint, bigint] // maximum user stake that can be unstaked from the pools
-    userCurrentWithdrawals: [bigint, bigint] // current user withdrawals from the pools
+  static calculateUnstakePoolAmount(
+    amount: bigint, // amount to unstake
+    minElectionStake: bigint, // minimum stake for participation (to be in the set)
+    currentPoolBalances: [bigint, bigint], // current stake balances of the pools
+    userMaxUnstakeAmounts: [bigint, bigint], // maximum user stake that can be unstaked from the pools
+    userCurrentWithdrawals: [bigint, bigint], // current user withdrawals from the pools
     userMinStake: [bigint, bigint] // minimum user stake to keep the pool active
-  }): [bigint, bigint] {
+  ): [bigint, bigint] {
     const [balancePool1, balancePool2] = currentPoolBalances
     const [userMaxUnstake1, userMaxUnstake2] = userMaxUnstakeAmounts
     const [userCurrentWithdrawals1, userCurrentWithdrawals2] = userCurrentWithdrawals
@@ -622,18 +615,6 @@ export class TonPoolStaker extends TonBaseStaker {
     // userMaxUnstakeToKeepAboveMin1, remainingFromPool2 (>minPoolStake || maxUserUnstake)
 
     // TODO: create function to return valid ranges for unstake.
-
-    console.log({
-      amount: fromNano(amount),
-      pools: pools.map((pool) => ({
-        ...pool,
-        balance: fromNano(pool.balance),
-        userCurrentWithdrawals: fromNano(pool.userCurrentWithdrawals),
-        userMaxUnstakeAbsolute: fromNano(pool.userMaxUnstakeAbsolute),
-        userMaxUnstakeToKeepPoolActive: fromNano(pool.userMaxUnstakeToKeepPoolActive),
-        userMaxUnstakeToKeepPoolAboveMin: fromNano(pool.userMaxUnstakeToKeepPoolAboveMin)
-      }))
-    })
 
     // Strategy 1: Try to keep both pools active
     if (pools[0].userMaxUnstakeToKeepPoolActive + pools[1].userMaxUnstakeToKeepPoolActive >= amount) {
