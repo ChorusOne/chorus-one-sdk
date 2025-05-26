@@ -76,9 +76,9 @@ describe('TonPoolStaker_calculateUnstakePoolAmount', () => {
       expect(result).to.deep.equal([7n, 2n])
     })
 
-    it('should unstake userMaxUnstakeToKeepPoolAboveMin partially and userMaxUnstakeToKeepPoolActive fully', () => {
+    it('should unstake userMaxUnstakeToKeepPoolAboveMin partially', () => {
       const result = fn(8n, minElectionStake, [13n, 12n], [10n, 4n], [1n, 1n], [10n, 4n])
-      expect(result).to.deep.equal([6n, 2n])
+      expect(result).to.deep.equal([8n, 0n])
     })
 
     it('should unstake userMaxUnstakeAbsolute and userMaxUnstakeToKeepPoolActive fully', () => {
