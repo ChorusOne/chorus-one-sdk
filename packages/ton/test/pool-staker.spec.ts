@@ -47,13 +47,6 @@ describe('TonPoolStaker_calculateUnstakePoolAmount', () => {
       const result = fn(5n, minElectionStake, [15n, 20n], [10n, 10n], [7n, 7n], [10n, 10n])
       expect(result).to.deep.equal([2n, 3n])
     })
-
-    // This optimization it's not done on the SDK yet. SDK doesn't take into account that unstake the userMaxUnstakeAbsolute can still allow the pool to be active
-    // it('should unstake userMaxUnstakeToKeepPoolActive partially and userMaxUnstakeAbsolute', () => {
-    //   const result = fn(13n, minElectionStake, [15n, 20n], [10n, 10n], [7n, 7n], [10n, 10n])
-    //   expect(result).to.deep.equal([3n, 10n]) <---- Optimized return
-    //   expect(result).to.deep.equal([10n, 3n]) <---- Not optimized return, disables one pool when it's not necessary, SDK currently returns this
-    // })
   })
 
   describe('should disable pool with lowest balance, amount >= userMaxUnstakeToKeepPoolActive1 + userMaxUnstakeToKeepPoolActive2', () => {
@@ -146,7 +139,6 @@ describe('TonPoolStaker_calculateUnstakePoolAmount', () => {
     })
   })
 
-  // TODO: implement this test case
   describe('should reject invalid amounts', () => {
     it('should throw error if user wants to withdraw more than available', () => {
       expect(() => fn(21n, 10n, [20n, 20n], [10n, 10n], [0n, 0n], [0n, 0n])).to.throw(
