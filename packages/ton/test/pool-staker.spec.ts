@@ -150,7 +150,7 @@ describe.only('TonPoolStaker_calculateUnstakePoolAmount', () => {
   describe('should reject invalid amounts', () => {
     it('should throw error if user wants to withdraw more than available', () => {
       expect(() => fn(21n, 10n, [20n, 20n], [10n, 10n], [0n, 0n], [0n, 0n])).to.throw(
-        'requested withdrawal amount exceeds available user stakes'
+        'Requested amount exceeds available stakes'
       )
     })
 
