@@ -25,7 +25,7 @@ describe.only('TonPoolStaker_calculateUnstakePoolAmount', () => {
   const fn = TonPoolStaker.calculateUnstakePoolAmount
   const minElectionStake = 10n
 
-  describe('should keep both pools active, amount < userMaxUnstakeToKeepPoolActive1 + userMaxUnstakeToKeepPoolActive2', () => {
+  describe('should keep both pools active, amount <= userMaxUnstakeToKeepPoolActive1 + userMaxUnstakeToKeepPoolActive2', () => {
     // pool1: userMaxUnstakeToKeepPoolActive (5n) < userMaxUnstakeToKeepPoolAboveMin (10n)
     // pool2: userMaxUnstakeToKeepPoolActive (10n) == userMaxUnstakeToKeepPoolAboveMin (10n)
     // balance 1 < balance 2
@@ -56,7 +56,7 @@ describe.only('TonPoolStaker_calculateUnstakePoolAmount', () => {
     // })
   })
 
-  describe('should disable pool with lowest balance, amount > userMaxUnstakeToKeepPoolActive1 + userMaxUnstakeToKeepPoolActive2', () => {
+  describe('should disable pool with lowest balance, amount >= userMaxUnstakeToKeepPoolActive1 + userMaxUnstakeToKeepPoolActive2', () => {
     it('should unstake userMaxUnstakeToKeepPoolActive fully and userMaxUnstakeToKeepPoolAboveMin fully', () => {
       const result = fn(8n, minElectionStake, [13n, 12n], [10n, 10n], [5n, 5n], [10n, 10n])
       expect(result).to.deep.equal([3n, 5n])
@@ -78,7 +78,7 @@ describe.only('TonPoolStaker_calculateUnstakePoolAmount', () => {
     })
   })
 
-  describe('should disable pool with highest balance, amount > userMaxUnstakeToKeepPoolActive1 + userMaxUnstakeToKeepPoolActive2', () => {
+  describe('should disable pool with highest balance, amount >= userMaxUnstakeToKeepPoolActive1 + userMaxUnstakeToKeepPoolActive2', () => {
     it('should unstake userMaxUnstakeToKeepPoolAboveMin fully and userMaxUnstakeToKeepPoolActive fully', () => {
       const result = fn(9n, minElectionStake, [13n, 12n], [10n, 5n], [3n, 3n], [10n, 5n])
       expect(result).to.deep.equal([7n, 2n])
@@ -102,7 +102,7 @@ describe.only('TonPoolStaker_calculateUnstakePoolAmount', () => {
     })
 
     it('should unstake userMaxUnstakeToKeepPoolAboveMin fully and userMaxUnstakeToKeepPoolAboveMin fully', () => {
-      const result = fn(8n, minElectionStake, [15n, 15n], [12n, 12n], [8n, 8n], [12n, 12n])
+      const result = fn(8n, minElectionStake, [13n, 13n], [12n, 12n], [8n, 8n], [12n, 12n])
       expect(result).to.deep.equal([4n, 4n])
     })
 
