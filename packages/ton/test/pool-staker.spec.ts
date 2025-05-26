@@ -167,10 +167,9 @@ describe.only('TonPoolStaker_calculateUnstakePoolAmount', () => {
     })
   })
 
-  describe('should allow partial withdraw when pool bellow userMinStake if user has deposit and ready to withdraw amounts', () => {
+  describe('should allow partial withdraw when pool is bellow userMinStake and user has deposit and ready to withdraw amounts', () => {
     // userBalance = [6n, 6n] < userMinStake = 7n
     // userDepositingAndAvailableToWithdraw=[4n, 4n]
-    // Pools are already bellow userMinStake, so we either unstake all or partially the depositing and ready to withdraw amounts
     it('should withdraw all from one pool and the rest from depositing and ready to withdraw amounts', () => {
       const result = fn(12n, minElectionStake, [15n, 20n], [10n, 10n], [7n, 7n], [6n, 6n])
       expect(result).to.deep.equal([10n, 2n])
@@ -178,7 +177,6 @@ describe.only('TonPoolStaker_calculateUnstakePoolAmount', () => {
 
     // userBalance = [6n, 6n] < userMinStake = 7n
     // userDepositingAndAvailableToWithdraw=[4n, 4n]
-    // Pools are already bellow userMinStake, so we either unstake all or partially the depositing and ready to withdraw amounts
     it('should withdraw partially the depositing and ready to withdraw amounts', () => {
       const result = fn(7n, minElectionStake, [15n, 20n], [10n, 10n], [7n, 7n], [6n, 6n])
       expect(result).to.deep.equal([3n, 4n])
