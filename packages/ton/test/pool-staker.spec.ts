@@ -25,122 +25,57 @@ describe('TonPoolStaker_calculateUnstakePoolAmount', () => {
   const minStake = 10n
 
   it('should withdraw from the highest balance pool first', () => {
-    const result = fn({
-      amount: 5n,
-      minElectionStake: minStake,
-      currentPoolBalances: [15n, 20n],
-      userMaxUnstakeAmounts: [10n, 10n],
-      userCurrentWithdrawals: [0n, 0n],
-      userMinStake: [0n, 0n]
-    })
+    const result = fn(5n, minStake, [15n, 20n], [10n, 10n], [0n, 0n], [0n, 0n])
     expect(result).to.deep.equal([0n, 5n])
   })
 
   it('should not split withdraw to two pools if not required', () => {
-    const result = fn({
-      amount: 10n,
-      minElectionStake: minStake,
-      currentPoolBalances: [20n, 20n],
-      userMaxUnstakeAmounts: [10n, 10n],
-      userCurrentWithdrawals: [0n, 0n],
-      userMinStake: [0n, 0n]
-    })
+    const result = fn(10n, minStake, [20n, 20n], [10n, 10n], [0n, 0n], [0n, 0n])
     expect(result).to.deep.equal([10n, 0n])
   })
 
   it('should split withdraw to avoid pool deactivation', () => {
-    const result = fn({
-      amount: 10n,
-      minElectionStake: minStake,
-      currentPoolBalances: [15n, 15n],
-      userMaxUnstakeAmounts: [10n, 10n],
-      userCurrentWithdrawals: [0n, 0n],
-      userMinStake: [0n, 0n]
-    })
+    const result = fn(10n, minStake, [15n, 15n], [10n, 10n], [0n, 0n], [0n, 0n])
     expect(result).to.deep.equal([5n, 5n])
   })
 
+  it('should withdraw from multiple pools if needed', () => {
+    const result = fn(15n, minStake, [20n, 20n], [10n, 10n], [0n, 0n], [0n, 0n])
+    expect(result).to.deep.equal([10n, 5n])
+  })
+
   it('should not withdraw if user stake is zero', () => {
-    const result = fn({
-      amount: 5n,
-      minElectionStake: minStake,
-      currentPoolBalances: [15n, 20n],
-      userMaxUnstakeAmounts: [0n, 10n],
-      userCurrentWithdrawals: [0n, 0n],
-      userMinStake: [0n, 0n]
-    })
+    const result = fn(5n, minStake, [15n, 20n], [0n, 10n], [0n, 0n], [0n, 0n])
     expect(result).to.deep.equal([0n, 5n])
   })
 
   it('should handle exact balance matches', () => {
-    const result = fn({
-      amount: 10n,
-      minElectionStake: minStake,
-      currentPoolBalances: [20n, 20n],
-      userMaxUnstakeAmounts: [10n, 5n],
-      userCurrentWithdrawals: [0n, 0n],
-      userMinStake: [0n, 0n]
-    })
+    const result = fn(10n, minStake, [20n, 20n], [10n, 5n], [0n, 0n], [0n, 0n])
     expect(result).to.deep.equal([10n, 0n])
   })
 
   it('should withdraw if one pool is empty', () => {
-    let result = fn({
-      amount: 5n,
-      minElectionStake: minStake,
-      currentPoolBalances: [0n, 20n],
-      userMaxUnstakeAmounts: [0n, 5n],
-      userCurrentWithdrawals: [0n, 0n],
-      userMinStake: [0n, 0n]
-    })
+    let result = fn(5n, minStake, [0n, 20n], [0n, 5n], [0n, 0n], [0n, 0n])
     expect(result).to.deep.equal([0n, 5n])
 
-    result = fn({
-      amount: 5n,
-      minElectionStake: minStake,
-      currentPoolBalances: [20n, 10n],
-      userMaxUnstakeAmounts: [5n, 0n],
-      userCurrentWithdrawals: [0n, 0n],
-      userMinStake: [0n, 0n]
-    })
+    result = fn(5n, minStake, [20n, 10n], [5n, 0n], [0n, 0n], [0n, 0n])
     expect(result).to.deep.equal([5n, 0n])
   })
 
   it('should withdraw from withdrawable amount even if the pool is empty', () => {
-    const result = fn({
-      amount: 5n,
-      minElectionStake: 0n,
-      currentPoolBalances: [0n, 0n],
-      userMaxUnstakeAmounts: [5n, 0n],
-      userCurrentWithdrawals: [5n, 0n],
-      userMinStake: [0n, 0n]
-    })
+    const result = fn(5n, 0n, [0n, 0n], [5n, 0n], [5n, 0n], [0n, 0n])
     expect(result).to.deep.equal([5n, 0n])
   })
 
-  it('should withdraw max amount', () => {
-    const result = fn({
-      amount: 30n,
-      minElectionStake: 0n,
-      currentPoolBalances: [10n, 10n],
-      userMaxUnstakeAmounts: [15n, 15n],
-      userCurrentWithdrawals: [5n, 5n],
-      userMinStake: [0n, 0n]
-    })
+  it('should withdraw max amount if the pool is empty', () => {
+    const result = fn(30n, 0n, [10n, 10n], [15n, 15n], [5n, 5n], [0n, 0n])
     expect(result).to.deep.equal([15n, 15n])
   })
 
   it('should throw error if user wants to withdraw more than available', () => {
-    expect(() =>
-      fn({
-        amount: 21n,
-        minElectionStake: 10n,
-        currentPoolBalances: [20n, 20n],
-        userMaxUnstakeAmounts: [10n, 10n],
-        userCurrentWithdrawals: [0n, 0n],
-        userMinStake: [0n, 0n]
-      })
-    ).to.throw('requested withdrawal amount exceeds available user stakes')
+    expect(() => fn(21n, 10n, [20n, 20n], [10n, 10n], [0n, 0n], [0n, 0n])).to.throw(
+      'requested withdrawal amount exceeds available user stakes'
+    )
   })
 })
 
