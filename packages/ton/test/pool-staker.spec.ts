@@ -95,10 +95,77 @@ describe.only('TonPoolStaker_calculateUnstakePoolAmount', () => {
     })
   })
 
+  describe('should disable both pools', () => {
+    it('should unstake userMaxUnstakeToKeepPoolAboveMin fully and userMaxUnstakeToKeepPoolAboveMin partially', () => {
+      const result = fn(10n, minElectionStake, [13n, 12n], [11n, 11n], [5n, 5n], [11n, 11n])
+      expect(result).to.deep.equal([6n, 4n])
+    })
+
+    it('should unstake userMaxUnstakeToKeepPoolAboveMin fully and userMaxUnstakeToKeepPoolAboveMin fully', () => {
+      const result = fn(8n, minElectionStake, [15n, 15n], [12n, 12n], [8n, 8n], [12n, 12n])
+      expect(result).to.deep.equal([4n, 4n])
+    })
+
+    it('should unstake userMaxUnstakeToKeepPoolAboveMin fully and userMaxUnstakeAbsolute', () => {
+      const result = fn(16n, minElectionStake, [15n, 15n], [12n, 12n], [8n, 8n], [12n, 12n])
+      expect(result).to.deep.equal([4n, 12n])
+    })
+  })
+
+  describe('should unstake all', () => {
+    it('should unstake userMaxUnstakeAbsolute and userMaxUnstakeAbsolute above minElectionStake', () => {
+      const result = fn(8n, minElectionStake, [32n, 40n], [5n, 3n], [0n, 0n], [5n, 3n])
+      expect(result).to.deep.equal([5n, 3n])
+    })
+
+    it('should unstake userMaxUnstakeAbsolute and userMaxUnstakeAbsolute bellow minElectionStake', () => {
+      const result = fn(10n, minElectionStake, [7n, 7n], [5n, 5n], [0n, 0n], [5n, 3n])
+      expect(result).to.deep.equal([5n, 5n])
+    })
+
+    it('should unstake userMaxUnstakeAbsolute and userMaxUnstakeAbsolute above userMinStake', () => {
+      const result = fn(24n, minElectionStake, [15n, 15n], [12n, 12n], [8n, 8n], [12n, 12n])
+      expect(result).to.deep.equal([12n, 12n])
+    })
+
+    it('should unstake userMaxUnstakeAbsolute and userMaxUnstakeAbsolute bellow userMinStake', () => {
+      const result = fn(4n, minElectionStake, [15n, 15n], [2n, 2n], [8n, 8n], [12n, 12n])
+      expect(result).to.deep.equal([2n, 2n])
+    })
+  })
+
+  describe('should unstake when bellow minElectionStake', () => {
+    it('should unstake userMaxUnstakeToKeepPoolAboveMin partially', () => {
+      const result = fn(1n, minElectionStake, [7n, 7n], [5n, 5n], [3n, 3n], [5n, 5n])
+      expect(result).to.deep.equal([0n, 1n])
+    })
+
+    it('should unstake userMaxUnstakeToKeepPoolAboveMin fully', () => {
+      const result = fn(4n, minElectionStake, [7n, 7n], [5n, 5n], [3n, 3n], [5n, 5n])
+      expect(result).to.deep.equal([2n, 2n])
+    })
+  })
+
   // TODO: implement this test case
-  // describe('should disable both pools', () => {})
-  // describe('should unstake all', () => {})
-  // describe('should reject invalid amounts', () => {})
+  describe('should reject invalid amounts', () => {
+    it('should throw error if user wants to withdraw more than available', () => {
+      expect(() => fn(21n, 10n, [20n, 20n], [10n, 10n], [0n, 0n], [0n, 0n])).to.throw(
+        'requested withdrawal amount exceeds available user stakes'
+      )
+    })
+
+    it("should throw if user request an amount that's impossible to find a pair", () => {
+      expect(() => fn(10n, minElectionStake, [15n, 15n], [8n, 8n], [7n, 7n], [8n, 8n])).to.throw(
+        'No valid combination to unstake requested amount'
+      )
+    })
+
+    it('should user try to partially unstake bellow userMinBalance', () => {
+      expect(() => fn(7n, minElectionStake, [15n, 15n], [4n, 4n], [7n, 7n], [8n, 8n])).to.throw(
+        'No valid combination to unstake requested amount'
+      )
+    })
+  })
 
   describe('should allow partial withdraw when pool bellow userMinStake if user has deposit and ready to withdraw amounts', () => {
     // userBalance = [6n, 6n] < userMinStake = 7n
@@ -116,57 +183,6 @@ describe.only('TonPoolStaker_calculateUnstakePoolAmount', () => {
       const result = fn(7n, minElectionStake, [15n, 20n], [10n, 10n], [7n, 7n], [6n, 6n])
       expect(result).to.deep.equal([3n, 4n])
     })
-  })
-
-  // ------- OLD TESTS -------
-
-  it('should withdraw from the highest balance pool first', () => {
-    const result = fn(5n, minElectionStake, [15n, 20n], [10n, 10n], [0n, 0n], [10n, 10n])
-    expect(result).to.deep.equal([0n, 5n])
-  })
-
-  it('should not split withdraw to two pools if not required', () => {
-    const result = fn(10n, minElectionStake, [20n, 20n], [10n, 10n], [0n, 0n], [10n, 10n])
-    expect(result).to.deep.equal([10n, 0n])
-  })
-
-  it('should split withdraw to avoid pool deactivation', () => {
-    const result = fn(10n, minElectionStake, [15n, 15n], [10n, 10n], [0n, 0n], [10n, 10n])
-    expect(result).to.deep.equal([5n, 5n])
-  })
-
-  it('should not withdraw if user stake is zero', () => {
-    const result = fn(5n, minElectionStake, [15n, 20n], [0n, 10n], [0n, 0n], [0n, 10n])
-    expect(result).to.deep.equal([0n, 5n])
-  })
-
-  it('should handle exact balance matches', () => {
-    const result = fn(10n, minElectionStake, [20n, 20n], [10n, 5n], [0n, 0n], [10n, 5n])
-    expect(result).to.deep.equal([10n, 0n])
-  })
-
-  it('should withdraw if one pool is empty', () => {
-    let result = fn(5n, minElectionStake, [0n, 20n], [0n, 5n], [0n, 0n], [0n, 5n])
-    expect(result).to.deep.equal([0n, 5n])
-
-    result = fn(5n, minElectionStake, [20n, 10n], [5n, 0n], [0n, 0n], [5n, 0n])
-    expect(result).to.deep.equal([5n, 0n])
-  })
-
-  it('should withdraw from withdrawable amount even if the pool is empty', () => {
-    const result = fn(5n, 0n, [0n, 0n], [5n, 0n], [5n, 0n], [5n, 0n])
-    expect(result).to.deep.equal([5n, 0n])
-  })
-
-  it('should withdraw max amount', () => {
-    const result = fn(30n, 0n, [10n, 10n], [15n, 15n], [15n, 15n], [15n, 15n])
-    expect(result).to.deep.equal([15n, 15n])
-  })
-
-  it('should throw error if user wants to withdraw more than available', () => {
-    expect(() => fn(21n, 10n, [20n, 20n], [10n, 10n], [0n, 0n], [0n, 0n])).to.throw(
-      'requested withdrawal amount exceeds available user stakes'
-    )
   })
 })
 
