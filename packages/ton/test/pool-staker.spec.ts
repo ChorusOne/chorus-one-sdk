@@ -20,45 +20,59 @@ describe('TonPoolStaker_selectPool', () => {
   })
 })
 
-describe('TonPoolStaker_calculateUnstakePoolAmount', () => {
+describe.only('TonPoolStaker_calculateUnstakePoolAmount', () => {
   const fn = TonPoolStaker.calculateUnstakePoolAmount
-  const minStake = 10n
+  const minElectionStake = 10n
+
+  describe('should keep both pools active', () => {
+    it('should withdraw from one pool if it has enough stake above election stake', () => {
+      const result = fn(5n, minElectionStake, [15n, 20n], [10n, 10n], [0n, 0n], [0n, 0n])
+      expect(result).to.deep.equal([0n, 5n])
+    })
+
+    it("should withdraw from both pools if one doesn't have enough stake above election stake", () => {
+      const result = fn(15n, minElectionStake, [15n, 20n], [10n, 10n], [0n, 0n], [0n, 0n])
+      expect(result).to.deep.equal([5n, 10n])
+    })
+
+    it('should withdraw from both pools to follow userMinStake restriction', () => {
+      const result = fn(5n, minElectionStake, [15n, 20n], [10n, 10n], [0n, 0n], [7n, 7n])
+      expect(result).to.deep.equal([2n, 3n])
+    })
+  })
+
+  // ------- OLD TESTS -------
 
   it('should withdraw from the highest balance pool first', () => {
-    const result = fn(5n, minStake, [15n, 20n], [10n, 10n], [0n, 0n], [0n, 0n])
+    const result = fn(5n, minElectionStake, [15n, 20n], [10n, 10n], [0n, 0n], [0n, 0n])
     expect(result).to.deep.equal([0n, 5n])
   })
 
   it('should not split withdraw to two pools if not required', () => {
-    const result = fn(10n, minStake, [20n, 20n], [10n, 10n], [0n, 0n], [0n, 0n])
+    const result = fn(10n, minElectionStake, [20n, 20n], [10n, 10n], [0n, 0n], [0n, 0n])
     expect(result).to.deep.equal([10n, 0n])
   })
 
   it('should split withdraw to avoid pool deactivation', () => {
-    const result = fn(10n, minStake, [15n, 15n], [10n, 10n], [0n, 0n], [0n, 0n])
+    const result = fn(10n, minElectionStake, [15n, 15n], [10n, 10n], [0n, 0n], [0n, 0n])
     expect(result).to.deep.equal([5n, 5n])
   })
 
-  it('should withdraw from multiple pools if needed', () => {
-    const result = fn(15n, minStake, [20n, 20n], [10n, 10n], [0n, 0n], [0n, 0n])
-    expect(result).to.deep.equal([10n, 5n])
-  })
-
   it('should not withdraw if user stake is zero', () => {
-    const result = fn(5n, minStake, [15n, 20n], [0n, 10n], [0n, 0n], [0n, 0n])
+    const result = fn(5n, minElectionStake, [15n, 20n], [0n, 10n], [0n, 0n], [0n, 0n])
     expect(result).to.deep.equal([0n, 5n])
   })
 
   it('should handle exact balance matches', () => {
-    const result = fn(10n, minStake, [20n, 20n], [10n, 5n], [0n, 0n], [0n, 0n])
+    const result = fn(10n, minElectionStake, [20n, 20n], [10n, 5n], [0n, 0n], [0n, 0n])
     expect(result).to.deep.equal([10n, 0n])
   })
 
   it('should withdraw if one pool is empty', () => {
-    let result = fn(5n, minStake, [0n, 20n], [0n, 5n], [0n, 0n], [0n, 0n])
+    let result = fn(5n, minElectionStake, [0n, 20n], [0n, 5n], [0n, 0n], [0n, 0n])
     expect(result).to.deep.equal([0n, 5n])
 
-    result = fn(5n, minStake, [20n, 10n], [5n, 0n], [0n, 0n], [0n, 0n])
+    result = fn(5n, minElectionStake, [20n, 10n], [5n, 0n], [0n, 0n], [0n, 0n])
     expect(result).to.deep.equal([5n, 0n])
   })
 
@@ -67,7 +81,7 @@ describe('TonPoolStaker_calculateUnstakePoolAmount', () => {
     expect(result).to.deep.equal([5n, 0n])
   })
 
-  it('should withdraw max amount if the pool is empty', () => {
+  it('should withdraw max amount', () => {
     const result = fn(30n, 0n, [10n, 10n], [15n, 15n], [5n, 5n], [0n, 0n])
     expect(result).to.deep.equal([15n, 15n])
   })
