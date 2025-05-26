@@ -529,220 +529,159 @@ export class TonPoolStaker extends TonBaseStaker {
   }
 
   /**
-   * Calculates the optimal unstake amounts from multiple pools.
-   *
-   * The function uses multiple strategies in order of preference:
-   * 1. Keep both pools active while respecting minimum stakes
-   * 2. Deactivate one pool while keeping the other active
-   * 3. Deactivate both pools while maintaining minimum user stakes
-   * 4. Complete withdrawal (returns 0n for both pools as signal to unstake all)
-   *    This avoids state synchronization issues by letting the contract handle the exact amounts
+   * Calculates optimal unstake amounts from two pools.
+   * Tries strategies in order: keep both active → keep one active → deactivate both
    */
-  /** @ignore */
   static calculateUnstakePoolAmount(
-    amount: bigint, // amount to unstake
-    minElectionStake: bigint, // minimum stake for participation (to be in the set)
-    currentPoolBalances: [bigint, bigint], // current stake balances of the pools
-    userMaxUnstakeAmounts: [bigint, bigint], // maximum user stake that can be unstaked from the pools
-    userMinStake: [bigint, bigint], // minimum user stake to keep the pool active
-    userBalances: [bigint, bigint] // user balances of the pools
+    requestedAmount: bigint,
+    minimumElectionStake: bigint,
+    [pool1Balance, pool2Balance]: [bigint, bigint],
+    [pool1MaxUnstake, pool2MaxUnstake]: [bigint, bigint],
+    [pool1MinStake, pool2MinStake]: [bigint, bigint],
+    [pool1UserBalance, pool2UserBalance]: [bigint, bigint]
   ): [bigint, bigint] {
-    const [balancePool1, balancePool2] = currentPoolBalances
-    const [userMaxUnstake1, userMaxUnstake2] = userMaxUnstakeAmounts
-    const [userMinStake1, userMinStake2] = userMinStake
-    const [userBalance1, userBalance2] = userBalances
-    const [userDepositingAndAvailableToWithdraw1, userDepositingAndAvailableToWithdraw2] = [
-      userMaxUnstake1 - userBalance1,
-      userMaxUnstake2 - userBalance2
-    ]
-
-    // check if the requested withdrawal amount exceeds the available user stakes
-    const totalUserStake = userMaxUnstake1 + userMaxUnstake2
-    if (amount > totalUserStake) {
-      throw new Error('requested withdrawal amount exceeds available user stakes')
+    if (requestedAmount > pool1MaxUnstake + pool2MaxUnstake) {
+      throw new Error('Requested amount exceeds available stakes')
     }
 
-    // TODO: Check if userDepositingAndAvailableToWithdraw, counts on pool balance for election
-    const getMaxUnstakeToKeepPoolActive = (balance: bigint, userDepositingAndAvailableToWithdraw: bigint): bigint => {
-      const poolMaxUnstakeToKeepActive = balance - minElectionStake > 0 ? balance - minElectionStake : 0n
-      return poolMaxUnstakeToKeepActive + userDepositingAndAvailableToWithdraw
+    interface PoolInfo {
+      index: 0 | 1
+      totalBalance: bigint
+      maxUnstakeAll: bigint
+      maxUnstakeKeepingPoolActive: bigint
+      maxUnstakeKeepingAboveMinimum: bigint
     }
 
-    // TODO: Check if userDepositingAndAvailableToWithdraw, can be partially withdraw when pool is bellow userMinStake
-    const getMaxUnstakeToKeepPoolAboveMin = (
-      userDepositingAndAvailableToWithdraw: bigint,
+    const buildPoolInfo = (
+      index: 0 | 1,
+      poolBalance: bigint,
+      userMaxUnstake: bigint,
       userMinStake: bigint,
-      userBalance: bigint
-    ): bigint => {
-      const unstakeFromBalanceAmount = userBalance - userMinStake > 0 ? userBalance - userMinStake : 0n
-      return unstakeFromBalanceAmount + userDepositingAndAvailableToWithdraw
-    }
+      userCurrentBalance: bigint
+    ): PoolInfo => {
+      const userDepositingAndAvailableWithdraw = userMaxUnstake - userCurrentBalance
 
-    const pools = [
-      {
-        index: 0,
-        balance: balancePool1,
-        userMaxUnstakeAbsolute: userMaxUnstake1,
-        userMaxUnstakeToKeepPoolActive: getMaxUnstakeToKeepPoolActive(
-          balancePool1,
-          userDepositingAndAvailableToWithdraw1
-        ),
-        userMaxUnstakeToKeepPoolAboveMin: getMaxUnstakeToKeepPoolAboveMin(
-          userDepositingAndAvailableToWithdraw1,
-          userMinStake1,
-          userBalance1
-        )
-      },
-      {
-        index: 1,
-        balance: balancePool2,
-        userMaxUnstakeAbsolute: userMaxUnstake2,
-        userMaxUnstakeToKeepPoolActive: getMaxUnstakeToKeepPoolActive(
-          balancePool2,
-          userDepositingAndAvailableToWithdraw2
-        ),
-        userMaxUnstakeToKeepPoolAboveMin: getMaxUnstakeToKeepPoolAboveMin(
-          userDepositingAndAvailableToWithdraw2,
-          userMinStake2,
-          userBalance2
-        )
+      const maxUnstakeKeepingActive = minBigInt(
+        (poolBalance > minimumElectionStake ? poolBalance - minimumElectionStake : 0n) +
+          userDepositingAndAvailableWithdraw,
+        (userCurrentBalance > userMinStake ? userCurrentBalance - userMinStake : 0n) +
+          userDepositingAndAvailableWithdraw
+      )
+
+      const maxUnstakeKeepingAboveMin =
+        (userCurrentBalance > userMinStake ? userCurrentBalance - userMinStake : 0n) +
+        userDepositingAndAvailableWithdraw
+
+      return {
+        index,
+        totalBalance: poolBalance,
+        maxUnstakeAll: userMaxUnstake,
+        maxUnstakeKeepingPoolActive: maxUnstakeKeepingActive,
+        maxUnstakeKeepingAboveMinimum: maxUnstakeKeepingAboveMin
       }
-    ]
-      .map((p) => {
-        return {
-          ...p,
-          userMaxUnstakeToKeepPoolActive: minBigInt(
-            p.userMaxUnstakeToKeepPoolActive,
-            p.userMaxUnstakeToKeepPoolAboveMin
-          )
-        }
-      })
-      .sort((a, b) => (a.balance > b.balance ? -1 : 1)) // Sort by balance (pool 1 highest -> pool 2 lowest)
-
-    const result: [bigint, bigint] = [0n, 0n]
-
-    // Try to withdraw from the best pairs first, do the permutation of: userMaxUnstakeToKeepPoolActive, userMaxUnstakeToKeepPoolAboveMin, userMaxUnstakeAbsolute
-    // Best scenario keep both pools active
-    // userMaxUnstakeToKeepPoolActive1, userMaxUnstakeToKeepPoolActive2
-    // Keep pool 1 active
-    // userMaxUnstakeToKeepPoolActive1, userMaxUnstakeAbsolute2
-    // userMaxUnstakeToKeepPoolActive1, userMaxUnstakeToKeepAboveMin2
-    // Keep pool 2 active
-    // userMaxUnstakeToKeepPoolActive2, userMaxUnstakeToKeepAboveMin1
-    // userMaxUnstakeToKeepPoolActive2, userMaxUnstakeAbsolute1
-    // Deactivate both pools
-    // userMaxUnstakeToKeepAboveMin1, userMaxUnstakeToKeepAboveMin2
-    // userMaxUnstakeAbsolute1, userMaxUnstakeAbsolute2
-    // ------------------------------------------------------------
-    // Best scenario keep both pools active
-    // userMaxUnstakeToKeepPoolActive1, userMaxUnstakeToKeepPoolActive2
-    // Sort pools by balance (pool 1 highest -> pool 2 lowest) - This will automatically try to keep 1 pool active
-    // userMaxUnstakeAbsolute1, remainingFromPool2 (>minPoolStake || maxUserUnstake)
-    // userMaxUnstakeToKeepAboveMin1, remainingFromPool2 (>minPoolStake || maxUserUnstake)
-
-    // TODO: create function to return valid ranges for unstake.
-
-    // Strategy 1: Try to keep both pools active
-    if (pools[0].userMaxUnstakeToKeepPoolActive + pools[1].userMaxUnstakeToKeepPoolActive >= amount) {
-      const fromPool0 =
-        amount <= pools[0].userMaxUnstakeToKeepPoolActive ? amount : pools[0].userMaxUnstakeToKeepPoolActive
-      const fromPool1 = amount - fromPool0
-
-      result[pools[0].index] = fromPool0
-      result[pools[1].index] = fromPool1
-      return result
     }
 
-    // Strategy 2: Keep pool with highest balance active
-    if (pools[0].userMaxUnstakeToKeepPoolActive + pools[1].userMaxUnstakeToKeepPoolAboveMin >= amount) {
-      const fromPool0 =
-        amount <= pools[0].userMaxUnstakeToKeepPoolActive ? amount : pools[0].userMaxUnstakeToKeepPoolActive
-      const fromPool1 = amount - fromPool0
+    const poolInfos = [
+      buildPoolInfo(0, pool1Balance, pool1MaxUnstake, pool1MinStake, pool1UserBalance),
+      buildPoolInfo(1, pool2Balance, pool2MaxUnstake, pool2MinStake, pool2UserBalance)
+    ].sort((a, b) => Number(b.totalBalance - a.totalBalance)) // Sort by balance desc
 
-      result[pools[0].index] = fromPool0
-      result[pools[1].index] = fromPool1
-      return result
+    const [highBalPol, lowBalPol] = poolInfos
+    const unstakeAmounts: [bigint, bigint] = [0n, 0n]
+
+    const attemptPartialUnstakeFromBothPools = (
+      primaryPool: PoolInfo,
+      primaryLimit: bigint,
+      secondaryPool: PoolInfo,
+      secondaryLimit: bigint
+    ): boolean => {
+      if (primaryLimit + secondaryLimit < requestedAmount) return false
+
+      const fromPrimary = minBigInt(requestedAmount, primaryLimit)
+      const fromSecondary = requestedAmount - fromPrimary
+
+      unstakeAmounts[primaryPool.index] = fromPrimary
+      unstakeAmounts[secondaryPool.index] = fromSecondary
+      return true
     }
 
-    // Strategy 2: Keep pool with highest balance active
+    const attemptCompleteUnstakeFromOnePool = (
+      completeWithdrawalPool: PoolInfo,
+      partialWithdrawalPool: PoolInfo,
+      partialLimit: bigint
+    ): boolean => {
+      const completeAmount = completeWithdrawalPool.maxUnstakeAll
+
+      if (completeAmount + partialLimit < requestedAmount || completeAmount > requestedAmount) {
+        return false
+      }
+
+      unstakeAmounts[completeWithdrawalPool.index] = completeAmount
+      unstakeAmounts[partialWithdrawalPool.index] = requestedAmount - completeAmount
+      return true
+    }
+
+    // Strategy 1: Keep both pools active
     if (
-      pools[0].userMaxUnstakeToKeepPoolActive + pools[1].userMaxUnstakeAbsolute >= amount &&
-      pools[1].userMaxUnstakeAbsolute <= amount // The user can't partially unstake the userMaxUnstakeAbsolute, so the user have to unstake all and the remaining amount must come from userMaxUnstakeToKeepPoolActive
-    ) {
-      const fromPool1 = pools[1].userMaxUnstakeAbsolute
-      const fromPool0 = amount - fromPool1
+      attemptPartialUnstakeFromBothPools(
+        highBalPol,
+        highBalPol.maxUnstakeKeepingPoolActive,
+        lowBalPol,
+        lowBalPol.maxUnstakeKeepingPoolActive
+      )
+    )
+      return unstakeAmounts
 
-      result[pools[0].index] = fromPool0
-      result[pools[1].index] = fromPool1
-      return result
-    }
-
-    // Strategy 3: Keep pool with lowest balance active
-    if (pools[1].userMaxUnstakeToKeepPoolActive + pools[0].userMaxUnstakeToKeepPoolAboveMin >= amount) {
-      const fromPool1 =
-        amount <= pools[1].userMaxUnstakeToKeepPoolActive ? amount : pools[1].userMaxUnstakeToKeepPoolActive
-      const fromPool0 = amount - fromPool1
-
-      result[pools[0].index] = fromPool0
-      result[pools[1].index] = fromPool1
-      return result
-    }
-
-    // Strategy 3: Keep pool with lowest balance active
+    // Strategy 2: Keep higher balance pool active, deactivate lower balance pool
     if (
-      pools[1].userMaxUnstakeToKeepPoolActive + pools[0].userMaxUnstakeAbsolute >= amount &&
-      pools[0].userMaxUnstakeAbsolute <= amount
-    ) {
-      const fromPool0 = pools[0].userMaxUnstakeAbsolute
-      const fromPool1 = amount - fromPool0
+      attemptPartialUnstakeFromBothPools(
+        highBalPol,
+        highBalPol.maxUnstakeKeepingPoolActive,
+        lowBalPol,
+        lowBalPol.maxUnstakeKeepingAboveMinimum
+      )
+    )
+      return unstakeAmounts
 
-      result[pools[0].index] = fromPool0
-      result[pools[1].index] = fromPool1
-      return result
-    }
+    if (attemptCompleteUnstakeFromOnePool(lowBalPol, highBalPol, highBalPol.maxUnstakeKeepingPoolActive))
+      return unstakeAmounts
 
-    // Strategy 6: Deactivate both pools - keep above minimum stake
-    if (pools[0].userMaxUnstakeToKeepPoolAboveMin + pools[1].userMaxUnstakeToKeepPoolAboveMin >= amount) {
-      const fromPool0 =
-        amount <= pools[0].userMaxUnstakeToKeepPoolAboveMin ? amount : pools[0].userMaxUnstakeToKeepPoolAboveMin
-      const fromPool1 = amount - fromPool0
-
-      result[pools[0].index] = fromPool0
-      result[pools[1].index] = fromPool1
-      return result
-    }
-
-    // Strategy 7: Deactivate both pools
+    // Strategy 3: Keep lower balance pool active, deactivate higher balance pool
     if (
-      pools[0].userMaxUnstakeToKeepPoolAboveMin + pools[1].userMaxUnstakeAbsolute >= amount &&
-      pools[1].userMaxUnstakeAbsolute <= amount
-    ) {
-      const fromPool1 = pools[1].userMaxUnstakeAbsolute
-      const fromPool0 = amount - fromPool1
+      attemptPartialUnstakeFromBothPools(
+        lowBalPol,
+        lowBalPol.maxUnstakeKeepingPoolActive,
+        highBalPol,
+        highBalPol.maxUnstakeKeepingAboveMinimum
+      )
+    )
+      return unstakeAmounts
 
-      result[pools[0].index] = fromPool0
-      result[pools[1].index] = fromPool1
-      return result
-    }
+    if (attemptCompleteUnstakeFromOnePool(highBalPol, lowBalPol, lowBalPol.maxUnstakeKeepingPoolActive))
+      return unstakeAmounts
 
-    // Strategy 8: Deactivate both pools
+    // Strategy 4: Deactivate both pools but maintain minimum stakes
     if (
-      pools[0].userMaxUnstakeAbsolute + pools[1].userMaxUnstakeToKeepPoolAboveMin >= amount &&
-      pools[0].userMaxUnstakeAbsolute <= amount
-    ) {
-      const fromPool0 = pools[0].userMaxUnstakeAbsolute
-      const fromPool1 = amount - fromPool0
+      attemptPartialUnstakeFromBothPools(
+        highBalPol,
+        highBalPol.maxUnstakeKeepingAboveMinimum,
+        lowBalPol,
+        lowBalPol.maxUnstakeKeepingAboveMinimum
+      )
+    )
+      return unstakeAmounts
 
-      result[pools[0].index] = fromPool0
-      result[pools[1].index] = fromPool1
-      return result
-    }
+    if (attemptCompleteUnstakeFromOnePool(lowBalPol, highBalPol, highBalPol.maxUnstakeKeepingAboveMinimum))
+      return unstakeAmounts
 
-    // Strategy 9: Absolute maximum
-    if (pools[0].userMaxUnstakeAbsolute + pools[1].userMaxUnstakeAbsolute === amount) {
-      result[pools[0].index] = pools[0].userMaxUnstakeAbsolute
-      result[pools[1].index] = pools[1].userMaxUnstakeAbsolute
-      return result
+    if (attemptCompleteUnstakeFromOnePool(highBalPol, lowBalPol, lowBalPol.maxUnstakeKeepingAboveMinimum))
+      return unstakeAmounts
+
+    // Strategy 5: Complete withdrawal from both pools
+    if (highBalPol.maxUnstakeAll + lowBalPol.maxUnstakeAll === requestedAmount) {
+      unstakeAmounts[highBalPol.index] = highBalPol.maxUnstakeAll
+      unstakeAmounts[lowBalPol.index] = lowBalPol.maxUnstakeAll
+      return unstakeAmounts
     }
 
     throw new Error('No valid combination to unstake requested amount')
