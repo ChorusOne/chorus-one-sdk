@@ -20,7 +20,6 @@ describe('TonPoolStaker_selectPool', () => {
   })
 })
 
-// Order os tries userMaxUnstakeToKeepPoolActive -> userMaxUnstakeToKeepPoolAboveMin -> userMaxUnstakeAbsolute
 describe('TonPoolStaker_calculateUnstakePoolAmount', () => {
   const fn = TonPoolStaker.calculateUnstakePoolAmount
   const minElectionStake = 10n
