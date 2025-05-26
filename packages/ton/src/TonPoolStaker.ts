@@ -548,8 +548,8 @@ export class TonPoolStaker extends TonBaseStaker {
       index: 0 | 1
       totalBalance: bigint
       maxUnstakeAll: bigint
-      maxUnstakeKeepingPoolActive: bigint
-      maxUnstakeKeepingAboveMinimum: bigint
+      maxUnstakeKeepPoolActive: bigint
+      maxUnstakeKeepAboveMinimum: bigint
     }
 
     const buildPoolInfo = (
@@ -561,14 +561,14 @@ export class TonPoolStaker extends TonBaseStaker {
     ): PoolInfo => {
       const userDepositingAndAvailableWithdraw = userMaxUnstake - userCurrentBalance
 
-      const maxUnstakeKeepingActive = minBigInt(
+      const maxUnstakeKeepActive = minBigInt(
         (poolBalance > minimumElectionStake ? poolBalance - minimumElectionStake : 0n) +
           userDepositingAndAvailableWithdraw,
         (userCurrentBalance > userMinStake ? userCurrentBalance - userMinStake : 0n) +
           userDepositingAndAvailableWithdraw
       )
 
-      const maxUnstakeKeepingAboveMin =
+      const maxUnstakeKeepAboveMin =
         (userCurrentBalance > userMinStake ? userCurrentBalance - userMinStake : 0n) +
         userDepositingAndAvailableWithdraw
 
@@ -576,8 +576,8 @@ export class TonPoolStaker extends TonBaseStaker {
         index,
         totalBalance: poolBalance,
         maxUnstakeAll: userMaxUnstake,
-        maxUnstakeKeepingPoolActive: maxUnstakeKeepingActive,
-        maxUnstakeKeepingAboveMinimum: maxUnstakeKeepingAboveMin
+        maxUnstakeKeepPoolActive: maxUnstakeKeepActive,
+        maxUnstakeKeepAboveMinimum: maxUnstakeKeepAboveMin
       }
     }
 
@@ -625,9 +625,9 @@ export class TonPoolStaker extends TonBaseStaker {
     if (
       attemptPartialUnstakeFromBothPools(
         highBalPol,
-        highBalPol.maxUnstakeKeepingPoolActive,
+        highBalPol.maxUnstakeKeepPoolActive,
         lowBalPol,
-        lowBalPol.maxUnstakeKeepingPoolActive
+        lowBalPol.maxUnstakeKeepPoolActive
       )
     )
       return unstakeAmounts
@@ -636,45 +636,45 @@ export class TonPoolStaker extends TonBaseStaker {
     if (
       attemptPartialUnstakeFromBothPools(
         highBalPol,
-        highBalPol.maxUnstakeKeepingPoolActive,
+        highBalPol.maxUnstakeKeepPoolActive,
         lowBalPol,
-        lowBalPol.maxUnstakeKeepingAboveMinimum
+        lowBalPol.maxUnstakeKeepAboveMinimum
       )
     )
       return unstakeAmounts
 
-    if (attemptCompleteUnstakeFromOnePool(lowBalPol, highBalPol, highBalPol.maxUnstakeKeepingPoolActive))
+    if (attemptCompleteUnstakeFromOnePool(lowBalPol, highBalPol, highBalPol.maxUnstakeKeepPoolActive))
       return unstakeAmounts
 
     // Strategy 3: Keep lower balance pool active, deactivate higher balance pool
     if (
       attemptPartialUnstakeFromBothPools(
         lowBalPol,
-        lowBalPol.maxUnstakeKeepingPoolActive,
+        lowBalPol.maxUnstakeKeepPoolActive,
         highBalPol,
-        highBalPol.maxUnstakeKeepingAboveMinimum
+        highBalPol.maxUnstakeKeepAboveMinimum
       )
     )
       return unstakeAmounts
 
-    if (attemptCompleteUnstakeFromOnePool(highBalPol, lowBalPol, lowBalPol.maxUnstakeKeepingPoolActive))
+    if (attemptCompleteUnstakeFromOnePool(highBalPol, lowBalPol, lowBalPol.maxUnstakeKeepPoolActive))
       return unstakeAmounts
 
     // Strategy 4: Deactivate both pools but maintain minimum stakes
     if (
       attemptPartialUnstakeFromBothPools(
         highBalPol,
-        highBalPol.maxUnstakeKeepingAboveMinimum,
+        highBalPol.maxUnstakeKeepAboveMinimum,
         lowBalPol,
-        lowBalPol.maxUnstakeKeepingAboveMinimum
+        lowBalPol.maxUnstakeKeepAboveMinimum
       )
     )
       return unstakeAmounts
 
-    if (attemptCompleteUnstakeFromOnePool(lowBalPol, highBalPol, highBalPol.maxUnstakeKeepingAboveMinimum))
+    if (attemptCompleteUnstakeFromOnePool(lowBalPol, highBalPol, highBalPol.maxUnstakeKeepAboveMinimum))
       return unstakeAmounts
 
-    if (attemptCompleteUnstakeFromOnePool(highBalPol, lowBalPol, lowBalPol.maxUnstakeKeepingAboveMinimum))
+    if (attemptCompleteUnstakeFromOnePool(highBalPol, lowBalPol, lowBalPol.maxUnstakeKeepAboveMinimum))
       return unstakeAmounts
 
     // Strategy 5: Complete withdrawal from both pools
