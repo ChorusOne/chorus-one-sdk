@@ -43,58 +43,79 @@ describe.only('TonPoolStaker_calculateUnstakePoolAmount', () => {
 
     // pool1: userMaxUnstakeToKeepPoolActive (5n) > userMaxUnstakeToKeepPoolAboveMin (3n)
     // pool2: userMaxUnstakeToKeepPoolActive (10n) > userMaxUnstakeToKeepPoolAboveMin (3n)
-    it('should unstake userMaxUnstakeToKeepPoolActive and userMaxUnstakeToKeepPoolActive, when userMaxUnstakeToKeepPoolActive > userMaxUnstakeToKeepPoolAboveMin', () => {
+    it('should unstake userMaxUnstakeToKeepPoolActive partially and userMaxUnstakeToKeepPoolAboveMin fully, when userMaxUnstakeToKeepPoolActive > userMaxUnstakeToKeepPoolAboveMin', () => {
       const result = fn(5n, minElectionStake, [15n, 20n], [10n, 10n], [7n, 7n], [10n, 10n])
       expect(result).to.deep.equal([2n, 3n])
     })
 
     // This optimization it's not done on the SDK yet. SDK doesn't take into account that unstake the userMaxUnstakeAbsolute can still allow the pool to be active
-    // it('should withdraw from both pools to follow userMinStake restriction', () => {
+    // it('should unstake userMaxUnstakeToKeepPoolActive partially and userMaxUnstakeAbsolute', () => {
     //   const result = fn(13n, minElectionStake, [15n, 20n], [10n, 10n], [7n, 7n], [10n, 10n])
     //   expect(result).to.deep.equal([3n, 10n]) <---- Optimized return
     //   expect(result).to.deep.equal([10n, 3n]) <---- Not optimized return, disables one pool when it's not necessary, SDK currently returns this
     // })
   })
 
-  describe('should disable pool 1, amount > userMaxUnstakeToKeepPoolActive1 + userMaxUnstakeToKeepPoolActive2', () => {
-    it('should unstake userMaxUnstakeToKeepPoolActive and userMaxUnstakeToKeepPoolAboveMin fully', () => {
-      const result = fn(6n, minElectionStake, [12n, 12n], [10n, 10n], [5n, 5n], [10n, 10n])
-      expect(result).to.deep.equal([2n, 4n])
+  describe('should disable pool with lowest balance, amount > userMaxUnstakeToKeepPoolActive1 + userMaxUnstakeToKeepPoolActive2', () => {
+    it('should unstake userMaxUnstakeToKeepPoolActive fully and userMaxUnstakeToKeepPoolAboveMin fully', () => {
+      const result = fn(8n, minElectionStake, [13n, 12n], [10n, 10n], [5n, 5n], [10n, 10n])
+      expect(result).to.deep.equal([3n, 5n])
     })
 
-    it('should unstake userMaxUnstakeToKeepPoolActive and userMaxUnstakeToKeepPoolAboveMin partially', () => {
-      const result = fn(5n, minElectionStake, [12n, 12n], [10n, 10n], [5n, 5n], [10n, 10n])
-      expect(result).to.deep.equal([2n, 3n])
+    it('should unstake userMaxUnstakeToKeepPoolActive fully and userMaxUnstakeToKeepPoolAboveMin partially', () => {
+      const result = fn(6n, minElectionStake, [13n, 12n], [10n, 10n], [5n, 5n], [10n, 10n])
+      expect(result).to.deep.equal([3n, 3n])
     })
 
-    it('should unstake userMaxUnstakeToKeepPoolActive and userMaxUnstakeAbsolute', () => {
-      const result = fn(12n, minElectionStake, [12n, 12n], [10n, 10n], [5n, 9n], [10n, 10n])
-      expect(result).to.deep.equal([2n, 10n])
+    it('should unstake userMaxUnstakeToKeepPoolActive fully and userMaxUnstakeAbsolute', () => {
+      const result = fn(13n, minElectionStake, [13n, 12n], [10n, 10n], [5n, 5n], [10n, 10n])
+      expect(result).to.deep.equal([3n, 10n])
     })
 
-    it('should unstake userMaxUnstakeToKeepPoolActive and userMaxUnstakeAbsolute, when userMaxUnstakeToKeepPoolActive > userMaxUnstakeToKeepPoolAboveMin', () => {
-      const result = fn(5n, minElectionStake, [15n, 10n], [10n, 10n], [9n, 6n], [10n, 10n])
-      expect(result).to.deep.equal([1n, 4n])
+    it('should unstake userMaxUnstakeToKeepPoolActive partially and userMaxUnstakeToKeepPoolAboveMin partially, when userMaxUnstakeToKeepPoolActive > userMaxUnstakeToKeepPoolAboveMin', () => {
+      const result = fn(7n, minElectionStake, [20n, 10n], [10n, 10n], [5n, 5n], [10n, 10n])
+      expect(result).to.deep.equal([5n, 2n])
+    })
+  })
+
+  describe('should disable pool with highest balance, amount > userMaxUnstakeToKeepPoolActive1 + userMaxUnstakeToKeepPoolActive2', () => {
+    it('should unstake userMaxUnstakeToKeepPoolAboveMin fully and userMaxUnstakeToKeepPoolActive fully', () => {
+      const result = fn(9n, minElectionStake, [13n, 12n], [10n, 5n], [3n, 3n], [10n, 5n])
+      expect(result).to.deep.equal([7n, 2n])
+    })
+
+    it('should unstake userMaxUnstakeToKeepPoolAboveMin partially and userMaxUnstakeToKeepPoolActive fully', () => {
+      const result = fn(8n, minElectionStake, [13n, 12n], [10n, 4n], [1n, 1n], [10n, 4n])
+      expect(result).to.deep.equal([6n, 2n])
+    })
+
+    it('should unstake userMaxUnstakeAbsolute and userMaxUnstakeToKeepPoolActive fully', () => {
+      const result = fn(12n, minElectionStake, [13n, 12n], [10n, 4n], [1n, 1n], [10n, 4n])
+      expect(result).to.deep.equal([10n, 2n])
     })
   })
 
   // TODO: implement this test case
+  // describe('should disable both pools', () => {})
+  // describe('should unstake all', () => {})
   // describe('should reject invalid amounts', () => {})
 
-  // userBalance = [6n, 6n] < userMinStake = 7n
-  // userDepositingAndAvailableToWithdraw=[4n, 4n]
-  // Pools are already bellow userMinStake, so we either unstake all or partially the depositing and ready to withdraw amounts
-  it('should withdraw all from one pool and the rest from depositing and ready to withdraw amounts', () => {
-    const result = fn(12n, minElectionStake, [15n, 20n], [10n, 10n], [7n, 7n], [6n, 6n])
-    expect(result).to.deep.equal([10n, 2n])
-  })
+  describe('should allow partial withdraw when pool bellow userMinStake if user has deposit and ready to withdraw amounts', () => {
+    // userBalance = [6n, 6n] < userMinStake = 7n
+    // userDepositingAndAvailableToWithdraw=[4n, 4n]
+    // Pools are already bellow userMinStake, so we either unstake all or partially the depositing and ready to withdraw amounts
+    it('should withdraw all from one pool and the rest from depositing and ready to withdraw amounts', () => {
+      const result = fn(12n, minElectionStake, [15n, 20n], [10n, 10n], [7n, 7n], [6n, 6n])
+      expect(result).to.deep.equal([10n, 2n])
+    })
 
-  // userBalance = [6n, 6n] < userMinStake = 7n
-  // userDepositingAndAvailableToWithdraw=[4n, 4n]
-  // Pools are already bellow userMinStake, so we either unstake all or partially the depositing and ready to withdraw amounts
-  it('should withdraw partially the depositing and ready to withdraw amounts', () => {
-    const result = fn(7n, minElectionStake, [15n, 20n], [10n, 10n], [7n, 7n], [6n, 6n])
-    expect(result).to.deep.equal([3n, 4n])
+    // userBalance = [6n, 6n] < userMinStake = 7n
+    // userDepositingAndAvailableToWithdraw=[4n, 4n]
+    // Pools are already bellow userMinStake, so we either unstake all or partially the depositing and ready to withdraw amounts
+    it('should withdraw partially the depositing and ready to withdraw amounts', () => {
+      const result = fn(7n, minElectionStake, [15n, 20n], [10n, 10n], [7n, 7n], [6n, 6n])
+      expect(result).to.deep.equal([3n, 4n])
+    })
   })
 
   // ------- OLD TESTS -------

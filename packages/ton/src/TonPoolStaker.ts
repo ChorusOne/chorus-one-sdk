@@ -653,7 +653,7 @@ export class TonPoolStaker extends TonBaseStaker {
       return result
     }
 
-    // Strategy 2: Keep pool 0 active
+    // Strategy 2: Keep pool with highest balance active
     if (pools[0].userMaxUnstakeToKeepPoolActive + pools[1].userMaxUnstakeToKeepPoolAboveMin >= amount) {
       const fromPool0 =
         amount <= pools[0].userMaxUnstakeToKeepPoolActive ? amount : pools[0].userMaxUnstakeToKeepPoolActive
@@ -664,7 +664,7 @@ export class TonPoolStaker extends TonBaseStaker {
       return result
     }
 
-    // Strategy 3: Keep pool 0 active
+    // Strategy 2: Keep pool with highest balance active
     if (
       pools[0].userMaxUnstakeToKeepPoolActive + pools[1].userMaxUnstakeAbsolute >= amount &&
       pools[1].userMaxUnstakeAbsolute <= amount // The user can't partially unstake the userMaxUnstakeAbsolute, so the user have to unstake all and the remaining amount must come from userMaxUnstakeToKeepPoolActive
@@ -677,7 +677,7 @@ export class TonPoolStaker extends TonBaseStaker {
       return result
     }
 
-    // Strategy 4: Keep pool 1 active
+    // Strategy 3: Keep pool with lowest balance active
     if (pools[1].userMaxUnstakeToKeepPoolActive + pools[0].userMaxUnstakeToKeepPoolAboveMin >= amount) {
       const fromPool1 =
         amount <= pools[1].userMaxUnstakeToKeepPoolActive ? amount : pools[1].userMaxUnstakeToKeepPoolActive
@@ -688,7 +688,7 @@ export class TonPoolStaker extends TonBaseStaker {
       return result
     }
 
-    // Strategy 5: Keep pool 1 active
+    // Strategy 3: Keep pool with lowest balance active
     if (
       pools[1].userMaxUnstakeToKeepPoolActive + pools[0].userMaxUnstakeAbsolute >= amount &&
       pools[0].userMaxUnstakeAbsolute <= amount
