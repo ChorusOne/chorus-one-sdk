@@ -229,7 +229,7 @@ export class TonPoolStaker extends TonBaseStaker {
         msgs.push(genUnstakeMsg(validatorAddress, toNano(amount), data.withdrawFee, data.receiptPrice))
       })
     } else {
-      const { minElectionStake, currentPoolBalances, userMaxUnstakeAmounts, userCurrentWithdrawals } =
+      const { minElectionStake, currentPoolBalances, userMaxUnstakeAmounts, userBalances } =
         await this.getPoolDataForDelegator(delegatorAddress, validatorAddresses)
 
       const unstakeAmountPerPool = TonPoolStaker.calculateUnstakePoolAmount(
@@ -237,8 +237,8 @@ export class TonPoolStaker extends TonBaseStaker {
         minElectionStake,
         currentPoolBalances,
         userMaxUnstakeAmounts,
-        userCurrentWithdrawals,
-        [poolParamsData[0].minStake, poolParamsData[1].minStake]
+        [poolParamsData[0].minStake, poolParamsData[1].minStake],
+        userBalances
       )
 
       if (unstakeAmountPerPool[0] + unstakeAmountPerPool[1] !== toNano(amount)) {
@@ -377,11 +377,6 @@ export class TonPoolStaker extends TonBaseStaker {
     const currentPoolBalances: [bigint, bigint] =
       validatorAddresses.length === 2 ? [poolStatus[0].balance, poolStatus[1].balance] : [poolStatus[0].balance, 0n]
 
-    const userCurrentWithdrawals: [bigint, bigint] =
-      validatorAddresses.length === 2
-        ? [toNano(userStake[0].withdraw), toNano(userStake[1].withdraw)]
-        : [toNano(userStake[0].withdraw), 0n]
-
     const userMaxUnstakeAmounts: [bigint, bigint] =
       validatorAddresses.length === 2
         ? [
@@ -390,11 +385,16 @@ export class TonPoolStaker extends TonBaseStaker {
           ]
         : [toNano(userStake[0].balance) + toNano(userStake[0].pendingDeposit) + toNano(userStake[0].withdraw), 0n]
 
+    const userBalances: [bigint, bigint] =
+      validatorAddresses.length === 2
+        ? [toNano(userStake[0].balance), toNano(userStake[1].balance)]
+        : [toNano(userStake[0].balance), 0n]
+
     return {
       minElectionStake,
       currentPoolBalances,
-      userCurrentWithdrawals,
-      userMaxUnstakeAmounts
+      userMaxUnstakeAmounts,
+      userBalances
     }
   }
 
@@ -544,13 +544,17 @@ export class TonPoolStaker extends TonBaseStaker {
     minElectionStake: bigint, // minimum stake for participation (to be in the set)
     currentPoolBalances: [bigint, bigint], // current stake balances of the pools
     userMaxUnstakeAmounts: [bigint, bigint], // maximum user stake that can be unstaked from the pools
-    userCurrentWithdrawals: [bigint, bigint], // current user withdrawals from the pools
-    userMinStake: [bigint, bigint] // minimum user stake to keep the pool active
+    userMinStake: [bigint, bigint], // minimum user stake to keep the pool active
+    userBalances: [bigint, bigint] // user balances of the pools
   ): [bigint, bigint] {
     const [balancePool1, balancePool2] = currentPoolBalances
     const [userMaxUnstake1, userMaxUnstake2] = userMaxUnstakeAmounts
-    const [userCurrentWithdrawals1, userCurrentWithdrawals2] = userCurrentWithdrawals
     const [userMinStake1, userMinStake2] = userMinStake
+    const [userBalance1, userBalance2] = userBalances
+    const [userDepositingAndAvailableToWithdraw1, userDepositingAndAvailableToWithdraw2] = [
+      userMaxUnstake1 - userBalance1,
+      userMaxUnstake2 - userBalance2
+    ]
 
     // check if the requested withdrawal amount exceeds the available user stakes
     const totalUserStake = userMaxUnstake1 + userMaxUnstake2
@@ -558,28 +562,50 @@ export class TonPoolStaker extends TonBaseStaker {
       throw new Error('requested withdrawal amount exceeds available user stakes')
     }
 
-    const getMaxUnstakeToKeepPoolActive = (balance: bigint, userCurrentWithdrawals: bigint): bigint =>
-      balance - minElectionStake + userCurrentWithdrawals > 0 ? balance - minElectionStake + userCurrentWithdrawals : 0n
+    // TODO: Check if userDepositingAndAvailableToWithdraw, counts on pool balance for election
+    const getMaxUnstakeToKeepPoolActive = (balance: bigint, userDepositingAndAvailableToWithdraw: bigint): bigint => {
+      const poolMaxUnstakeToKeepActive = balance - minElectionStake > 0 ? balance - minElectionStake : 0n
+      return poolMaxUnstakeToKeepActive + userDepositingAndAvailableToWithdraw
+    }
 
-    const getMaxUnstakeToKeepPoolAboveMin = (userMaxUnstake: bigint, userMinStake: bigint): bigint =>
-      userMaxUnstake - userMinStake > 0 ? userMaxUnstake - userMinStake : 0n
+    // TODO: Check if userDepositingAndAvailableToWithdraw, can be partially withdraw when pool is bellow userMinStake
+    const getMaxUnstakeToKeepPoolAboveMin = (
+      userDepositingAndAvailableToWithdraw: bigint,
+      userMinStake: bigint,
+      userBalance: bigint
+    ): bigint => {
+      const unstakeFromBalanceAmount = userBalance - userMinStake > 0 ? userBalance - userMinStake : 0n
+      return unstakeFromBalanceAmount + userDepositingAndAvailableToWithdraw
+    }
 
     const pools = [
       {
         index: 0,
         balance: balancePool1,
-        userCurrentWithdrawals: userCurrentWithdrawals1,
         userMaxUnstakeAbsolute: userMaxUnstake1,
-        userMaxUnstakeToKeepPoolActive: getMaxUnstakeToKeepPoolActive(balancePool1, userCurrentWithdrawals1),
-        userMaxUnstakeToKeepPoolAboveMin: getMaxUnstakeToKeepPoolAboveMin(userMaxUnstake1, userMinStake1)
+        userMaxUnstakeToKeepPoolActive: getMaxUnstakeToKeepPoolActive(
+          balancePool1,
+          userDepositingAndAvailableToWithdraw1
+        ),
+        userMaxUnstakeToKeepPoolAboveMin: getMaxUnstakeToKeepPoolAboveMin(
+          userDepositingAndAvailableToWithdraw1,
+          userMinStake1,
+          userBalance1
+        )
       },
       {
         index: 1,
         balance: balancePool2,
-        userCurrentWithdrawals: userCurrentWithdrawals2,
         userMaxUnstakeAbsolute: userMaxUnstake2,
-        userMaxUnstakeToKeepPoolActive: getMaxUnstakeToKeepPoolActive(balancePool2, userCurrentWithdrawals2),
-        userMaxUnstakeToKeepPoolAboveMin: getMaxUnstakeToKeepPoolAboveMin(userMaxUnstake2, userMinStake2)
+        userMaxUnstakeToKeepPoolActive: getMaxUnstakeToKeepPoolActive(
+          balancePool2,
+          userDepositingAndAvailableToWithdraw2
+        ),
+        userMaxUnstakeToKeepPoolAboveMin: getMaxUnstakeToKeepPoolAboveMin(
+          userDepositingAndAvailableToWithdraw2,
+          userMinStake2,
+          userBalance2
+        )
       }
     ]
       .map((p) => {
