@@ -24,153 +24,163 @@ describe('TonPoolStaker_calculateUnstakePoolAmount', () => {
   const fn = TonPoolStaker.calculateUnstakePoolAmount
   const minElectionStake = 10n
 
-  describe('should keep both pools active, amount <= userMaxUnstakeToKeepPoolActive1 + userMaxUnstakeToKeepPoolActive2', () => {
-    // pool1: userMaxUnstakeToKeepPoolActive (5n) < userMaxUnstakeToKeepPoolAboveMin (10n)
-    // pool2: userMaxUnstakeToKeepPoolActive (10n) == userMaxUnstakeToKeepPoolAboveMin (10n)
+  describe('should keep both pools active, amount <= maxUnstakeKeepPool1Active + maxUnstakeKeepPool2Active', () => {
+    // pool1: maxUnstakeKeepPoolActive (5n) < maxUnstakeKeepPoolAboveMin (10n)
+    // pool2: maxUnstakeKeepPoolActive (10n) == maxUnstakeKeepPoolAboveMin (10n)
     // balance 1 < balance 2
-    it('should unstake userMaxUnstakeToKeepPoolActive partially, while prioritizing pool balance', () => {
-      const result = fn(5n, minElectionStake, [15n, 20n], [10n, 10n], [0n, 0n], [10n, 10n])
+    it('should unstake maxUnstakeKeepPoolActive partially, while prioritizing pool balance', () => {
+      const result = fn(5n, minElectionStake, [15n, 20n], [10n, 10n], [0n, 0n], [0n, 0n])
       expect(result).to.deep.equal([0n, 5n])
     })
 
-    // pool1: userMaxUnstakeToKeepPoolActive (5n) < userMaxUnstakeToKeepPoolAboveMin (10n)
-    // pool2: userMaxUnstakeToKeepPoolActive (10n) == userMaxUnstakeToKeepPoolAboveMin (10n)
-    it('should unstake userMaxUnstakeToKeepPoolActive fully and userMaxUnstakeToKeepPoolActive fully', () => {
-      const result = fn(15n, minElectionStake, [15n, 20n], [10n, 10n], [0n, 0n], [10n, 10n])
+    // pool1: maxUnstakeKeepPoolActive (5n) < maxUnstakeKeepPoolAboveMin (10n)
+    // pool2: maxUnstakeKeepPoolActive (10n) == maxUnstakeKeepPoolAboveMin (10n)
+    it('should unstake maxUnstakeKeepPoolActive fully and maxUnstakeKeepPoolActive fully', () => {
+      const result = fn(15n, minElectionStake, [15n, 20n], [10n, 10n], [0n, 0n], [0n, 0n])
       expect(result).to.deep.equal([5n, 10n])
     })
 
-    // pool1: userMaxUnstakeToKeepPoolActive (5n) > userMaxUnstakeToKeepPoolAboveMin (3n)
-    // pool2: userMaxUnstakeToKeepPoolActive (10n) > userMaxUnstakeToKeepPoolAboveMin (3n)
-    it('should unstake userMaxUnstakeToKeepPoolActive partially and userMaxUnstakeToKeepPoolAboveMin fully, when userMaxUnstakeToKeepPoolActive > userMaxUnstakeToKeepPoolAboveMin', () => {
-      const result = fn(5n, minElectionStake, [15n, 20n], [10n, 10n], [7n, 7n], [10n, 10n])
+    // pool1: maxUnstakeKeepPoolActive (5n) > maxUnstakeKeepPoolAboveMin (3n)
+    // pool2: maxUnstakeKeepPoolActive (10n) > maxUnstakeKeepPoolAboveMin (3n)
+    it('should unstake maxUnstakeKeepPoolActive partially and maxUnstakeKeepPoolAboveMin fully, when maxUnstakeKeepPoolActive > maxUnstakeKeepPoolAboveMin', () => {
+      const result = fn(5n, minElectionStake, [15n, 20n], [10n, 10n], [7n, 7n], [0n, 0n])
       expect(result).to.deep.equal([2n, 3n])
     })
   })
 
-  describe('should disable pool with lowest balance, amount >= userMaxUnstakeToKeepPoolActive1 + userMaxUnstakeToKeepPoolActive2', () => {
-    it('should unstake userMaxUnstakeToKeepPoolActive fully and userMaxUnstakeToKeepPoolAboveMin fully', () => {
-      const result = fn(8n, minElectionStake, [13n, 12n], [10n, 10n], [5n, 5n], [10n, 10n])
+  describe('should disable pool with lowest balance, amount >= maxUnstakeKeepPool1Active + maxUnstakeKeepPool2AboveMin', () => {
+    it('should unstake maxUnstakeKeepPoolActive fully and maxUnstakeKeepPoolAboveMin fully', () => {
+      const result = fn(8n, minElectionStake, [13n, 12n], [10n, 10n], [5n, 5n], [0n, 0n])
       expect(result).to.deep.equal([3n, 5n])
     })
 
-    it('should unstake userMaxUnstakeToKeepPoolActive fully and userMaxUnstakeToKeepPoolAboveMin partially', () => {
-      const result = fn(6n, minElectionStake, [13n, 12n], [10n, 10n], [5n, 5n], [10n, 10n])
+    it('should unstake maxUnstakeKeepPoolActive fully and maxUnstakeKeepPoolAboveMin partially', () => {
+      const result = fn(6n, minElectionStake, [13n, 12n], [10n, 10n], [5n, 5n], [0n, 0n])
       expect(result).to.deep.equal([3n, 3n])
     })
 
-    it('should unstake userMaxUnstakeToKeepPoolActive fully and userMaxUnstakeAbsolute', () => {
-      const result = fn(13n, minElectionStake, [13n, 12n], [10n, 10n], [5n, 5n], [10n, 10n])
+    it('should unstake maxUnstakeKeepPoolActive fully and userMaxUnstakeAbsolute', () => {
+      const result = fn(13n, minElectionStake, [13n, 12n], [10n, 10n], [5n, 5n], [0n, 0n])
       expect(result).to.deep.equal([3n, 10n])
     })
 
-    it('should unstake userMaxUnstakeToKeepPoolActive partially and userMaxUnstakeToKeepPoolAboveMin partially, when userMaxUnstakeToKeepPoolActive > userMaxUnstakeToKeepPoolAboveMin', () => {
-      const result = fn(7n, minElectionStake, [20n, 10n], [10n, 10n], [5n, 5n], [10n, 10n])
+    it('should unstake maxUnstakeKeepPoolActive partially and maxUnstakeKeepPoolAboveMin partially, when maxUnstakeKeepPoolActive > maxUnstakeKeepPoolAboveMin', () => {
+      const result = fn(7n, minElectionStake, [20n, 10n], [10n, 10n], [5n, 5n], [0n, 0n])
       expect(result).to.deep.equal([5n, 2n])
     })
   })
 
-  describe('should disable pool with highest balance, amount >= userMaxUnstakeToKeepPoolActive1 + userMaxUnstakeToKeepPoolActive2', () => {
-    it('should unstake userMaxUnstakeToKeepPoolAboveMin fully and userMaxUnstakeToKeepPoolActive fully', () => {
-      const result = fn(9n, minElectionStake, [13n, 12n], [10n, 5n], [3n, 3n], [10n, 5n])
+  describe('should disable pool with highest balance, amount >= maxUnstakeKeepPool1AboveMin + maxUnstakeKeepPool2Active', () => {
+    it('should unstake maxUnstakeKeepPoolAboveMin fully and maxUnstakeKeepPoolActive fully', () => {
+      const result = fn(9n, minElectionStake, [13n, 12n], [10n, 5n], [3n, 3n], [0n, 0n])
       expect(result).to.deep.equal([7n, 2n])
     })
 
-    it('should unstake userMaxUnstakeToKeepPoolAboveMin partially and userMaxUnstakeToKeepPoolActive fully', () => {
-      const result = fn(8n, minElectionStake, [13n, 12n], [10n, 4n], [1n, 1n], [10n, 4n])
+    it('should unstake maxUnstakeKeepPoolAboveMin partially and maxUnstakeKeepPoolActive fully', () => {
+      const result = fn(8n, minElectionStake, [13n, 12n], [10n, 4n], [1n, 1n], [0n, 0n])
       expect(result).to.deep.equal([6n, 2n])
     })
 
-    it('should unstake userMaxUnstakeAbsolute and userMaxUnstakeToKeepPoolActive fully', () => {
-      const result = fn(12n, minElectionStake, [13n, 12n], [10n, 4n], [1n, 1n], [10n, 4n])
+    it('should unstake userMaxUnstakeAbsolute and maxUnstakeKeepPoolActive fully', () => {
+      const result = fn(12n, minElectionStake, [13n, 12n], [10n, 4n], [1n, 1n], [0n, 0n])
       expect(result).to.deep.equal([10n, 2n])
     })
   })
 
   describe('should disable both pools', () => {
-    it('should unstake userMaxUnstakeToKeepPoolAboveMin fully and userMaxUnstakeToKeepPoolAboveMin partially', () => {
-      const result = fn(10n, minElectionStake, [13n, 12n], [11n, 11n], [5n, 5n], [11n, 11n])
+    it('should unstake maxUnstakeKeepPoolAboveMin fully and maxUnstakeKeepPoolAboveMin partially', () => {
+      const result = fn(10n, minElectionStake, [13n, 12n], [11n, 11n], [5n, 5n], [0n, 0n])
       expect(result).to.deep.equal([6n, 4n])
     })
 
-    it('should unstake userMaxUnstakeToKeepPoolAboveMin fully and userMaxUnstakeToKeepPoolAboveMin fully', () => {
-      const result = fn(8n, minElectionStake, [13n, 13n], [12n, 12n], [8n, 8n], [12n, 12n])
+    it('should unstake maxUnstakeKeepPoolAboveMin fully and maxUnstakeKeepPoolAboveMin fully', () => {
+      const result = fn(8n, minElectionStake, [13n, 13n], [12n, 12n], [8n, 8n], [0n, 0n])
       expect(result).to.deep.equal([4n, 4n])
     })
 
-    it('should unstake userMaxUnstakeToKeepPoolAboveMin fully and userMaxUnstakeAbsolute', () => {
-      const result = fn(16n, minElectionStake, [15n, 15n], [12n, 12n], [8n, 8n], [12n, 12n])
+    it('should unstake maxUnstakeKeepPoolAboveMin fully and userMaxUnstakeAbsolute', () => {
+      const result = fn(16n, minElectionStake, [15n, 15n], [12n, 12n], [8n, 8n], [0n, 0n])
       expect(result).to.deep.equal([4n, 12n])
     })
   })
 
   describe('should unstake all', () => {
     it('should unstake userMaxUnstakeAbsolute and userMaxUnstakeAbsolute above minElectionStake', () => {
-      const result = fn(8n, minElectionStake, [32n, 40n], [5n, 3n], [0n, 0n], [5n, 3n])
+      const result = fn(8n, minElectionStake, [32n, 40n], [5n, 3n], [0n, 0n], [0n, 0n])
       expect(result).to.deep.equal([5n, 3n])
     })
 
     it('should unstake userMaxUnstakeAbsolute and userMaxUnstakeAbsolute bellow minElectionStake', () => {
-      const result = fn(10n, minElectionStake, [7n, 7n], [5n, 5n], [0n, 0n], [5n, 3n])
+      const result = fn(10n, minElectionStake, [7n, 7n], [5n, 5n], [0n, 0n], [0n, 0n])
       expect(result).to.deep.equal([5n, 5n])
     })
 
     it('should unstake userMaxUnstakeAbsolute and userMaxUnstakeAbsolute above userMinStake', () => {
-      const result = fn(24n, minElectionStake, [15n, 15n], [12n, 12n], [8n, 8n], [12n, 12n])
+      const result = fn(24n, minElectionStake, [15n, 15n], [12n, 12n], [8n, 8n], [0n, 0n])
       expect(result).to.deep.equal([12n, 12n])
     })
 
     it('should unstake userMaxUnstakeAbsolute and userMaxUnstakeAbsolute bellow userMinStake', () => {
-      const result = fn(4n, minElectionStake, [15n, 15n], [2n, 2n], [8n, 8n], [12n, 12n])
+      const result = fn(4n, minElectionStake, [15n, 15n], [2n, 2n], [8n, 8n], [0n, 0n])
       expect(result).to.deep.equal([2n, 2n])
     })
   })
 
   describe('should unstake when bellow minElectionStake', () => {
-    it('should unstake userMaxUnstakeToKeepPoolAboveMin partially', () => {
-      const result = fn(1n, minElectionStake, [7n, 7n], [5n, 5n], [3n, 3n], [5n, 5n])
+    it('should unstake maxUnstakeKeepPoolAboveMin partially', () => {
+      const result = fn(1n, minElectionStake, [7n, 7n], [5n, 5n], [3n, 3n], [0n, 0n])
       expect(result).to.deep.equal([0n, 1n])
     })
 
-    it('should unstake userMaxUnstakeToKeepPoolAboveMin fully', () => {
-      const result = fn(4n, minElectionStake, [7n, 7n], [5n, 5n], [3n, 3n], [5n, 5n])
+    it('should unstake maxUnstakeKeepPoolAboveMin fully', () => {
+      const result = fn(4n, minElectionStake, [7n, 7n], [5n, 5n], [3n, 3n], [0n, 0n])
       expect(result).to.deep.equal([2n, 2n])
     })
   })
 
   describe('should reject invalid amounts', () => {
-    it('should throw error if user wants to withdraw more than available', () => {
+    it('should reject when trying to unstake more than available', () => {
       expect(() => fn(21n, 10n, [20n, 20n], [10n, 10n], [0n, 0n], [0n, 0n])).to.throw(
         'Requested amount exceeds available stakes'
       )
     })
 
-    it("should throw if user request an amount that's impossible to find a pair", () => {
-      expect(() => fn(10n, minElectionStake, [15n, 15n], [8n, 8n], [7n, 7n], [8n, 8n])).to.throw(
+    it('should reject when maxUnstakeToKeepPoolAboveMin is not enough', () => {
+      expect(() => fn(10n, minElectionStake, [15n, 15n], [8n, 8n], [7n, 7n], [0n, 0n])).to.throw(
         'No valid combination to unstake requested amount'
       )
     })
 
-    it('should user try to partially unstake bellow userMinBalance', () => {
-      expect(() => fn(7n, minElectionStake, [15n, 15n], [4n, 4n], [7n, 7n], [8n, 8n])).to.throw(
+    it('should reject when trying to partially withdraw pool bellow userMinStake', () => {
+      expect(() => fn(7n, minElectionStake, [15n, 15n], [4n, 4n], [7n, 7n], [0n, 0n])).to.throw(
+        'No valid combination to unstake requested amount'
+      )
+    })
+
+    it('should reject when trying to partially withdraw pool bellow userMinStake and userWithdraw is not enough', () => {
+      expect(() => fn(17n, minElectionStake, [15n, 20n], [10n, 10n], [7n, 7n], [6n, 6n])).to.throw(
         'No valid combination to unstake requested amount'
       )
     })
   })
 
-  describe('should allow partial withdraw when pool is bellow userMinStake and user has deposit and ready to withdraw amounts', () => {
-    // userBalance = [6n, 6n] < userMinStake = 7n
-    // userDepositingAndAvailableToWithdraw=[4n, 4n]
-    it('should withdraw all from one pool and the rest from depositing and ready to withdraw amounts', () => {
-      const result = fn(12n, minElectionStake, [15n, 20n], [10n, 10n], [7n, 7n], [6n, 6n])
-      expect(result).to.deep.equal([10n, 2n])
+  describe('should allow partial withdraw when pool is bellow userMinStake and user has ready to withdraw amounts', () => {
+    // userStaked=[4n, 4n] < userMinStake = 7n
+    it('should unstake userWithdraw partially', () => {
+      const result = fn(2n, minElectionStake, [15n, 20n], [10n, 10n], [7n, 7n], [6n, 6n])
+      expect(result).to.deep.equal([0n, 2n])
     })
 
-    // userBalance = [6n, 6n] < userMinStake = 7n
-    // userDepositingAndAvailableToWithdraw=[4n, 4n]
-    it('should withdraw partially the depositing and ready to withdraw amounts', () => {
+    // userStaked=[4n, 4n] < userMinStake = 7n
+    it('should unstake maxUnstakeAbsolute and userWithdraw fully', () => {
+      const result = fn(16n, minElectionStake, [15n, 20n], [10n, 10n], [7n, 7n], [6n, 6n])
+      expect(result).to.deep.equal([10n, 6n])
+    })
+
+    // userStaked=[4n, 4n] < userMinStake = 7n
+    it('should unstake userWithdraw partially and userWithdraw fully', () => {
       const result = fn(7n, minElectionStake, [15n, 20n], [10n, 10n], [7n, 7n], [6n, 6n])
-      expect(result).to.deep.equal([3n, 4n])
+      expect(result).to.deep.equal([1n, 6n])
     })
   })
 })
@@ -189,7 +199,7 @@ describe('TonPoolStaker_calculateStakeAmount', () => {
     // the lower balance
     const result_tw = fn(
       toNano(5), // to stake
-      toNano(5), // minmum for election
+      toNano(5), // minimum for election
       [toNano(10), toNano(10)], // current pool balances
       [toNano(1), toNano(1)] // minPoolStakes
     )
@@ -199,7 +209,7 @@ describe('TonPoolStaker_calculateStakeAmount', () => {
     // the lower balance
     const result_two = fn(
       toNano(3), // to stake
-      toNano(5), // minmum for election
+      toNano(5), // minimum for election
       [toNano(5), toNano(10)], // current pool balances
       [toNano(1), toNano(1)] // minPoolStakes
     )
@@ -208,29 +218,29 @@ describe('TonPoolStaker_calculateStakeAmount', () => {
     // if the amount is enough to balance the stakes do it
     const result_three = fn(
       toNano(5), // to stake
-      toNano(5), // minmum for election
+      toNano(5), // minimum for election
       [toNano(5), toNano(10)], // current pool balances
       [toNano(1), toNano(1)] // minPoolStakes
     )
     expect(result_three).to.eql([toNano(5), toNano(0)])
 
-    // if the remainder ( 6 - (6 - 1) = 1 ) divided evenlty (0.5) is not meeting
+    // if the remainder ( 6 - (6 - 1) = 1 ) divided evenly (0.5) is not meeting
     // the minimum stake, try to fill up the pool with the lower balance and
     // push the whole remainder to the other pool
     const result_four = fn(
       toNano(6), // to stake
-      toNano(5), // minmum for election
+      toNano(5), // minimum for election
       [toNano(5), toNano(10)], // current pool balances
       [toNano(1), toNano(1)] // minPoolStakes
     )
     expect(result_four).to.eql([toNano(5), toNano(1)])
 
-    // it's not possible to blance the stakes and keep the minimum stake
-    // so resign from blancing the pool stake and simply split the
+    // it's not possible to balance the stakes and keep the minimum stake
+    // so resign from balancing the pool stake and simply split the
     // amount between the pools
     const result_five = fn(
       toNano(2.4), // to stake
-      toNano(1.2), // minmum for election
+      toNano(1.2), // minimum for election
       [toNano(1.871), toNano(1.7348)], // current pool balances
       [toNano(1.2), toNano(1.2)] // minPoolStakes
     )
@@ -240,7 +250,7 @@ describe('TonPoolStaker_calculateStakeAmount', () => {
     // with the lowest stake pool
     const result_six = fn(
       toNano(5.5), // to stake
-      toNano(5), // minmum for election
+      toNano(5), // minimum for election
       [toNano(5), toNano(10)], // current pool balances
       [toNano(1), toNano(1)] // minPoolStakes
     )
@@ -248,7 +258,7 @@ describe('TonPoolStaker_calculateStakeAmount', () => {
   })
 
   it('should distribute stake if only one pool is below minimum', () => {
-    // activate pool two with 500 and the remainer (500) split between two pools
+    // activate pool two with 500 and the remainder (500) split between two pools
     const result = fn(1000n, 1000n, [1500n, 500n], minPoolStakes)
     expect(result).to.eql([250n, 750n])
 
@@ -262,10 +272,10 @@ describe('TonPoolStaker_calculateStakeAmount', () => {
     // if there is not enough to activate pool two, split stakes between
     // active/inactive pool
     //
-    // strategy: user stake can't activae the pool two, so staking all to pool
+    // strategy: user stake can't activate the pool two, so staking all to pool
     // two doesn't earn any rewards. Instead, split the stake between two pools
     // so that the other staker has a chance to bring pool one in the next
-    // staking action but at the same time user can still earn reawards from the
+    // staking action but at the same time user can still earn rewards from the
     // active pool (half of his stake)
     const result_four = fn(300n, 1000n, [500n, 1500n], minPoolStakes)
     expect(result_four).to.eql([150n, 150n])
@@ -287,7 +297,7 @@ describe('TonPoolStaker_calculateStakeAmount', () => {
     // there is a chance to make second pool active
     //
     // strategy: user stake was used to activate one pool, the remainder can
-    // either be staked with the second pool or split in between activa/inactive
+    // either be staked with the second pool or split in between active/inactive
     // pool. In the first case user doesn't earn anything on inactive pool so in
     // below case that would 4150 (our of 10150) earning no rewards. In the
     // second case only 2075 doesn't earn rewards, but at least the portion of

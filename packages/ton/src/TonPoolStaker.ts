@@ -34,7 +34,7 @@ export class TonPoolStaker extends TonBaseStaker {
    *
    * @returns Returns a promise that resolves to a TON nominator pool staking transaction.
    */
-  async buildStakeTx (params: {
+  async buildStakeTx(params: {
     delegatorAddress: string
     validatorAddressPair: [string, string]
     amount: string
@@ -166,7 +166,7 @@ export class TonPoolStaker extends TonBaseStaker {
    *
    * @returns Returns a promise that resolves to a TON nominator pool staking transaction.
    */
-  async buildUnstakeTx (params: {
+  async buildUnstakeTx(params: {
     delegatorAddress: string
     validatorAddressPair: [string, string]
     amount: string
@@ -229,7 +229,7 @@ export class TonPoolStaker extends TonBaseStaker {
         msgs.push(genUnstakeMsg(validatorAddress, toNano(amount), data.withdrawFee, data.receiptPrice))
       })
     } else {
-      const { minElectionStake, currentPoolBalances, userMaxUnstakeAmounts, userBalances } =
+      const { minElectionStake, currentPoolBalances, userMaxUnstakeAmounts, userWithdraw } =
         await this.getPoolDataForDelegator(delegatorAddress, validatorAddresses)
 
       const unstakeAmountPerPool = TonPoolStaker.calculateUnstakePoolAmount(
@@ -238,7 +238,7 @@ export class TonPoolStaker extends TonBaseStaker {
         currentPoolBalances,
         userMaxUnstakeAmounts,
         [poolParamsData[0].minStake, poolParamsData[1].minStake],
-        userBalances
+        userWithdraw
       )
 
       if (unstakeAmountPerPool[0] + unstakeAmountPerPool[1] !== toNano(amount)) {
@@ -275,7 +275,7 @@ export class TonPoolStaker extends TonBaseStaker {
    *
    * @returns Returns a promise that resolves to the staking information for the specified delegator.
    */
-  async getStake (params: { delegatorAddress: string; validatorAddress: string }) {
+  async getStake(params: { delegatorAddress: string; validatorAddress: string }) {
     const { delegatorAddress, validatorAddress } = params
     const client = this.getClient()
 
@@ -299,7 +299,7 @@ export class TonPoolStaker extends TonBaseStaker {
    *
    * @returns Returns a promise that resolves to the staking information for the specified pool.
    */
-  async getPoolParams (params: { validatorAddress: string }) {
+  async getPoolParams(params: { validatorAddress: string }) {
     const result = await this.getPoolParamsUnformatted(params)
 
     return {
@@ -323,7 +323,7 @@ export class TonPoolStaker extends TonBaseStaker {
    *
    * @returns A promise that resolves to an object containing the transaction status.
    */
-  async getTxStatus (params: { address: string; txHash: string; limit?: number }): Promise<TonTxStatus> {
+  async getTxStatus(params: { address: string; txHash: string; limit?: number }): Promise<TonTxStatus> {
     const transaction = await this.getTransactionByHash(params)
 
     if (transaction === undefined) {
@@ -345,7 +345,7 @@ export class TonPoolStaker extends TonBaseStaker {
     return this.matchTransactionStatus(transaction)
   }
 
-  private async getPoolParamsUnformatted (params: { validatorAddress: string }) {
+  private async getPoolParamsUnformatted(params: { validatorAddress: string }) {
     const { validatorAddress } = params
     const client = this.getClient()
     const response = await client.runMethod(Address.parse(validatorAddress), 'get_params', [])
@@ -367,7 +367,7 @@ export class TonPoolStaker extends TonBaseStaker {
   }
 
   /** @ignore */
-  private async getPoolDataForDelegator (delegatorAddress: string, validatorAddresses: string[]) {
+  private async getPoolDataForDelegator(delegatorAddress: string, validatorAddresses: string[]) {
     const [poolStatus, userStake, minElectionStake] = await Promise.all([
       Promise.all(validatorAddresses.map((validatorAddress) => this.getPoolStatus(validatorAddress))),
       Promise.all(validatorAddresses.map((validatorAddress) => this.getStake({ delegatorAddress, validatorAddress }))),
@@ -385,20 +385,20 @@ export class TonPoolStaker extends TonBaseStaker {
           ]
         : [toNano(userStake[0].balance) + toNano(userStake[0].pendingDeposit) + toNano(userStake[0].withdraw), 0n]
 
-    const userBalances: [bigint, bigint] =
+    const userWithdraw: [bigint, bigint] =
       validatorAddresses.length === 2
-        ? [toNano(userStake[0].balance), toNano(userStake[1].balance)]
-        : [toNano(userStake[0].balance), 0n]
+        ? [toNano(userStake[0].withdraw), toNano(userStake[1].withdraw)]
+        : [toNano(userStake[0].withdraw), 0n]
 
     return {
       minElectionStake,
       currentPoolBalances,
       userMaxUnstakeAmounts,
-      userBalances
+      userWithdraw
     }
   }
 
-  async getElectionMinStake (): Promise<bigint> {
+  async getElectionMinStake(): Promise<bigint> {
     // elector contract address
     const elections = await this.getPastElections('Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF')
 
@@ -415,7 +415,7 @@ export class TonPoolStaker extends TonBaseStaker {
     return minStake
   }
 
-  async getPoolStatus (validatorAddress: string): Promise<PoolStatus> {
+  async getPoolStatus(validatorAddress: string): Promise<PoolStatus> {
     const client = this.getClient()
     const provider = client.provider(Address.parse(validatorAddress))
     const res = await provider.get('get_pool_status', [])
@@ -429,16 +429,16 @@ export class TonPoolStaker extends TonBaseStaker {
     }
   }
 
-  async getPastElections (electorContractAddress: string): Promise<Election[]> {
+  async getPastElections(electorContractAddress: string): Promise<Election[]> {
     const client = this.getClient()
     const provider = client.provider(Address.parse(electorContractAddress))
     const res = await provider.get('past_elections', [])
 
     const FrozenDictValue: DictionaryValue<FrozenSet> = {
-      serialize (_src: FrozenSet, _builder: Builder) {
+      serialize(_src: FrozenSet, _builder: Builder) {
         throw Error('not implemented')
       },
-      parse (src: Slice): FrozenSet {
+      parse(src: Slice): FrozenSet {
         const address = new Address(-1, src.loadBuffer(32))
         const weight = src.loadUintBig(64)
         const stake = src.loadCoins()
@@ -478,7 +478,7 @@ export class TonPoolStaker extends TonBaseStaker {
   }
 
   /** @ignore */
-  static selectPool (
+  static selectPool(
     minStake: bigint, // minimum stake for participation (to be in the set)
     currentBalances: [bigint, bigint] // current stake balances of the pools
   ): number {
@@ -501,7 +501,7 @@ export class TonPoolStaker extends TonBaseStaker {
   }
 
   /** @ignore */
-  static selectStrategy (
+  static selectStrategy(
     preferredStrategy: string | undefined,
     amount: bigint,
     totalValidators: number,
@@ -531,60 +531,62 @@ export class TonPoolStaker extends TonBaseStaker {
   /**
    * Calculates optimal unstake amounts from two pools.
    * Tries strategies in order: keep both active → keep one active → deactivate both
+   *
+   * TODO: Add transaction simulation to catch false negatives thrown by SDK in case of bugs in calculation logic.
+   *       Consider adding anonymous telemetry/logging.
+   *
+   * TODO: Add `getValidUnstakeRanges()` method to help integrators validate amounts upfront by knowing the valid amounts to unstake.
+   *
    */
-  static calculateUnstakePoolAmount (
-    requestedAmount: bigint,
-    minimumElectionStake: bigint,
-    [pool1Balance, pool2Balance]: [bigint, bigint],
-    [pool1MaxUnstake, pool2MaxUnstake]: [bigint, bigint],
-    [pool1MinStake, pool2MinStake]: [bigint, bigint],
-    [pool1UserBalance, pool2UserBalance]: [bigint, bigint]
+  static calculateUnstakePoolAmount(
+    amount: bigint, // amount to unstake
+    minElectionStake: bigint, // minimum stake for participation (to be in the set)
+    [pool1Balance, pool2Balance]: [bigint, bigint], // current stake balances of the pools
+    [pool1UserMaxUnstake, pool2UserMaxUnstake]: [bigint, bigint], // maximum user stake that can be unstaked from the pools
+    [pool1MinStake, pool2MinStake]: [bigint, bigint], // min user stake per pool
+    [pool1UserWithdraw, pool2UserWithdraw]: [bigint, bigint] // current user ready to withdraw from the pools
   ): [bigint, bigint] {
-    if (requestedAmount > pool1MaxUnstake + pool2MaxUnstake) {
+    if (amount > pool1UserMaxUnstake + pool2UserMaxUnstake) {
       throw new Error('Requested amount exceeds available stakes')
     }
 
     interface PoolInfo {
       index: 0 | 1
-      totalBalance: bigint
-      maxUnstakeAll: bigint
+      poolBalance: bigint
+      maxUnstakeAbsolute: bigint
       maxUnstakeKeepPoolActive: bigint
-      maxUnstakeKeepAboveMinimum: bigint
+      maxUnstakeKeepPoolAboveMin: bigint
     }
 
     const buildPoolInfo = (
       index: 0 | 1,
       poolBalance: bigint,
       userMaxUnstake: bigint,
-      userMinStake: bigint,
-      userCurrentBalance: bigint
+      poolMinStake: bigint,
+      userWithdraw: bigint
     ): PoolInfo => {
-      const userDepositingAndAvailableWithdraw = userMaxUnstake - userCurrentBalance
+      // userStake = pending depositing + balance
+      const userStaked = userMaxUnstake - userWithdraw
 
-      const maxUnstakeKeepActive = minBigInt(
-        (poolBalance > minimumElectionStake ? poolBalance - minimumElectionStake : 0n) +
-          userDepositingAndAvailableWithdraw,
-        (userCurrentBalance > userMinStake ? userCurrentBalance - userMinStake : 0n) +
-          userDepositingAndAvailableWithdraw
+      const maxUnstakeKeepPoolAboveMin = (userStaked > poolMinStake ? userStaked - poolMinStake : 0n) + userWithdraw
+      const maxUnstakeKeepPoolActive = minBigInt(
+        (poolBalance > minElectionStake ? poolBalance - minElectionStake : 0n) + userWithdraw,
+        maxUnstakeKeepPoolAboveMin
       )
-
-      const maxUnstakeKeepAboveMin =
-        (userCurrentBalance > userMinStake ? userCurrentBalance - userMinStake : 0n) +
-        userDepositingAndAvailableWithdraw
 
       return {
         index,
-        totalBalance: poolBalance,
-        maxUnstakeAll: userMaxUnstake,
-        maxUnstakeKeepPoolActive: maxUnstakeKeepActive,
-        maxUnstakeKeepAboveMinimum: maxUnstakeKeepAboveMin
+        poolBalance,
+        maxUnstakeAbsolute: userMaxUnstake,
+        maxUnstakeKeepPoolActive,
+        maxUnstakeKeepPoolAboveMin
       }
     }
 
     const poolInfos = [
-      buildPoolInfo(0, pool1Balance, pool1MaxUnstake, pool1MinStake, pool1UserBalance),
-      buildPoolInfo(1, pool2Balance, pool2MaxUnstake, pool2MinStake, pool2UserBalance)
-    ].sort((a, b) => Number(b.totalBalance - a.totalBalance)) // Sort by balance desc
+      buildPoolInfo(0, pool1Balance, pool1UserMaxUnstake, pool1MinStake, pool1UserWithdraw),
+      buildPoolInfo(1, pool2Balance, pool2UserMaxUnstake, pool2MinStake, pool2UserWithdraw)
+    ].sort((a, b) => Number(b.poolBalance - a.poolBalance)) // Sort by balance desc
 
     const [highBalPol, lowBalPol] = poolInfos
     const unstakeAmounts: [bigint, bigint] = [0n, 0n]
@@ -595,10 +597,10 @@ export class TonPoolStaker extends TonBaseStaker {
       secondaryPool: PoolInfo,
       secondaryLimit: bigint
     ): boolean => {
-      if (primaryLimit + secondaryLimit < requestedAmount) return false
+      if (primaryLimit + secondaryLimit < amount) return false
 
-      const fromPrimary = minBigInt(requestedAmount, primaryLimit)
-      const fromSecondary = requestedAmount - fromPrimary
+      const fromPrimary = minBigInt(amount, primaryLimit)
+      const fromSecondary = amount - fromPrimary
 
       unstakeAmounts[primaryPool.index] = fromPrimary
       unstakeAmounts[secondaryPool.index] = fromSecondary
@@ -610,18 +612,27 @@ export class TonPoolStaker extends TonBaseStaker {
       partialWithdrawalPool: PoolInfo,
       partialLimit: bigint
     ): boolean => {
-      const completeAmount = completeWithdrawalPool.maxUnstakeAll
+      const completeAmount = completeWithdrawalPool.maxUnstakeAbsolute
 
-      if (completeAmount + partialLimit < requestedAmount || completeAmount > requestedAmount) {
+      if (completeAmount + partialLimit < amount || completeAmount > amount) {
         return false
       }
 
       unstakeAmounts[completeWithdrawalPool.index] = completeAmount
-      unstakeAmounts[partialWithdrawalPool.index] = requestedAmount - completeAmount
+      unstakeAmounts[partialWithdrawalPool.index] = amount - completeAmount
       return true
     }
 
-    // Strategy 1: Keep both pools active
+    // Strategy 1: Complete withdrawal from both pools
+    // Placed as first strategy to ensure full unstake requests are always accepted, providing a safety net in case the subsequent logic contains bugs.
+    // It's not harmful for pool liveness because there is no way to optimize a full unstake.
+    if (highBalPol.maxUnstakeAbsolute + lowBalPol.maxUnstakeAbsolute === amount) {
+      unstakeAmounts[highBalPol.index] = highBalPol.maxUnstakeAbsolute
+      unstakeAmounts[lowBalPol.index] = lowBalPol.maxUnstakeAbsolute
+      return unstakeAmounts
+    }
+
+    // Strategy 2: Keep both pools active
     if (
       attemptPartialUnstakeFromBothPools(
         highBalPol,
@@ -632,13 +643,13 @@ export class TonPoolStaker extends TonBaseStaker {
     )
       return unstakeAmounts
 
-    // Strategy 2: Keep higher balance pool active, deactivate lower balance pool
+    // Strategy 3: Keep higher balance pool active, deactivate lower balance pool
     if (
       attemptPartialUnstakeFromBothPools(
         highBalPol,
         highBalPol.maxUnstakeKeepPoolActive,
         lowBalPol,
-        lowBalPol.maxUnstakeKeepAboveMinimum
+        lowBalPol.maxUnstakeKeepPoolAboveMin
       )
     )
       return unstakeAmounts
@@ -646,13 +657,13 @@ export class TonPoolStaker extends TonBaseStaker {
     if (attemptCompleteUnstakeFromOnePool(lowBalPol, highBalPol, highBalPol.maxUnstakeKeepPoolActive))
       return unstakeAmounts
 
-    // Strategy 3: Keep lower balance pool active, deactivate higher balance pool
+    // Strategy 4: Keep lower balance pool active, deactivate higher balance pool
     if (
       attemptPartialUnstakeFromBothPools(
         lowBalPol,
         lowBalPol.maxUnstakeKeepPoolActive,
         highBalPol,
-        highBalPol.maxUnstakeKeepAboveMinimum
+        highBalPol.maxUnstakeKeepPoolAboveMin
       )
     )
       return unstakeAmounts
@@ -660,35 +671,28 @@ export class TonPoolStaker extends TonBaseStaker {
     if (attemptCompleteUnstakeFromOnePool(highBalPol, lowBalPol, lowBalPol.maxUnstakeKeepPoolActive))
       return unstakeAmounts
 
-    // Strategy 4: Deactivate both pools but maintain minimum stakes
+    // Strategy 5: Deactivate both pools but maintain minimum stakes. Contract-native logic for valid remaining staked amount: https://github.com/ChorusOne/ton-pool-contracts/blob/fa98fb53556bad6f03db2adf84476a16502de6bf/nominators.fc#L1014
     if (
       attemptPartialUnstakeFromBothPools(
         highBalPol,
-        highBalPol.maxUnstakeKeepAboveMinimum,
+        highBalPol.maxUnstakeKeepPoolAboveMin,
         lowBalPol,
-        lowBalPol.maxUnstakeKeepAboveMinimum
+        lowBalPol.maxUnstakeKeepPoolAboveMin
       )
     )
       return unstakeAmounts
 
-    if (attemptCompleteUnstakeFromOnePool(lowBalPol, highBalPol, highBalPol.maxUnstakeKeepAboveMinimum))
+    if (attemptCompleteUnstakeFromOnePool(lowBalPol, highBalPol, highBalPol.maxUnstakeKeepPoolAboveMin))
       return unstakeAmounts
 
-    if (attemptCompleteUnstakeFromOnePool(highBalPol, lowBalPol, lowBalPol.maxUnstakeKeepAboveMinimum))
+    if (attemptCompleteUnstakeFromOnePool(highBalPol, lowBalPol, lowBalPol.maxUnstakeKeepPoolAboveMin))
       return unstakeAmounts
-
-    // Strategy 5: Complete withdrawal from both pools
-    if (highBalPol.maxUnstakeAll + lowBalPol.maxUnstakeAll === requestedAmount) {
-      unstakeAmounts[highBalPol.index] = highBalPol.maxUnstakeAll
-      unstakeAmounts[lowBalPol.index] = lowBalPol.maxUnstakeAll
-      return unstakeAmounts
-    }
 
     throw new Error('No valid combination to unstake requested amount')
   }
 
   /** @ignore */
-  static calculateStakePoolAmount (
+  static calculateStakePoolAmount(
     amount: bigint, // amount to stake
     minStake: bigint, // minimum stake for participation (to be in the set)
     currentPoolBalances: [bigint, bigint], // current stake balances of the pools
