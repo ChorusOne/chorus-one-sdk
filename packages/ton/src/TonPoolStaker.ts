@@ -565,7 +565,7 @@ export class TonPoolStaker extends TonBaseStaker {
       poolMinStake: bigint,
       userWithdraw: bigint
     ): PoolInfo => {
-      // userStake = pending depositing + balance
+      // userStaked = pending depositing + balance
       const userStaked = userMaxUnstake - userWithdraw
 
       const maxUnstakeKeepPoolAboveMin = (userStaked > poolMinStake ? userStaked - poolMinStake : 0n) + userWithdraw
