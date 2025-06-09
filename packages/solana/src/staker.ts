@@ -204,6 +204,84 @@ export class SolanaStaker {
 
     return { tx: { tx: deactivateTx } }
   }
+  /**
+   * Builds a partial unstake transaction.
+   *
+   * This method allows for unstaking a specific amount from multiple stake accounts.
+   * It will split the stake accounts if necessary to achieve the desired unstake amount.
+   *
+   * @param params - Parameters for building the transaction
+   * @param params.ownerAddress - The stake account owner's address
+   * @param params.amount - The amount to unstake, specified in `SOL`
+   *
+   * @returns Returns a promise that resolves to an array of SOLANA transactions for partial unstaking.
+   */
+
+  async buildPartialUnstakeTx (params: {
+    ownerAddress: string
+    amount: string
+  }): Promise<{ transactions: SolanaTransaction[] }> {
+    const { ownerAddress, amount } = params
+
+    const allStakeAccounts = await this.getStakeAccounts({ ownerAddress, withStates: true })
+    const delegatedStakeAccounts = allStakeAccounts.accounts.filter((account) => account.state === 'delegated')
+
+    if (delegatedStakeAccounts.length === 0) {
+      throw new Error(`No delegated stake account found for owner ${ownerAddress}`)
+    }
+
+    const totalStakedLamports = delegatedStakeAccounts.reduce((acc, cur) => acc + cur.amount, 0)
+    const amountToUnstakeLamports = macroToDenomAmount(amount, getDenomMultiplier())
+
+    if (amountToUnstakeLamports > totalStakedLamports) {
+      throw new Error(
+        `Amount ${amount} SOL (${amountToUnstakeLamports} lamports) is greater than total staked ${denomToMacroAmount(totalStakedLamports.toString(), getDenomMultiplier())} SOL (${totalStakedLamports} lamports)`
+      )
+    }
+
+    delegatedStakeAccounts.sort((a, b) => b.amount - a.amount)
+
+    let remainingAmount = amountToUnstakeLamports
+    const transactions: SolanaTransaction[] = []
+
+    for (const account of delegatedStakeAccounts) {
+      if (remainingAmount <= 0) break
+
+      if (account.amount > remainingAmount) {
+        // Partial unstake of this account
+        // Step 1: Split the stake account
+        const splitResult = await this.buildSplitStakeTx({
+          ownerAddress,
+          stakeAccountAddress: account.address,
+          amount: denomToMacroAmount(remainingAmount.toString(), getDenomMultiplier()).toString()
+        })
+
+        // Step 2: Deactivate the newly created stake account
+        const deactivateTx = StakeProgram.deactivate({
+          stakePubkey: new PublicKey(splitResult.stakeAccountAddress),
+          authorizedPubkey: new PublicKey(ownerAddress)
+        })
+
+        const combinedTx = combineTransactions(splitResult.tx, { tx: deactivateTx })
+        transactions.push(combinedTx)
+
+        remainingAmount = 0
+      } else {
+        const unstakeTx = await this.buildUnstakeTx({
+          ownerAddress,
+          stakeAccountAddress: account.address
+        })
+        transactions.push(unstakeTx.tx)
+        remainingAmount -= account.amount
+      }
+    }
+
+    if (remainingAmount > 0) {
+      throw new Error(`Unable to unstake the full amount. Remaining: ${remainingAmount} lamports`)
+    }
+
+    return { transactions }
+  }
 
   /**
    * Builds a withdraw stake transaction.
@@ -286,7 +364,7 @@ export class SolanaStaker {
     const { ownerAddress, stakeAccountAddress, amount } = params
 
     const amountInLamports = macroToDenomAmount(amount, getDenomMultiplier())
-    const mininmumStakeAmount = await connection.getMinimumBalanceForRentExemption(StakeProgram.space)
+    const minimumStakeAmount = await connection.getMinimumBalanceForRentExemption(StakeProgram.space)
 
     const newStakeAccount = Keypair.generate()
 
@@ -297,7 +375,7 @@ export class SolanaStaker {
         splitStakePubkey: newStakeAccount.publicKey,
         lamports: amountInLamports
       },
-      mininmumStakeAmount
+      minimumStakeAmount
     )
 
     return {
