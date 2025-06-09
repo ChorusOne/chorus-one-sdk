@@ -161,6 +161,39 @@ export class SolanaTestStaker {
   }
 
   /**
+   * Undelegate a stake account. The unstake operation will undelegate the whole amount of the stake account.
+   * @param stakeAccountAddress The address of the stake account to undelegate
+   * @returns The status of the transaction
+   */
+  async undelegatePartialStake (amount: string): Promise<string[]> {
+    const { transactions } = await this.staker.buildPartialUnstakeTx({
+      ownerAddress: this.ownerAddress,
+      amount
+    })
+
+    if (transactions.length === 0) {
+      throw new Error('No transactions to sign')
+    }
+
+    const statuses: string[] = await Promise.all(
+      transactions.map(async (tx, i) => {
+        const { signedTx } = await this.staker.sign({
+          signer: this.localSigner,
+          signerAddress: this.ownerAddress,
+          tx
+        })
+        const { txHash } = await this.staker.broadcast({ signedTx })
+        this.logger.info(`Unstake transaction hash: ${txHash} for the ${i + 1}th transaction of ${transactions.length}`)
+        const { status } = await this.staker.getTxStatus({ txHash })
+        this.logger.info(`Unstake transaction status: ${status}`)
+        return status
+      })
+    )
+
+    return statuses
+  }
+
+  /**
    * Get all stake accounts for the owner
    * @param stakeAccount The address of the stake account to get (optional). If `null` is passed, all stake accounts will be returned.
    * @returns An object containing the stake accounts
