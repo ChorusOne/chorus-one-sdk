@@ -29,6 +29,10 @@ describe('SolanaStake - integration', () => {
     await testStaker.requestAirdropIfNeeded(new PublicKey(testStaker.ownerAddress), 0.1, 2)
     await new Promise((resolve) => setTimeout(resolve, 2000))
   })
+  beforeEach(async function () {
+    this.timeout(30000)
+    await testStaker.cleanupAllStakeAccounts()
+  })
 
   it('should create and delegate a stake account, unstake and withdraw', async () => {
     // Check stake accounts before creating a new one
@@ -75,42 +79,25 @@ describe('SolanaStake - integration', () => {
     expect(newStakeAccount.state).to.equal('delegated')
     expect(newStakeAccount.amount).to.be.greaterThan(100000000) // we need to account for the rent exemption
   }).timeout(60000)
-  it('should unstake partial amounts - simple', async () => {
-    const maybeDelegatedStakeAccounts = (await testStaker.getStakeAccounts(null)).accounts.filter(
-      (account) => account.state === 'delegated'
+  it('should unstake partial amounts', async () => {
+    const stakeAmount = 0.5
+    const stakeAccountAddress = await testStaker.createAndDelegateStake(stakeAmount.toString())
+    console.log(`Created stake account: ${stakeAccountAddress}`)
+
+    const stakeAccountsAfterCreation = await testStaker.getStakeAccounts(stakeAccountAddress)
+    expect(stakeAccountsAfterCreation.accounts.length).to.equal(1)
+    expect(stakeAccountsAfterCreation.accounts[0].state).to.equal('delegated')
+
+    const amountToUnstakeSOL = stakeAmount - 0.1
+    console.log(`Unstaking ${amountToUnstakeSOL} SOL`)
+    const status = await testStaker.undelegatePartialStake(amountToUnstakeSOL.toString())
+    expect(status.length).to.be.greaterThan(0)
+    status.forEach((s) => expect(s).to.equal('success'))
+    const stakeAccountsAfterSplit = await testStaker.getStakeAccounts(stakeAccountAddress)
+    expect(stakeAccountsAfterSplit.accounts.length).to.equal(1)
+    expect(stakeAccountsAfterSplit.accounts[0].state).to.equal('delegated')
+    expect(stakeAccountsAfterSplit.accounts[0].amount).to.be.greaterThanOrEqual(
+      (stakeAmount - amountToUnstakeSOL) * LAMPORTS_PER_SOL
     )
-
-    if (maybeDelegatedStakeAccounts.length === 0) {
-      const stakeAmount = 0.5
-      console.log('No delegated stake accounts found, creating one with ' + stakeAmount + ' SOL')
-      const stakeAccountAddress = await testStaker.createAndDelegateStake(stakeAmount.toString())
-      console.log(`Created stake account: ${stakeAccountAddress}`)
-
-      const stakeAccountsAfterCreation = await testStaker.getStakeAccounts(stakeAccountAddress)
-      expect(stakeAccountsAfterCreation.accounts.length).to.equal(1)
-      expect(stakeAccountsAfterCreation.accounts[0].state).to.equal('delegated')
-
-      const amountToUnstakeSOL = stakeAmount - 0.1
-      console.log(`Unstaking ${amountToUnstakeSOL} SOL`)
-      const status = await testStaker.undelegatePartialStake(amountToUnstakeSOL.toString())
-      expect(status.length).to.be.greaterThan(0)
-      status.forEach((s) => expect(s).to.equal('success'))
-    } else {
-      console.log(
-        `Found ${maybeDelegatedStakeAccounts.length} delegated stake accounts, proceeding with partial unstake`
-      )
-      const totalStakedLamports = maybeDelegatedStakeAccounts.reduce((acc, account) => acc + account.amount, 0)
-      const totalStakedSOL = totalStakedLamports / LAMPORTS_PER_SOL
-      const amountToUnstakeSOL = Math.min(0.1, totalStakedSOL * 0.5)
-
-      console.log(`Total staked: ${totalStakedSOL} SOL (${totalStakedLamports} lamports)`)
-      console.log(`Amount to unstake: ${amountToUnstakeSOL} SOL`)
-
-      const status = await testStaker.undelegatePartialStake(amountToUnstakeSOL.toString())
-      expect(status.length).to.be.greaterThan(0)
-      status.forEach((s) => expect(s).to.equal('success'))
-
-      console.log(`✅ Successfully unstaked ${amountToUnstakeSOL} SOL in ${status.length} transaction(s)`)
-    }
   }).timeout(60000)
 })
