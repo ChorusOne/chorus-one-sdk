@@ -278,4 +278,33 @@ export class SolanaTestStaker {
     this.logger.info(`Split transaction status: ${status}`)
     return { status, newStakeAccountAddress }
   }
+  /**
+   * Unstake and withdraw all stake accounts owned by the test wallet
+   */
+  async cleanupAllStakeAccounts (): Promise<void> {
+    const allStakeAccounts = await this.getStakeAccounts(null)
+    console.log(`Found ${allStakeAccounts.accounts.length} stake accounts.`)
+
+    for (const account of allStakeAccounts.accounts) {
+      const { address, state } = account
+
+      if (state === 'delegated') {
+        this.logger.info(`Unstaking account ${address}`)
+        try {
+          await this.undelegateStake(address)
+        } catch (err) {
+          this.logger.error(`Failed to undelegate ${address}:`, err)
+        }
+      }
+
+      if (state === 'undelegated') {
+        this.logger.info(`Withdrawing from account ${address}`)
+        try {
+          await this.withdrawStake(address)
+        } catch (err) {
+          this.logger.error(`Failed to withdraw from ${address}:`, err)
+        }
+      }
+    }
+  }
 }
