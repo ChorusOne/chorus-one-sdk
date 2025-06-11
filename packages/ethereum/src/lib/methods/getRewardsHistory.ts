@@ -13,12 +13,10 @@ export async function getRewardsHistory (params: {
     type: 'graph',
     op: 'UserRewards',
     query:
-      'query UserRewards( $where: AllocatorStats_filter $limit: Int) { allocator: allocatorStats_collection( interval: day first: $limit where: $where ) { apy timestamp earnedAssets totalAssets }}',
-    // variables: vars_getRewards
+      'query UserRewards( $where: AllocatorStats_filter $limit: Int) { allocator: allocatorStats_collection( interval: day first: $limit where: $where orderBy: timestamp orderDirection: asc ) { apy timestamp earnedAssets totalAssets }}',
     variables: {
-      limit: 365,
+      limit: 1000, // 1000 is the maximum limit for the query
       where: {
-        timestamp_gte: (from * 1000).toString(),
         allocator_: {
           address: userAccount.toLowerCase(),
           vault: vault.toLowerCase()
@@ -36,17 +34,19 @@ export async function getRewardsHistory (params: {
     earnedAssets: string
     totalAssets: string
   }[]
-
+  let totalRewards = BigInt(0)
   return data
     .reduce(
       (acc, reward) => {
         const timestamp = Math.floor(parseInt(reward.timestamp) / 1000)
-        if (timestamp > to) return acc
+        totalRewards += BigInt(reward.earnedAssets)
+        if (timestamp >= to) return acc
+        if (timestamp < from) return acc
         return [
           ...acc,
           {
             timestamp,
-            totalRewards: BigInt(reward.totalAssets),
+            totalRewards,
             dailyRewards: BigInt(reward.earnedAssets)
           }
         ]
