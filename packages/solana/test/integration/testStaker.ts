@@ -165,8 +165,8 @@ export class SolanaTestStaker {
    * @param stakeAccountAddress The address of the stake account to undelegate
    * @returns The status of the transaction
    */
-  async undelegatePartialStake (amount: string): Promise<string[]> {
-    const { transactions } = await this.staker.buildPartialUnstakeTx({
+  async undelegatePartialStake (amount: string): Promise<{ statuses: string[]; accounts: StakeAccount[] }> {
+    const { transactions, accounts } = await this.staker.buildPartialUnstakeTx({
       ownerAddress: this.ownerAddress,
       amount
     })
@@ -190,7 +190,7 @@ export class SolanaTestStaker {
       })
     )
 
-    return statuses
+    return { statuses, accounts }
   }
 
   /**
@@ -306,5 +306,7 @@ export class SolanaTestStaker {
         }
       }
     }
+    // wait for 2 seconds to ensure all transactions are processed
+    await new Promise((resolve) => setTimeout(resolve, 2000))
   }
 }
