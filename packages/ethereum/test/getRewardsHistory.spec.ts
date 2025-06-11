@@ -75,4 +75,23 @@ describe('EthereumStaker.getRewards', () => {
       }
     ])
   })
+
+  it('throws error when time range exceeds 1000 days', async function () {
+    disableHoodi.bind(this)()
+
+    const startTime = 1640995200000 // 2022-01-01
+    const endTime = startTime + 1001 * 24 * 60 * 60 * 1000 // 1001 days later
+
+    try {
+      await staker.getRewardsHistory({
+        startTime,
+        endTime,
+        validatorAddress,
+        delegatorAddress
+      })
+      assert.fail('Should have thrown an error')
+    } catch (error) {
+      assert.equal(error.message, 'Time range cannot exceed 1000 days')
+    }
+  })
 })

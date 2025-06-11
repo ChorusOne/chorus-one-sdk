@@ -9,13 +9,20 @@ export async function getRewardsHistory (params: {
   userAccount: Hex
 }) {
   const { connector, from, to, vault, userAccount } = params
+
+  const MAX_DAYS = 1000 // 1000 days is the maximum limit for the query
+  const daysDiff = Math.floor((to - from) / (1000 * 60 * 60 * 24))
+  if (daysDiff > MAX_DAYS) {
+    throw new Error(`Time range cannot exceed ${MAX_DAYS} days`)
+  }
+
   const rewardsData = await connector.graphqlRequest({
     type: 'graph',
     op: 'UserRewards',
     query:
       'query UserRewards( $where: AllocatorStats_filter $limit: Int) { allocator: allocatorStats_collection( interval: day first: $limit where: $where orderBy: timestamp orderDirection: asc ) { apy timestamp earnedAssets totalAssets }}',
     variables: {
-      limit: 1000, // 1000 is the maximum limit for the query
+      limit: MAX_DAYS,
       where: {
         allocator_: {
           address: userAccount.toLowerCase(),
