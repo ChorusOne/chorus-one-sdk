@@ -160,17 +160,17 @@ export class TonPoolStaker extends TonBaseStaker {
    * @param params - Parameters for building the transaction
    * @param params.delegatorAddress - The delegator address
    * @param params.validatorAddressPair - The validator address pair to unstake from
-   * @param params.amount - The amount to stake, specified in `TON`
+   * @param params.amount - The amount to unstake, specified in `TON`. When disableStatefulCalculation is true, must be a tuple [string, string]
    * @param params.disableStatefulCalculation - (Optional) Disables stateful calculation where validator and user stake is taken into account
    * @param params.validUntil - (Optional) The Unix timestamp when the transaction expires
    *
-   * @returns Returns a promise that resolves to a TON nominator pool staking transaction.
+   * @returns Returns a promise that resolves to a TON nominator pool unstaking transaction.
    */
-  async buildUnstakeTx (params: {
+  async buildUnstakeTx<T extends boolean = false>(params: {
     delegatorAddress: string
     validatorAddressPair: [string, string]
-    amount: string
-    disableStatefulCalculation?: boolean
+    amount: T extends true ? [string, string] : string
+    disableStatefulCalculation?: T
     validUntil?: number
   }): Promise<{ tx: UnsignedTx }> {
     const { delegatorAddress, validatorAddressPair, amount, disableStatefulCalculation, validUntil } = params
@@ -226,9 +226,9 @@ export class TonPoolStaker extends TonBaseStaker {
     if (disableStatefulCalculation) {
       validatorAddresses.forEach((validatorAddress, index) => {
         const data = poolParamsData[index]
-        msgs.push(genUnstakeMsg(validatorAddress, toNano(amount), data.withdrawFee, data.receiptPrice))
+        msgs.push(genUnstakeMsg(validatorAddress, toNano(amount[index]), data.withdrawFee, data.receiptPrice))
       })
-    } else {
+    } else if (!Array.isArray(amount)) {
       const { minElectionStake, currentPoolBalances, userMaxUnstakeAmounts, userWithdraw } =
         await this.getPoolDataForDelegator(delegatorAddress, validatorAddresses)
 

@@ -13,5 +13,5 @@ export const CHORUS_ONE_COSMOS_VALIDATORS = {
   SEDA: 'sedavaloper16pj5gljqnqs0ajxakccfjhu05yczp987m2vshd',
   SEI: 'seivaloper16pj5gljqnqs0ajxakccfjhu05yczp98743ctgy',
   STARGAZE: 'starsvaloper16pj5gljqnqs0ajxakccfjhu05yczp987esm6lu',
-  XPLA: 'xplavaloper14yeq3lkajldaggj28hmq8xng9xux7x5g80w747',
+  XPLA: 'xplavaloper14yeq3lkajldaggj28hmq8xng9xux7x5g80w747'
 } as const
