@@ -226,6 +226,11 @@ export class TonPoolStaker extends TonBaseStaker {
     if (disableStatefulCalculation) {
       validatorAddresses.forEach((validatorAddress, index) => {
         const data = poolParamsData[index]
+
+        if (amount[index] === '') {
+          return null
+        }
+
         msgs.push(genUnstakeMsg(validatorAddress, toNano(amount[index]), data.withdrawFee, data.receiptPrice))
       })
     } else if (!Array.isArray(amount)) {
