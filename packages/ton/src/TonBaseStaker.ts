@@ -165,7 +165,7 @@ export class TonBaseStaker {
    */
   async init (): Promise<void> {
     const rateLimitRetryAdapter: AxiosAdapter = async (config: InternalAxiosRequestConfig): Promise<AxiosResponse> => {
-      const maxRetries = 3
+      const maxRetries = 10
       const retryDelay = 1000
 
       let retries = 0
