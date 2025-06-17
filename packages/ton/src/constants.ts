@@ -1,7 +1,9 @@
+type ChorusOneTonValidator = Record<'mainnet' | 'testnet', { tonPoolPair: [string, string] }>
+
 /**
  * Contains the TON validator addresses for Chorus One's validators.
  */
-export const CHORUS_ONE_TON_VALIDATORS = {
+export const CHORUS_ONE_TON_VALIDATORS: ChorusOneTonValidator = {
   /**
    * TON mainnet validator addresses.
    */
@@ -9,7 +11,10 @@ export const CHORUS_ONE_TON_VALIDATORS = {
     /**
      * Chorus One's TON Pool Pair for the mainnet
      */
-    tonPoolPair: []
+    tonPoolPair: [
+      'EQBFbbSCrAnX2XWOjSq2qnAx_GRdx2wZIFqrlk9D0-1mxHDN',
+      'EQBNL2W5KZuw3Y3FbrLdDfIdXdrYXQFfcGfDO3kig0EK8zxz'
+    ]
   },
   /**
    * TON testnet validator addresses.
