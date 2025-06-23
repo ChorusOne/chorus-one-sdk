@@ -234,9 +234,7 @@ export class SolanaStaker {
     const amountToUnstakeLamports = macroToDenomAmount(amount, getDenomMultiplier())
 
     if (amountToUnstakeLamports > totalStakedLamports) {
-      throw new Error(
-        `Amount ${amount} SOL (${amountToUnstakeLamports} lamports) is greater than total staked ${denomToMacroAmount(totalStakedLamports.toString(), getDenomMultiplier())} SOL (${totalStakedLamports} lamports)`
-      )
+      throw new Error(`Requested ${amountToUnstakeLamports} lamports exceeds total staked: ${totalStakedLamports}`)
     }
 
     delegatedStakeAccounts.sort((a, b) => a.amount - b.amount)
@@ -244,42 +242,62 @@ export class SolanaStaker {
     let remainingAmount = amountToUnstakeLamports
     const transactions: SolanaTransaction[] = []
     const accounts: StakeAccount[] = []
-    while (remainingAmount > 0) {
-      const smallestViable = delegatedStakeAccounts.find((a) => a.amount >= remainingAmount)
+    const connection = this.getConnection()
+    const rentExemption = await connection.getMinimumBalanceForRentExemption(StakeProgram.space)
 
-      if (smallestViable) {
-        if (smallestViable.amount === remainingAmount) {
-          const { tx } = await this.buildUnstakeTx({
-            ownerAddress,
-            stakeAccountAddress: smallestViable.address
-          })
-          transactions.push(tx)
-          accounts.push(smallestViable)
-        } else {
-          const splitResult = await this.buildSplitStakeTx({
-            ownerAddress,
-            stakeAccountAddress: smallestViable.address,
-            amount: denomToMacroAmount(remainingAmount.toString(), getDenomMultiplier()).toString()
-          })
-
-          const deactivateTx = StakeProgram.deactivate({
-            stakePubkey: new PublicKey(splitResult.stakeAccountAddress),
-            authorizedPubkey: new PublicKey(ownerAddress)
-          })
-
-          const combinedTx = combineTransactions(splitResult.tx, { tx: deactivateTx })
-          transactions.push(combinedTx)
-          accounts.push(smallestViable)
-        }
-
+    while (remainingAmount > 0n) {
+      // Exact match - full unstake
+      const maybeFullUnstake = delegatedStakeAccounts.find((a) => a.amount === remainingAmount)
+      if (maybeFullUnstake) {
+        const { tx } = await this.buildUnstakeTx({
+          ownerAddress,
+          stakeAccountAddress: maybeFullUnstake.address
+        })
+        transactions.push(tx)
+        accounts.push(maybeFullUnstake)
         break
       }
+
+      // Try to split safely
+      const maybeSplit = delegatedStakeAccounts.find((a) => {
+        return a.amount >= remainingAmount && a.amount - remainingAmount >= rentExemption
+      })
+
+      if (maybeSplit) {
+        const newStakeAccount = new Keypair()
+        const splitTx = StakeProgram.split(
+          {
+            stakePubkey: new PublicKey(maybeSplit.address),
+            authorizedPubkey: new PublicKey(ownerAddress),
+            splitStakePubkey: newStakeAccount.publicKey,
+            lamports: remainingAmount
+          },
+          rentExemption
+        )
+        const deactivateTx = StakeProgram.deactivate({
+          stakePubkey: newStakeAccount.publicKey,
+          authorizedPubkey: new PublicKey(ownerAddress)
+        })
+        const tx = splitTx.add(deactivateTx)
+
+        transactions.push({ tx, additionalKeys: [newStakeAccount] })
+        accounts.push(maybeSplit)
+        break
+      }
+
       if (delegatedStakeAccounts.length === 0) {
+        throw new Error(`Ran out of stake accounts before satisfying unstake amount. Remaining: ${remainingAmount}`)
+      }
+
+      // Fallback: consume the largest fully — but only if it doesn’t exceed the remaining amount -
+      // we don't want to unstake more than requested
+      const largest = delegatedStakeAccounts[delegatedStakeAccounts.length - 1]
+      if (largest.amount > remainingAmount) {
         throw new Error(
-          `Ran out of stake accounts before satisfying unstake amount. Remaining: ${remainingAmount} lamports`
+          `Unable to unstake ${remainingAmount} lamports without exceeding the requested amount. ` +
+            `The only available account (${largest.address}) holds ${largest.amount} lamports.`
         )
       }
-      const largest = delegatedStakeAccounts[delegatedStakeAccounts.length - 1]
       const { tx } = await this.buildUnstakeTx({
         ownerAddress,
         stakeAccountAddress: largest.address
