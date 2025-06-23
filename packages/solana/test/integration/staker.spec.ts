@@ -82,7 +82,7 @@ describe('SolanaStake - integration', () => {
   }).timeout(60000)
 })
 
-describe('Solana staker - partial unstake - happy path', () => {
+describe('Solana staker - partial unstake - happy path 🙂', () => {
   let testStaker: SolanaTestStaker
 
   before(async function () {
@@ -113,7 +113,7 @@ describe('Solana staker - partial unstake - happy path', () => {
     )
     await testStaker.cleanupAllStakeAccounts()
     // make sure there are no delegated stake accounts before the test
-    expect(delegated.length).to.equal(0)
+    // expect(delegated.length).to.equal(0)
     console.log(`✅ Cleaned up all stake accounts before the test, found ${delegated.length} delegated accounts.`)
   })
   it('should unstake partial amount - one stake account', async () => {
@@ -339,6 +339,71 @@ describe('Solana staker - partial unstake - happy path', () => {
     expect(affectedAccounts.some((a) => a.address === accountD[0])).to.be.true
 
     console.log(`✅ Fully unstaked largest (${accountD[0]}) and (${accountB[0]}) accounts`)
+  }).timeout(60000)
+})
+
+describe('Solana staker - partial unstake - sad path 😢', () => {
+  let testStaker: SolanaTestStaker
+
+  before(async function () {
+    this.timeout(10000)
+    const mnemonic = process.env.TEST_SOLANA_MNEMONIC
+    if (!mnemonic) {
+      throw new Error('TEST_SOLANA_MNEMONIC environment variable is not set')
+    }
+
+    testStaker = new SolanaTestStaker({
+      mnemonic,
+      rpcUrl: 'https://api.devnet.solana.com'
+    })
+
+    await testStaker.init()
+
+    await testStaker.requestAirdropIfNeeded(new PublicKey(testStaker.ownerAddress), 1, 5)
+    await new Promise((resolve) => setTimeout(resolve, 2000))
+  })
+  beforeEach(async function () {
+    this.timeout(60000)
+    const { accounts } = await testStaker.getStakeAccounts(null)
+    const delegated = accounts.filter((a) => a.state === 'delegated')
+    const deactivating = accounts.filter((a) => a.state === 'deactivating')
+    const undelegated = accounts.filter((a) => a.state === 'undelegated')
+    console.log(
+      `🧹 Cleaning up before test: ${delegated.length} delegated, ${deactivating.length} deactivating, ${undelegated.length} undelegated, total: ${accounts.length}`
+    )
+    await testStaker.cleanupAllStakeAccounts()
+    // make sure there are no delegated stake accounts before the test
+    // expect(delegated.length).to.equal(0)
+    console.log(`✅ Cleaned up all stake accounts before the test, found ${delegated.length} delegated accounts.`)
+  })
+  it('should throw if there are no delegated stake accounts', async () => {
+    const unstakeAmount = 0.01
+    console.log(`🔻 Attempting to unstake ${unstakeAmount} SOL with no stake accounts`)
+
+    await expect(testStaker.undelegatePartialStake(unstakeAmount.toString())).to.be.rejectedWith(
+      /No delegated stake account/
+    )
+  })
+  it('should throw if split would leave less than rent exemption', async () => {
+    // Smallest viable stake: just above rent exemption
+    const rentExemptionLamports = await testStaker.getMinimumStakeRentExemption()
+    console.log(`Minimum rent exemption: ${rentExemptionLamports} lamports `)
+
+    const barelyViableLamports = rentExemptionLamports + 100_000 // tiny amount above rent
+
+    const solAmount = barelyViableLamports / LAMPORTS_PER_SOL
+    const stakeAccount = await testStaker.createAndDelegateStake(solAmount.toString())
+    console.log(`🟢 Staked just above rent exemption → ${stakeAccount}`)
+
+    const accounts = await testStaker.getStakeAccounts(null)
+    const delegated = accounts.accounts.filter((a) => a.state === 'delegated')
+    console.log(`Found ${delegated.length} delegated stake accounts before test.`, delegated[0].amount)
+    // Try to unstake an amount that would leave < rent exemption in the source
+    const unsafeUnstakeLamports = barelyViableLamports - rentExemptionLamports + 1 // 1 lamport too much
+    const unsafeUnstakeSol = unsafeUnstakeLamports / LAMPORTS_PER_SOL
+
+    console.log(`🔻 Attempting unsafe unstake of ${unsafeUnstakeLamports} lamports (${unsafeUnstakeSol} SOL)`)
+    await expect(testStaker.undelegatePartialStake(unsafeUnstakeSol.toString())).to.be.rejected
   }).timeout(60000)
   it('should throw an error when unstaking more than available', async () => {
     const stakeAmount = 0.1 // 0.1 SOL

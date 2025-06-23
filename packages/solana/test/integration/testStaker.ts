@@ -1,7 +1,7 @@
 import { SolanaStaker, StakeAccount } from '@chorus-one/solana'
 import { LocalSigner } from '@chorus-one/signer-local'
 import { KeyType } from '@chorus-one/signer'
-import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js'
+import { Connection, PublicKey, LAMPORTS_PER_SOL, StakeProgram } from '@solana/web3.js'
 import * as bip39 from 'bip39'
 import { derivePath, getPublicKey } from 'ed25519-hd-key'
 import type { Logger } from '@chorus-one/utils'
@@ -308,5 +308,14 @@ export class SolanaTestStaker {
     }
     // wait for 2 seconds to ensure all transactions are processed
     await new Promise((resolve) => setTimeout(resolve, 2000))
+  }
+
+  /**
+   * Get the minimum stake rent exemption amount
+   * @returns The minimum rent exemption amount in lamports
+   */
+  async getMinimumStakeRentExemption (): Promise<number> {
+    const rentExemption = await this.connection.getMinimumBalanceForRentExemption(StakeProgram.space)
+    return rentExemption
   }
 }
