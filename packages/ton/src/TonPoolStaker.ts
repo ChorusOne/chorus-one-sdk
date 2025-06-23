@@ -90,9 +90,11 @@ export class TonPoolStaker extends TonBaseStaker {
       validatorAddresses
     )
 
-    const poolParams = await Promise.all(
-      validatorAddresses.map((validatorAddress) => this.getPoolParamsUnformatted({ validatorAddress }))
-    )
+    const poolParams: Awaited<ReturnType<TonPoolStaker['getPoolParamsUnformatted']>>[] = []
+    for (const validatorAddress of validatorAddresses) {
+      const params = await this.getPoolParamsUnformatted({ validatorAddress })
+      poolParams.push(params)
+    }
 
     const lowestMinStake: bigint = poolParams
       .filter((param) => param.minStake !== 0n)
@@ -217,9 +219,11 @@ export class TonPoolStaker extends TonBaseStaker {
       }
     }
 
-    const poolParamsData = await Promise.all(
-      validatorAddresses.map((validatorAddress) => this.getPoolParamsUnformatted({ validatorAddress }))
-    )
+    const poolParamsData: Awaited<ReturnType<TonPoolStaker['getPoolParamsUnformatted']>>[] = []
+    for (const validatorAddress of validatorAddresses) {
+      const data = await this.getPoolParamsUnformatted({ validatorAddress })
+      poolParamsData.push(data)
+    }
 
     const msgs: Message[] = []
 
@@ -373,11 +377,19 @@ export class TonPoolStaker extends TonBaseStaker {
 
   /** @ignore */
   private async getPoolDataForDelegator (delegatorAddress: string, validatorAddresses: string[]) {
-    const [poolStatus, userStake, minElectionStake] = await Promise.all([
-      Promise.all(validatorAddresses.map((validatorAddress) => this.getPoolStatus(validatorAddress))),
-      Promise.all(validatorAddresses.map((validatorAddress) => this.getStake({ delegatorAddress, validatorAddress }))),
-      this.getElectionMinStake()
-    ])
+    const poolStatus: Awaited<ReturnType<TonPoolStaker['getPoolStatus']>>[] = []
+    for (const validatorAddress of validatorAddresses) {
+      const status = await this.getPoolStatus(validatorAddress)
+      poolStatus.push(status)
+    }
+
+    const userStake: Awaited<ReturnType<TonPoolStaker['getStake']>>[] = []
+    for (const validatorAddress of validatorAddresses) {
+      const stake = await this.getStake({ delegatorAddress, validatorAddress })
+      userStake.push(stake)
+    }
+
+    const minElectionStake: Awaited<ReturnType<TonPoolStaker['getElectionMinStake']>> = await this.getElectionMinStake()
 
     const currentPoolBalances: [bigint, bigint] =
       validatorAddresses.length === 2 ? [poolStatus[0].balance, poolStatus[1].balance] : [poolStatus[0].balance, 0n]
