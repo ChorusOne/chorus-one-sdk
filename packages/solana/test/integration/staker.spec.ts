@@ -113,7 +113,7 @@ describe('Solana staker - partial unstake - happy path 🙂', () => {
     )
     await testStaker.cleanupAllStakeAccounts()
     // make sure there are no delegated stake accounts before the test
-    // expect(delegated.length).to.equal(0)
+    expect(delegated.length).to.equal(0)
     console.log(`✅ Cleaned up all stake accounts before the test, found ${delegated.length} delegated accounts.`)
   })
   it('should unstake partial amount - one stake account', async () => {
