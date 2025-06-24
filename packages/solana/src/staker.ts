@@ -245,7 +245,7 @@ export class SolanaStaker {
     const connection = this.getConnection()
     const rentExemption = await connection.getMinimumBalanceForRentExemption(StakeProgram.space)
 
-    while (remainingAmount > 0n) {
+    while (remainingAmount > 0) {
       // Exact match - full unstake
       const maybeFullUnstake = delegatedStakeAccounts.find((a) => a.amount === remainingAmount)
       if (maybeFullUnstake) {
