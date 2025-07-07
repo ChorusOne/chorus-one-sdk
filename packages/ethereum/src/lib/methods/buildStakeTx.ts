@@ -6,7 +6,7 @@ import { getHarvestParams } from '../utils/getHarvestParams'
 import { Transaction } from '../types/transaction'
 import { getDefaultTrackingAddress } from '../utils/getDefaultTrackingAddress'
 
-export async function buildStakeTx(request: {
+export async function buildStakeTx (request: {
   connector: StakewiseConnector
   userAccount: Hex
   vault: Hex
