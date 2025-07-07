@@ -13,6 +13,7 @@ import {
 import { defaultValidUntil, getDefaultGas, getRandomQueryId, TonBaseStaker } from './TonBaseStaker'
 import { UnsignedTx, Election, FrozenSet, PoolStatus, Message, TonTxStatus } from './types'
 import { minBigInt } from './utils'
+import { DEFAULT_TRACKING_REF_CODE } from '@chorus-one/utils'
 
 export class TonPoolStaker extends TonBaseStaker {
   /**
@@ -42,7 +43,14 @@ export class TonPoolStaker extends TonBaseStaker {
     referrer?: string
     validUntil?: number
   }): Promise<{ tx: UnsignedTx }> {
-    const { validatorAddressPair, delegatorAddress, amount, preferredStrategy, validUntil, referrer } = params
+    const {
+      validatorAddressPair,
+      delegatorAddress,
+      amount,
+      preferredStrategy,
+      validUntil,
+      referrer = DEFAULT_TRACKING_REF_CODE
+    } = params
 
     // allow staking to both pools
     const validatorAddresses = validatorAddressPair.filter((address) => address.length > 0)

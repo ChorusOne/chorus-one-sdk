@@ -1,9 +1,10 @@
-import { Hex, encodeFunctionData, zeroAddress } from 'viem'
+import { Hex, encodeFunctionData } from 'viem'
 import { VaultABI } from '../contracts/vaultAbi'
 import { StakewiseConnector } from '../connector'
 import { keeperABI } from '../contracts/keeperAbi'
 import { getHarvestParams } from '../utils/getHarvestParams'
 import { Transaction } from '../types/transaction'
+import { DEFAULT_SDK_TRACKING_ADDRESS } from '../../constants'
 
 export async function buildStakeTx (request: {
   connector: StakewiseConnector
@@ -12,7 +13,7 @@ export async function buildStakeTx (request: {
   amount: bigint
   referrer?: Hex
 }): Promise<Transaction> {
-  const { userAccount, connector, vault, amount, referrer = zeroAddress } = request
+  const { userAccount, connector, vault, amount, referrer = DEFAULT_SDK_TRACKING_ADDRESS } = request
   const canHarvest = await connector.eth.readContract({
     abi: keeperABI,
     address: connector.keeper,

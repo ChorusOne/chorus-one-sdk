@@ -48,3 +48,5 @@ export function sortObjectByKeys<T> (obj: T): T {
   }
   return obj
 }
+
+export const DEFAULT_TRACKING_REF_CODE = 'chorusone-staking' as const
