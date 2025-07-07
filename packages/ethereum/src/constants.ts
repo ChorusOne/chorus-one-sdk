@@ -32,10 +32,3 @@ export const CHORUS_ONE_ETHEREUM_VALIDATORS = {
     obolDvVault: '0x2148ffbc0a2d83f5e3605041f5b85d54305f803c'
   }
 } as const
-
-// TODO: Check which address we should use here with Dmitry, or derive it from DEFAULT_TRACKING_REF_CODE
-/**
- * Default tracking address for SDK-originated transactions.
- * This address is used as the default referrer when no specific referrer is provided.
- */
-export const DEFAULT_SDK_TRACKING_ADDRESS = '0x742d35Cc6634C0532925a3b8D40Ec0A1c4cF4000' as const
