@@ -21,6 +21,7 @@ import { TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import { Coin } from 'cosmjs-types/cosmos/base/v1beta1/coin'
 import { newCosmosClient, CosmosClient } from './client'
 import BigNumber from 'bignumber.js'
+import { DEFAULT_TRACKING_REF_CODE } from '@chorus-one/utils'
 
 /**
  * This class provides the functionality to stake, unstake, redelegate, and withdraw rewards for Cosmos-based blockchains.
@@ -364,20 +365,12 @@ export class CosmosStaker {
     const cosmosClient = this.getClient()
     const chainID = this.getChainID()
 
-    const { signer, signerAddress, tx, memo } = params
+    const { signer, signerAddress, tx, memo = DEFAULT_TRACKING_REF_CODE } = params
 
     const gas = await getGas(cosmosClient, this.networkConfig, signerAddress, signer, tx, memo)
 
     const acc = await getAccount(cosmosClient, this.networkConfig.lcdUrl, signerAddress)
-    const signDoc = await genSignableTx(
-      this.networkConfig,
-      chainID,
-      tx,
-      acc.accountNumber,
-      acc.sequence,
-      gas,
-      memo ?? ''
-    )
+    const signDoc = await genSignableTx(this.networkConfig, chainID, tx, acc.accountNumber, acc.sequence, gas, memo)
 
     const isEVM = this.networkConfig.isEVM ?? false
     const { sig, pk } = await genSignDocSignature(signer, acc, signDoc, isEVM)

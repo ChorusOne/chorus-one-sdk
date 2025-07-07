@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js'
 import { checkMaxDecimalPlaces } from '@chorus-one/utils'
-import { LAMPORTS_PER_SOL } from '@solana/web3.js'
+import { LAMPORTS_PER_SOL, PublicKey, TransactionInstruction } from '@solana/web3.js'
 
 export function macroToDenomAmount (
   amount: string, // in macro denom (e.g. ATOM)
@@ -55,4 +55,21 @@ export function getDenomMultiplier (denomMultiplier?: string): string {
     return denomMultiplier
   }
   return BigNumber(LAMPORTS_PER_SOL).toString(10)
+}
+
+const MEMO_PROGRAM_ID: PublicKey = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr')
+
+export function createMemoInstruction (memo: string, signerPubkeys?: Array<PublicKey>): TransactionInstruction {
+  const keys =
+    signerPubkeys == null
+      ? []
+      : signerPubkeys.map(function (key) {
+          return { pubkey: key, isSigner: true, isWritable: false }
+        })
+
+  return new TransactionInstruction({
+    keys,
+    programId: MEMO_PROGRAM_ID,
+    data: Buffer.from(memo, 'utf8')
+  })
 }

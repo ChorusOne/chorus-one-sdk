@@ -11,9 +11,10 @@ import {
   VersionedTransaction,
   TransactionMessage
 } from '@solana/web3.js'
-import { getDenomMultiplier, macroToDenomAmount, denomToMacroAmount } from './tx'
+import { getDenomMultiplier, macroToDenomAmount, denomToMacroAmount, createMemoInstruction } from './tx'
 import type { Signer } from '@chorus-one/signer'
 import { SolanaSigningData, SolanaTxStatus, SolanaNetworkConfig, SolanaTransaction, StakeAccount } from './types'
+import { DEFAULT_TRACKING_REF_CODE } from '@chorus-one/utils'
 
 /**
  * This class provides the functionality to stake, unstake, and withdraw for Solana blockchains.
@@ -115,6 +116,7 @@ export class SolanaStaker {
    * @param params.validatorAddress - The validatiors vote account address to delegate the stake to
    * @param params.stakeAccountAddress - The stake account address to delegate from. If not provided, a new stake account will be created.
    * @param params.amount - The amount to stake, specified in `SOL`. If `stakeAccountAddress` is not provided, this parameter is required.
+   * @param params.referrer - (Optional) A custom tracking reference. If not provided, the default tracking reference will be used.
    *
    * @returns Returns a promise that resolves to a SOLANA staking transaction.
    */
@@ -123,8 +125,9 @@ export class SolanaStaker {
     validatorAddress: string
     stakeAccountAddress?: string
     amount?: string
+    referrer?: string
   }): Promise<{ tx: SolanaTransaction; stakeAccountAddress: string }> {
-    const { ownerAddress, stakeAccountAddress, validatorAddress, amount } = params
+    const { ownerAddress, stakeAccountAddress, validatorAddress, amount, referrer = DEFAULT_TRACKING_REF_CODE } = params
 
     let stakeAccountAddr: string | undefined
     let createAccountTx: SolanaTransaction | undefined
@@ -156,6 +159,10 @@ export class SolanaStaker {
       authorizedPubkey: new PublicKey(ownerAddress),
       votePubkey: new PublicKey(validatorAddress)
     })
+
+    const memoInstruction = createMemoInstruction(referrer)
+
+    delegateTx.add(memoInstruction)
 
     const delegateSolanaTx = {
       tx: delegateTx,
