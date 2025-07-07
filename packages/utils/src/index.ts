@@ -49,4 +49,4 @@ export function sortObjectByKeys<T> (obj: T): T {
   return obj
 }
 
-export const DEFAULT_TRACKING_REF_CODE = 'chorusone-staking' as const
+export const DEFAULT_TRACKING_REF_CODE = 'sdk-chorusone-staking' as const
