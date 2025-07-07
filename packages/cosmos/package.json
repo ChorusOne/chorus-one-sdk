@@ -1,6 +1,6 @@
 {
   "name": "@chorus-one/cosmos",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "description": "All-in-one toolkit for building staking dApps on Cosmos SDK based networks",
   "scripts": {
     "build": "rm -fr dist/* && tsc -p tsconfig.mjs.json --outDir dist/mjs && tsc -p tsconfig.cjs.json --outDir dist/cjs && bash ../../scripts/fix-package-json"
