@@ -4,15 +4,16 @@ import { StakewiseConnector } from '../connector'
 import { keeperABI } from '../contracts/keeperAbi'
 import { getHarvestParams } from '../utils/getHarvestParams'
 import { Transaction } from '../types/transaction'
-import { DEFAULT_SDK_TRACKING_ADDRESS } from '../../constants'
+import { getDefaultTrackingAddress } from '../utils/getDefaultTrackingAddress'
 
-export async function buildStakeTx (request: {
+export async function buildStakeTx(request: {
   connector: StakewiseConnector
   userAccount: Hex
   vault: Hex
   amount: bigint
   referrer?: Hex
 }): Promise<Transaction> {
+  const DEFAULT_SDK_TRACKING_ADDRESS = getDefaultTrackingAddress()
   const { userAccount, connector, vault, amount, referrer = DEFAULT_SDK_TRACKING_ADDRESS } = request
   const canHarvest = await connector.eth.readContract({
     abi: keeperABI,
