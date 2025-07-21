@@ -43,15 +43,19 @@ export const getUnstakeQueue = async (params: { connector: StakewiseConnector; u
     exitedAssets: string
     positionTicket: string
     exitQueueIndex: string | null
+    withdrawalTimestamp: number | null
   }[]
 
-  return data.map((queueItem) => ({
-    positionTicket: BigInt(queueItem.positionTicket),
-    exitQueueIndex: queueItem.exitQueueIndex ? BigInt(queueItem.exitQueueIndex) : undefined,
-    isWithdrawable: queueItem.isClaimable,
-    wasWithdrawn: queueItem.isClaimed,
-    timestamp: Number(queueItem.timestamp) * 1000,
-    totalAssets: BigInt(queueItem.totalAssets),
-    exitedAssets: BigInt(queueItem.exitedAssets || 0)
-  }))
+  return data.map((queueItem) => {
+    return {
+      positionTicket: BigInt(queueItem.positionTicket),
+      exitQueueIndex: queueItem.exitQueueIndex ? BigInt(queueItem.exitQueueIndex) : undefined,
+      isWithdrawable: queueItem.isClaimable,
+      wasWithdrawn: queueItem.isClaimed,
+      timestamp: Number(queueItem.timestamp) * 1000,
+      totalAssets: BigInt(queueItem.totalAssets),
+      exitedAssets: BigInt(queueItem.exitedAssets || 0),
+      withdrawalTimestamp: queueItem.withdrawalTimestamp ? queueItem.withdrawalTimestamp * 1000 : undefined
+    }
+  })
 }

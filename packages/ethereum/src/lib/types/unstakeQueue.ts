@@ -42,4 +42,9 @@ export interface UnstakeQueueItem {
    * The amount of assets in ETH that can be withdrawn.
    */
   withdrawableAssets: bigint
+  /**
+   * Estimated withdrawal timestamp (Unix timestamp).
+   * null: not processed, 0: ready to claim, number: available at timestamp.
+   */
+  withdrawalTimestamp?: number
 }
