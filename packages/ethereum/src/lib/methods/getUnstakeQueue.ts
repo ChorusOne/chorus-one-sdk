@@ -55,7 +55,7 @@ export const getUnstakeQueue = async (params: { connector: StakewiseConnector; u
       timestamp: Number(queueItem.timestamp) * 1000,
       totalAssets: BigInt(queueItem.totalAssets),
       exitedAssets: BigInt(queueItem.exitedAssets || 0),
-      withdrawalTimestamp: queueItem.withdrawalTimestamp ? queueItem.withdrawalTimestamp * 1000 : undefined
+      withdrawalTimestamp: queueItem.withdrawalTimestamp !== null ? queueItem.withdrawalTimestamp * 1000 : undefined
     }
   })
 }
