@@ -33,7 +33,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@chorus-one/signer": "^1.0.0",
-    "@chorus-one/utils": "^1.0.1",
+    "@chorus-one/utils": "^1.0.2",
     "@cosmjs/amino": "^0.33.1",
     "@cosmjs/crypto": "^0.33.1",
     "@cosmjs/encoding": "^0.33.1",
