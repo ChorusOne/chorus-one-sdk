@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "@chorus-one/signer": "1.0.0",
-    "fireblocks-sdk": "^4.0.0",
+    "fireblocks-sdk": "5.38.0",
     "jsrsasign": "^11.1.0",
     "uuid": "^10.0.0"
   }
