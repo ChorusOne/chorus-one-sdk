@@ -94,7 +94,7 @@ Here, `validatorAddress` refers to the address the vault, and `userAddress` is t
 - **`isWithdrawable` (boolean)**: A flag indicating whether the assets are ready to be withdrawn.
 - **`totalAmount` (string)**: The total amount of assets in the queue item, in ETH.
 - **`withdrawableAmount` (string)**: The portion of assets, in ETH, that can be withdrawn.
-- **`withdrawalTimestamp` (number | null)**: The Unix timestamp when withdrawal becomes available. `null` if not yet processed, `0` if ready to claim.
+- **`withdrawalTimestamp` (number | undefined)**: The Unix timestamp when withdrawal becomes available. `undefined` if not yet processed, `0` if ready to claim.
 
 Once assets within the unstake queue reach a withdrawable state, users can initiate the withdrawal process to transfer them back into their wallets. This is done through the `buildWithdrawTx` method, which prepares the transaction necessary for withdrawing the specified assets.
 
