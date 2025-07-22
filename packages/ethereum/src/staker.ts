@@ -352,7 +352,8 @@ export class EthereumStaker {
         timestamp: item.timestamp,
         isWithdrawable: item.isWithdrawable,
         totalAmount: formatEther(item.totalAssets),
-        withdrawableAmount: formatEther(item.exitedAssets)
+        withdrawableAmount: formatEther(item.exitedAssets),
+        withdrawalTimestamp: item.withdrawalTimestamp
       }))
   }
 
