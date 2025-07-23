@@ -11,7 +11,7 @@ import {
   VersionedTransaction,
   TransactionMessage
 } from '@solana/web3.js'
-import { getDenomMultiplier, macroToDenomAmount, denomToMacroAmount, createMemoInstruction } from './tx'
+import { getDenomMultiplier, macroToDenomAmount, denomToMacroAmount, getTrackingInstruction } from './tx'
 import type { Signer } from '@chorus-one/signer'
 import { SolanaSigningData, SolanaTxStatus, SolanaNetworkConfig, SolanaTransaction, StakeAccount } from './types'
 import { DEFAULT_TRACKING_REF_CODE } from '@chorus-one/utils'
@@ -160,9 +160,8 @@ export class SolanaStaker {
       votePubkey: new PublicKey(validatorAddress)
     })
 
-    const memoInstruction = createMemoInstruction(referrer)
-
-    delegateTx.add(memoInstruction)
+    const trackingInstruction = getTrackingInstruction(referrer)
+    delegateTx.instructions.push(trackingInstruction)
 
     const delegateSolanaTx = {
       tx: delegateTx,
@@ -182,14 +181,16 @@ export class SolanaStaker {
    * @param params - Parameters for building the transaction
    * @param params.ownerAddress - The stake account owner's address
    * @param params.stakeAccountAddress - The stake account address to deactivate
+   * @param params.referrer - (Optional) A custom tracking reference. If not provided, the default tracking reference will be used.
    *
    * @returns Returns a promise that resolves to a SOLANA unstaking transaction.
    */
   async buildUnstakeTx (params: {
     ownerAddress: string
     stakeAccountAddress: string
+    referrer?: string
   }): Promise<{ tx: SolanaTransaction }> {
-    const { ownerAddress, stakeAccountAddress } = params
+    const { ownerAddress, stakeAccountAddress, referrer = DEFAULT_TRACKING_REF_CODE } = params
     const stakePubkey = new PublicKey(stakeAccountAddress)
     const stakeState = await this.getStakeAccounts({ ownerAddress, withStates: true })
 
@@ -208,6 +209,8 @@ export class SolanaStaker {
       stakePubkey,
       authorizedPubkey: new PublicKey(ownerAddress)
     })
+    const trackingInstruction = getTrackingInstruction(referrer)
+    deactivateTx.instructions.push(trackingInstruction)
 
     return { tx: { tx: deactivateTx } }
   }
@@ -220,6 +223,7 @@ export class SolanaStaker {
    * @param params - Parameters for building the transaction
    * @param params.ownerAddress - The stake account owner's address
    * @param params.amount - The amount to unstake, specified in `SOL`
+   * @param params.referrer - (Optional) A custom tracking reference. If not provided, the default tracking reference will be used.
    *
    * @returns Returns a promise that resolves to an array of SOLANA transactions for partial unstaking and the affected stake accounts.
    */
@@ -227,8 +231,9 @@ export class SolanaStaker {
   async buildPartialUnstakeTx (params: {
     ownerAddress: string
     amount: string
+    referrer?: string
   }): Promise<{ transactions: SolanaTransaction[]; accounts: StakeAccount[] }> {
-    const { ownerAddress, amount } = params
+    const { ownerAddress, amount, referrer = DEFAULT_TRACKING_REF_CODE } = params
 
     const allStakeAccounts = await this.getStakeAccounts({ ownerAddress, withStates: true })
     let delegatedStakeAccounts = allStakeAccounts.accounts.filter((account) => account.state === 'delegated')
@@ -315,7 +320,8 @@ export class SolanaStaker {
       remainingAmount -= largest.amount
       delegatedStakeAccounts = delegatedStakeAccounts.filter((a) => a.address !== largest.address)
     }
-
+    const trackingInstruction = getTrackingInstruction(referrer)
+    transactions.map((tx) => tx.tx.instructions.push(trackingInstruction))
     return { transactions, accounts }
   }
 
