@@ -1,8 +1,7 @@
 import BigNumber from 'bignumber.js'
 import { checkMaxDecimalPlaces } from '@chorus-one/utils'
 import { LAMPORTS_PER_SOL, PublicKey, TransactionInstruction } from '@solana/web3.js'
-import { utf8ToBytes } from '@noble/ciphers/utils'
-import { sha256 } from '@noble/hashes/sha2'
+import { createHash } from 'crypto'
 
 export function macroToDenomAmount (
   amount: string, // in macro denom (e.g. ATOM)
@@ -60,8 +59,8 @@ export function getDenomMultiplier (denomMultiplier?: string): string {
 }
 
 export function trackingStringToPubkey (inputString: string): PublicKey {
-  const inputBytes = utf8ToBytes(inputString)
-  const hashed = sha256(inputBytes)
+  const inputBytes = new Uint8Array(new TextEncoder().encode(inputString))
+  const hashed = createHash('sha256').update(inputBytes).digest()
 
   return new PublicKey(hashed)
 }
@@ -77,3 +76,6 @@ export const getTrackingInstruction = (referrer: string): TransactionInstruction
     data: Buffer.alloc(0)
   })
 }
+
+const safepal = trackingStringToPubkey('d716b5a3-chorusone-staking')
+console.log('safepal', safepal.toBase58())
