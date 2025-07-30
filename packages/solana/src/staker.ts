@@ -263,7 +263,8 @@ export class SolanaStaker {
       if (maybeFullUnstake) {
         const { tx } = await this.buildUnstakeTx({
           ownerAddress,
-          stakeAccountAddress: maybeFullUnstake.address
+          stakeAccountAddress: maybeFullUnstake.address,
+          referrer
         })
         transactions.push(tx)
         accounts.push(maybeFullUnstake)
@@ -291,6 +292,8 @@ export class SolanaStaker {
           authorizedPubkey: new PublicKey(ownerAddress)
         })
         const tx = splitTx.add(deactivateTx)
+        const trackingInstruction = getTrackingInstruction(referrer)
+        tx.instructions.push(trackingInstruction)
 
         transactions.push({ tx, additionalKeys: [newStakeAccount] })
         accounts.push(maybeSplit)
@@ -304,7 +307,11 @@ export class SolanaStaker {
       // Fallback: consume the largest fully — but only if it doesn’t exceed the remaining amount -
       // we don't want to unstake more than requested
       const largest = delegatedStakeAccounts[delegatedStakeAccounts.length - 1]
-      if (largest.amount > remainingAmount) {
+      console.log(
+        `Unstaking from largest account: ${largest.address} with amount: ${largest.amount}. Remaining: ${remainingAmount}`
+      )
+
+      if (largest.amount < remainingAmount) {
         throw new Error(
           `Unable to unstake ${remainingAmount} lamports without exceeding the requested amount. ` +
             `The only available account (${largest.address}) holds ${largest.amount} lamports.`
@@ -312,7 +319,8 @@ export class SolanaStaker {
       }
       const { tx } = await this.buildUnstakeTx({
         ownerAddress,
-        stakeAccountAddress: largest.address
+        stakeAccountAddress: largest.address,
+        referrer
       })
       transactions.push(tx)
       accounts.push(largest)
@@ -320,8 +328,6 @@ export class SolanaStaker {
       remainingAmount -= largest.amount
       delegatedStakeAccounts = delegatedStakeAccounts.filter((a) => a.address !== largest.address)
     }
-    const trackingInstruction = getTrackingInstruction(referrer)
-    transactions.map((tx) => tx.tx.instructions.push(trackingInstruction))
     return { transactions, accounts }
   }
 
