@@ -76,6 +76,3 @@ export const getTrackingInstruction = (referrer: string): TransactionInstruction
     data: Buffer.alloc(0)
   })
 }
-
-const safepal = trackingStringToPubkey('d716b5a3-chorusone-staking')
-console.log('safepal', safepal.toBase58())
