@@ -33,45 +33,45 @@ describe('EthereumStaker.getRewards', () => {
     assert.deepEqual(rewards, [
       {
         timestamp: 1735689600000,
-        amount: '0.008753377787080096',
-        totalRewards: '0.008753377787080096',
-        dailyRewards: '0.000022443428921008'
+        amount: '0.008782461427329766',
+        totalRewards: '0.008782461427329766',
+        dailyRewards: '0.000022505390841316'
       },
       {
         timestamp: 1735776000000,
-        amount: '0.008774544232426604',
-        totalRewards: '0.008774544232426604',
-        dailyRewards: '0.000021166445346508'
+        amount: '0.008803770251106602',
+        totalRewards: '0.008803770251106602',
+        dailyRewards: '0.000021308823776836'
       },
       {
         timestamp: 1735862400000,
-        amount: '0.008792737294644708',
-        totalRewards: '0.008792737294644708',
-        dailyRewards: '0.000018193062218104'
+        amount: '0.008822067114814422',
+        totalRewards: '0.008822067114814422',
+        dailyRewards: '0.00001829686370782'
       },
       {
         timestamp: 1735948800000,
-        amount: '0.00880915741497382',
-        totalRewards: '0.00880915741497382',
-        dailyRewards: '0.000016420120329112'
+        amount: '0.008838598634788673',
+        totalRewards: '0.008838598634788673',
+        dailyRewards: '0.000016531519974251'
       },
       {
         timestamp: 1736035200000,
-        amount: '0.008826192471555911',
-        totalRewards: '0.008826192471555911',
-        dailyRewards: '0.000017035056582091'
+        amount: '0.008855742609842669',
+        totalRewards: '0.008855742609842669',
+        dailyRewards: '0.000017143975053996'
       },
       {
         timestamp: 1736121600000,
-        amount: '0.008848166217191916',
-        totalRewards: '0.008848166217191916',
-        dailyRewards: '0.000021973745636005'
+        amount: '0.008877831302012103',
+        totalRewards: '0.008877831302012103',
+        dailyRewards: '0.000022088692169434'
       },
       {
         timestamp: 1736208000000,
-        amount: '0.008866858175311622',
-        totalRewards: '0.008866858175311622',
-        dailyRewards: '0.000018691958119706'
+        amount: '0.008896646668920832',
+        totalRewards: '0.008896646668920832',
+        dailyRewards: '0.000018815366908729'
       }
     ])
   })
