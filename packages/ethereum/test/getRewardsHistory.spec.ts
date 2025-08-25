@@ -3,6 +3,7 @@ import { assert } from 'chai'
 import { Hex } from 'viem'
 import { prepareTests } from './lib/utils'
 import { disableHoodi } from './lib/disableHoodi'
+import { restoreToInitialState } from './setup'
 
 describe('EthereumStaker.getRewards', () => {
   let validatorAddress: Hex
@@ -15,6 +16,10 @@ describe('EthereumStaker.getRewards', () => {
     // Use one of the first delegators to the MevMax Vault
     delegatorAddress = '0xA3FBae7A9834862A5853D39d850aBcBCE5a1AFdA'
     staker = setup.staker
+  })
+  afterEach(async () => {
+    // Restore to clean state after each test
+    await restoreToInitialState()
   })
 
   it('returns correct rewards history for given period of time', async function () {

@@ -2,6 +2,7 @@ import { EthereumStaker } from '@chorus-one/ethereum'
 import { Hex, parseEther, PublicClient, WalletClient } from 'viem'
 import { prepareTests, stake } from './lib/utils'
 import { assert } from 'chai'
+import { restoreToInitialState } from './setup'
 
 const amountToStake = parseEther('2')
 
@@ -20,8 +21,17 @@ describe('EthereumStaker.getStake', () => {
     publicClient = setup.publicClient
     staker = setup.staker
   })
-
+  afterEach(async () => {
+    // Restore to clean state after each test
+    await restoreToInitialState()
+  })
   it('returns staked balance and maxUnstake', async () => {
+    const { balance: stakebefore } = await staker.getStake({
+      delegatorAddress,
+      validatorAddress
+    })
+    console.log(`Stake before: ${stakebefore}`)
+
     await stake({
       delegatorAddress,
       validatorAddress,
@@ -35,6 +45,7 @@ describe('EthereumStaker.getStake', () => {
       delegatorAddress,
       validatorAddress
     })
+    console.log(`Stake after: ${stakeAfter}, maxUnstake: ${maxUnstake}`)
 
     // Take into account gas fees
     assert.closeTo(Number(parseEther(stakeAfter) - amountToStake), 0, 1)

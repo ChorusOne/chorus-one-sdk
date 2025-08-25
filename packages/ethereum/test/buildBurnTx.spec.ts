@@ -3,6 +3,7 @@ import { Hex, PublicClient, WalletClient, erc20Abi, formatEther, parseEther } fr
 import { assert } from 'chai'
 import { mint, prepareTests, stake } from './lib/utils'
 import { describe } from 'mocha'
+import { restoreToInitialState } from './setup'
 
 const amountToStake = parseEther('20')
 const amountToMint = parseEther('15')
@@ -34,6 +35,10 @@ describe('EthStaker.buildBurnTx', () => {
       walletClient,
       staker
     })
+  })
+  afterEach(async () => {
+    // Restore to clean state after each test
+    await restoreToInitialState()
   })
 
   it('should build a burning tx', async () => {

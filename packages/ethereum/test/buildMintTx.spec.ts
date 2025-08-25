@@ -2,6 +2,7 @@ import { EthereumStaker } from '@chorus-one/ethereum'
 import { Hex, PublicClient, WalletClient, erc20Abi, parseEther } from 'viem'
 import { assert } from 'chai'
 import { mint, prepareTests, stake } from './lib/utils'
+import { restoreToInitialState } from './setup'
 
 const amountToStake = parseEther('20')
 
@@ -31,6 +32,10 @@ describe('EthereumStaker.buildMintTx', () => {
       walletClient,
       staker
     })
+  })
+  afterEach(async () => {
+    // Restore to clean state after each test
+    await restoreToInitialState()
   })
 
   it('builds a minting tx', async () => {

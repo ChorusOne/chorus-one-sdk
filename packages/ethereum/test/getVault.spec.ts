@@ -3,6 +3,7 @@ import { assert } from 'chai'
 import { Hex } from 'viem'
 import { prepareTests } from './lib/utils'
 import { disableHoodi } from './lib/disableHoodi'
+import { restoreToInitialState } from './setup'
 
 describe('EthereumStaker.getVault', () => {
   let validatorAddress: Hex
@@ -12,6 +13,10 @@ describe('EthereumStaker.getVault', () => {
     const setup = await prepareTests()
     validatorAddress = setup.validatorAddress
     staker = setup.staker
+  })
+  afterEach(async () => {
+    // Restore to clean state after each test
+    await restoreToInitialState()
   })
 
   it('returns vault details', async function () {
