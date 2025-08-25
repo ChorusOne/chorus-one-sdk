@@ -133,6 +133,7 @@ export class AvalancheStaker {
     const stakingAssetId = this.getAsset(context).assetId
 
     const pvmApi = new pvm.PVMApi(this.networkConfig.rpcUrl)
+    const feeState = await pvmApi.getFeeState()
 
     const { utxos } = await pvmApi.getUTXOs({ addresses: [pChainAddress] })
 
@@ -145,19 +146,24 @@ export class AvalancheStaker {
     const end = BigInt(endTime.getTime() / 1000)
 
     const tx = pvm.newAddPermissionlessDelegatorTx(
-      context,
-      utxos,
-      [utils.bech32ToBytes(pChainAddress)],
-      validatorAddress,
-      constants.PrimaryNetworkID.toString(),
-      start,
-      end,
-      macroToDenomAmount(amount, this.networkConfig.denomMultiplier), // weight is amont in nAVAX
-      [utils.bech32ToBytes(pChainAddress)],
-      undefined, // options
-      undefined, // threshold
-      undefined, // locktime
-      stakingAssetId
+      {
+        changeAddressesBytes: [utils.bech32ToBytes(pChainAddress)],
+        end,
+        feeState,
+        fromAddressesBytes: [utils.bech32ToBytes(pChainAddress)],
+        locktime: undefined,
+        nodeId: validatorAddress,
+        memo: Buffer.from(''),
+        minIssuanceTime: start,
+        rewardAddresses: [utils.bech32ToBytes(pChainAddress)],
+        stakingAssetId,
+        start,
+        subnetId: constants.PrimaryNetworkID.toString(),
+        threshold: undefined,
+        utxos,
+        weight: macroToDenomAmount(amount, this.networkConfig.denomMultiplier)
+      },
+      context
     )
 
     return { tx }
@@ -223,11 +229,15 @@ export class AvalancheStaker {
 
         const amnt = macroToDenomAmount(amount, this.networkConfig.denomMultiplier)
         const tx = pvm.newExportTx(
-          context,
-          getChainIdFromContext(dstChain, context),
-          [utils.bech32ToBytes(srcAddr)],
-          utxos,
-          [avaxSerial.TransferableOutput.fromNative(assetId, amnt, [utils.bech32ToBytes(dstCoreAddr)])]
+          {
+            changeAddressesBytes: [utils.bech32ToBytes(srcAddr)],
+            destinationChainId: getChainIdFromContext(dstChain, context),
+            feeState: await pvmApi.getFeeState(),
+            fromAddressesBytes: [utils.bech32ToBytes(srcAddr)],
+            outputs: [avaxSerial.TransferableOutput.fromNative(assetId, amnt, [utils.bech32ToBytes(dstCoreAddr)])],
+            utxos
+          },
+          context
         )
 
         return { tx }
@@ -298,11 +308,14 @@ export class AvalancheStaker {
         })
 
         const tx = pvm.newImportTx(
-          context,
-          getChainIdFromContext(srcChain, context),
-          utxos,
-          [utils.bech32ToBytes(dstAddr)],
-          [utils.bech32ToBytes(srcCoreAddr)]
+          {
+            feeState: await pvmApi.getFeeState(),
+            fromAddressesBytes: [utils.bech32ToBytes(srcCoreAddr)],
+            sourceChainId: getChainIdFromContext(srcChain, context),
+            toAddressesBytes: [utils.bech32ToBytes(dstCoreAddr)],
+            utxos
+          },
+          context
         )
 
         return { tx }
