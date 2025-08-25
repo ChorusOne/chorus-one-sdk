@@ -375,7 +375,7 @@ export class CosmosStaker {
     const isEVM = this.networkConfig.isEVM ?? false
     const { sig, pk } = await genSignDocSignature(signer, acc, signDoc, isEVM)
 
-    const pkType = isEVM ? acc.pubkey?.type ?? undefined : undefined
+    const pkType = isEVM ? (acc.pubkey?.type ?? undefined) : undefined
     const signedTx = genSignedTx(signDoc, sig, pk, pkType)
 
     // IMPORTANT: verify that signer address matches derived address from signature
