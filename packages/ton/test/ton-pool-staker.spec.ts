@@ -4,7 +4,7 @@ import { toNano } from '@ton/ton'
 import spies from 'chai-spies'
 import { createMemberMock, createParamsMock, createPoolStatusMock } from './helpers/mock-data'
 import { extractMessagePayload, setupStaker } from './helpers/test-setup'
-import { chaiAsPromised } from 'chai-promised'
+import chaiAsPromised from 'chai-as-promised'
 
 use(spies)
 use(chaiAsPromised)

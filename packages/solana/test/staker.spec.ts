@@ -2,7 +2,7 @@ import { SolanaStaker, denomToMacroAmount, macroToDenomAmount } from '@chorus-on
 import { StakeProgram, PublicKey, Authorized, Lockup, Keypair } from '@solana/web3.js'
 import { describe, it } from 'mocha'
 import { use, assert, expect, spy } from 'chai'
-import { chaiAsPromised } from 'chai-promised'
+import chaiAsPromised from 'chai-as-promised'
 import spies from 'chai-spies'
 
 // Use chai-as-promised plugin for async tests

@@ -2,7 +2,7 @@ import { CosmosStaker, denomToMacroAmount } from '@chorus-one/cosmos'
 import type { MsgDelegateEncodeObject } from '@cosmjs/stargate'
 import { describe, it } from 'mocha'
 import { use, assert, expect } from 'chai'
-import { chaiAsPromised } from 'chai-promised'
+import chaiAsPromised from 'chai-as-promised'
 
 // Use chai-as-promised plugin for async tests
 use(chaiAsPromised)
