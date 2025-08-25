@@ -5,9 +5,14 @@
     "baseUrl": ".",
     "paths": {
       "@chorus-one/signer": ["../signer/src"]
-    }
+    },
+    "module": "esnext"
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"],
-  "references": [{ "path": "../signer" }]
+  "references": [
+    {
+      "path": "../signer"
+    }
+  ]
 }
