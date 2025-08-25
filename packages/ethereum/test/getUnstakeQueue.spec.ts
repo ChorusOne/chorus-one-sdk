@@ -3,6 +3,7 @@ import { assert } from 'chai'
 import { EthereumStaker } from '../dist/mjs'
 import { prepareTests } from './lib/utils'
 import { disableHoodi } from './lib/disableHoodi'
+import { restoreToInitialState } from './setup'
 
 describe('EthereumStaker.getUnstakeQueue', () => {
   let delegatorAddress: Hex
@@ -15,6 +16,10 @@ describe('EthereumStaker.getUnstakeQueue', () => {
     delegatorAddress = '0x9685b00aa0db8eccc1684c1155b826169ce48d3d'
     validatorAddress = setup.validatorAddress
     staker = setup.staker
+  })
+  afterEach(async () => {
+    // Restore to clean state after each test
+    await restoreToInitialState()
   })
 
   it('returns the unstake queue', async function () {

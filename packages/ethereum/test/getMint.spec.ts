@@ -2,6 +2,7 @@ import { EthereumStaker } from '@chorus-one/ethereum'
 import { Hex, parseEther, PublicClient, WalletClient } from 'viem'
 import { mint, prepareTests, stake } from './lib/utils'
 import { assert } from 'chai'
+import { restoreToInitialState } from './setup'
 
 const amountToStake = parseEther('20')
 const amountToMint = parseEther('1')
@@ -20,6 +21,10 @@ describe('EthereumStaker.getMint', () => {
     walletClient = setup.walletClient
     publicClient = setup.publicClient
     staker = setup.staker
+  })
+  afterEach(async () => {
+    // Restore to clean state after each test
+    await restoreToInitialState()
   })
 
   it('returns minted balance and maxMint', async () => {

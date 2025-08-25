@@ -2,6 +2,7 @@ import { EthereumStaker } from '@chorus-one/ethereum'
 import { Hex, PublicClient, WalletClient, parseEther } from 'viem'
 import { assert } from 'chai'
 import { prepareTests, stake } from './lib/utils'
+import { restoreToInitialState } from './setup'
 
 const amountToStake = parseEther('2')
 
@@ -20,6 +21,11 @@ describe('EthereumStaker.buildStakeTx', () => {
     walletClient = setup.walletClient
     publicClient = setup.publicClient
     staker = setup.staker
+  })
+
+  afterEach(async () => {
+    // Restore to clean state after each test
+    await restoreToInitialState()
   })
 
   it('builds a staking tx', async () => {
@@ -47,7 +53,7 @@ describe('EthereumStaker.buildStakeTx', () => {
 
     // Take into account gas fees
     assert.closeTo(Number(balanceAfter), Number(balanceBefore - amountToStake), Number(parseEther('0.001')))
-    assert.closeTo(Number(parseEther(stakeAfter) - amountToStake), 0, 1)
+    assert.closeTo(Number(parseEther(stakeAfter)), Number(amountToStake), 1)
   })
 
   it('builds a staking tx with referrer', async () => {
