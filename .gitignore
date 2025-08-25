@@ -14,5 +14,8 @@ dist
 packages/ethereum/cache
 packages/ethereum/hardhat.log
 packages/ethereum/hardhat.pid
+packages/ethereum/edr-fork-cache
+
 
 packages/**/.env
+
