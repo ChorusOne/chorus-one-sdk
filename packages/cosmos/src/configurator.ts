@@ -73,7 +73,7 @@ export class CosmosConfigurator {
 
     const newGasPrice = gasPrice
       ? parseInt(gasPrice)
-      : feeToken.average_gas_price ?? feeToken.low_gas_price ?? feeToken.fixed_min_gas_price ?? 0
+      : (feeToken.average_gas_price ?? feeToken.low_gas_price ?? feeToken.fixed_min_gas_price ?? 0)
     if (!newGasPrice) {
       throw new Error(`No gas price found for ${network}`)
     }

@@ -1,5 +1,5 @@
 import type { Signer } from '@chorus-one/signer'
-import { publicKeyConvert } from 'secp256k1'
+import secp256k1 from 'secp256k1'
 import { Chain, createWalletClient, formatEther, Hex, http, keccak256, parseEther, serializeTransaction } from 'viem'
 import { StakewiseConnector } from './lib/connector'
 
@@ -42,7 +42,7 @@ export class EthereumStaker {
   static getAddressDerivationFn =
     () =>
     async (publicKey: Uint8Array): Promise<Array<string>> => {
-      const pkUncompressed = publicKeyConvert(publicKey, false)
+      const pkUncompressed = secp256k1.publicKeyConvert(publicKey, false)
       const hash = keccak256(pkUncompressed.subarray(1))
       const ethAddress = hash.slice(-40)
       return [ethAddress]

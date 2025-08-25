@@ -1,22 +1,22 @@
-import { secp256k1, utils } from '@avalabs/avalanchejs'
+import { secp256k1 as avalancheSecp256k1, utils } from '@avalabs/avalanchejs'
 import { checkMaxDecimalPlaces } from '@chorus-one/utils'
 import { Context } from '@avalabs/avalanchejs'
-import { publicKeyConvert } from 'secp256k1'
+import secp256k1 from 'secp256k1'
 import { AvalancheAddressSet } from './types.d'
 import { BigNumber } from 'bignumber.js'
 
 /** @ignore */
 export function publicKeyToAddress (pk: Uint8Array, hrp: string): AvalancheAddressSet {
-  const pkUncompressed = publicKeyConvert(pk, false)
+  const pkUncompressed = secp256k1.publicKeyConvert(pk, false)
 
   // NOTE: avalanchejs publicKeyBytesToAddress expects compressed public key!!! (otherwise you get wrong address)
-  const pkCompressed = Buffer.from(publicKeyConvert(pkUncompressed, true))
+  const pkCompressed = secp256k1.publicKeyConvert(pkUncompressed, true)
 
   // generate C-Chain and P-Chain addresses
-  const addrBytes = secp256k1.publicKeyBytesToAddress(pkCompressed)
+  const addrBytes = avalancheSecp256k1.publicKeyBytesToAddress(pkCompressed)
 
   return {
-    cAddr: '0x' + Buffer.from(secp256k1.publicKeyToEthAddress(pk)).toString('hex').toLowerCase(),
+    cAddr: '0x' + Buffer.from(avalancheSecp256k1.publicKeyToEthAddress(pk)).toString('hex').toLowerCase(),
     pAddr: utils.format('P', hrp, addrBytes),
     xAddr: utils.format('X', hrp, addrBytes),
     coreEthAddr: utils.format('C', hrp, addrBytes)
