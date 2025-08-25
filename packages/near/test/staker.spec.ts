@@ -1,13 +1,16 @@
 import { NearStaker, denomToMacroAmount, macroToDenomAmount } from '@chorus-one/near'
 import { KeyPair } from 'near-api-js'
 import { describe, it } from 'mocha'
-import { use, assert, expect, spy } from 'chai'
-import { chaiAsPromised } from 'chai-promised'
+import chai, { use, assert, expect } from 'chai'
+import chaiAsPromised from 'chai-as-promised'
 import spies from 'chai-spies'
 
 // Use chai-as-promised plugin for async tests
 use(chaiAsPromised)
 use(spies)
+
+// After using the spies plugin, spy is available on chai
+const { spy } = chai
 
 describe('NearStaker', () => {
   const delegatorAddress = 'mateusz-test-mnemonic.testnet'

@@ -1,7 +1,7 @@
 import { SubstrateStaker, denomToMacroAmount, macroToDenomAmount, RewardDestination } from '@chorus-one/substrate'
 import { describe, it } from 'mocha'
 import { use, assert, expect, spy } from 'chai'
-import { chaiAsPromised } from 'chai-promised'
+import chaiAsPromised from 'chai-as-promised'
 import spies from 'chai-spies'
 
 // Use chai-as-promised plugin for async tests
