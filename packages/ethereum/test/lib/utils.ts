@@ -19,18 +19,6 @@ export const prepareTests = async () => {
     chain: hardhat,
     transport: http()
   })
-  const resetParams = {
-    forking: {
-      jsonRpcUrl: config.networkConfig.url
-    },
-    accounts: config.accounts
-  }
-
-  await fetch('http://localhost:8545', {
-    method: 'POST',
-    body: `{"jsonrpc":"2.0","method":"hardhat_reset","params":[${JSON.stringify(resetParams)}],"id":1}`
-  })
-
   const staker = new EthereumStaker({
     network: config.networkConfig.name,
     rpcUrl: hardhat.rpcUrls.default.http[0]
