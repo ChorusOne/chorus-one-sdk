@@ -4,7 +4,7 @@
   "description": "All-in-one toolkit for building staking dApps on Ethereum network",
   "scripts": {
     "build": "rm -fr dist/* && tsc -p tsconfig.mjs.json --outDir dist/mjs && tsc -p tsconfig.cjs.json --outDir dist/cjs && bash ../../scripts/fix-package-json",
-    "hardhat:start": "hardhat node --fork ${FORK_URL:-https://ethereum-rpc.publicnode.com} --fork-block-number 22217318 & echo $! > hardhat.pid;",
+    "hardhat:start": "hardhat node --network hardhat & echo $! > hardhat.pid;",
     "hardhat:stop": "kill $(cat hardhat.pid) && rm hardhat.pid",
     "test:integration": "mocha --timeout 30000 '**/*.spec.ts'",
     "test": "NETWORK=${NETWORK:-ethereum} npm run hardhat:start > hardhat.log & sleep 5; NETWORK=${NETWORK:-ethereum} npm run test:integration; status=$?; npm run hardhat:stop; exit $status"
