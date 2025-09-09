@@ -38,7 +38,7 @@ describe('EthereumStaker.getUnstakeQueue', () => {
         isWithdrawable: true,
         totalAmount: '0.100003157585081498',
         withdrawableAmount: '0.100003157585081498',
-        withdrawalTimestamp: undefined
+        withdrawalTimestamp: 0
       }
     ])
   })
