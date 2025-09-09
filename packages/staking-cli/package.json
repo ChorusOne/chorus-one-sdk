@@ -40,6 +40,6 @@
     "@chorus-one/utils": "^1.0.1",
     "@commander-js/extra-typings": "^11.1.0",
     "@ledgerhq/hw-transport-node-hid": "^6.29.5",
-    "chalk": "^4.1.2"
+    "chalk": "5.6.2"
   }
 }
