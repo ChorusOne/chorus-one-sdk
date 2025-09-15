@@ -1,7 +1,18 @@
 import type { Signer } from '@chorus-one/signer'
 import secp256k1 from 'secp256k1'
-import { Chain, createWalletClient, formatEther, Hex, http, keccak256, parseEther, serializeTransaction } from 'viem'
+import {
+  Chain,
+  createWalletClient,
+  encodeFunctionData,
+  formatEther,
+  Hex,
+  http,
+  keccak256,
+  parseEther,
+  serializeTransaction
+} from 'viem'
 import { StakewiseConnector } from './lib/connector'
+import { NativeStakingConnector } from './lib/nativeStakingConnector'
 
 import {
   buildStakeTx,
@@ -23,6 +34,13 @@ import {
 import { Networks } from './lib/types/networks'
 import { Transaction } from './lib/types/transaction'
 import { EthereumTxStatus } from './lib/types/txStatus'
+import {
+  CreateBatchRequest,
+  CreateBatchResponse,
+  BatchStatusResponse,
+  ValidatorDepositData
+} from './lib/types/nativeStaking'
+import { depositAbi } from './lib/contracts/depositContractAbi'
 
 /**
  * This class provides the functionality to stake, unstake, and withdraw for Ethereum network.
@@ -31,6 +49,7 @@ import { EthereumTxStatus } from './lib/types/txStatus'
  */
 export class EthereumStaker {
   private connector: StakewiseConnector
+  private nativeStakingConnector?: NativeStakingConnector
 
   /**
    * This **static** method is used to derive an address from a public key.
@@ -54,13 +73,18 @@ export class EthereumStaker {
    * @param params - Initialization configuration
    * @param params.network - The network to connect to
    * @param params.rpcUrl - (Optional) The URL of the RPC endpoint. If not provided, the public RPC URL for the network will be used.
+   * @param params.nativeStakingApiToken - (Optional) API token for native staking operations. Required for native staking methods.
    *
    * @returns  An instance of EthereumStaker.
    */
-  constructor (params: { network: Networks; rpcUrl?: string }) {
+  constructor (params: { network: Networks; rpcUrl?: string; nativeStakingApiToken?: string }) {
     const network = params.network
 
     this.connector = new StakewiseConnector(network, params.rpcUrl)
+
+    if (params.nativeStakingApiToken) {
+      this.nativeStakingConnector = new NativeStakingConnector(network, params.nativeStakingApiToken, params.rpcUrl)
+    }
   }
 
   /**
@@ -420,6 +444,174 @@ export class EthereumStaker {
     })
 
     return { health }
+  }
+
+  /**
+   * Creates a batch of validators for native Ethereum staking.
+   *
+   * This method creates a new batch of validators using the Chorus One Native Staking API.
+   * Each validator requires 32 ETH to be deposited. The batch will generate deposit data
+   * that can be used to deposit validators on the Ethereum network.
+   *
+   * @param params - Parameters for creating the validator batch
+   * @param params.batchId - Unique identifier for the batch
+   * @param params.withdrawalAddress - The withdrawal address that will control the staked funds
+   * @param params.feeRecipientAddress - The address that will receive MEV rewards
+   * @param params.numberOfValidators - Number of validators to create (each requires 32 ETH)
+   *
+   * @returns Returns a promise that resolves to the batch creation response.
+   */
+  async createValidatorBatch (params: {
+    batchId: string
+    withdrawalAddress: Hex
+    feeRecipientAddress: Hex
+    numberOfValidators: number
+  }): Promise<CreateBatchResponse> {
+    if (!this.nativeStakingConnector) {
+      throw new Error('Native staking is not enabled. Please provide nativeStakingApiToken in constructor.')
+    }
+
+    const request: CreateBatchRequest = {
+      batch_id: params.batchId,
+      withdrawal_address: params.withdrawalAddress,
+      fee_recipient: params.feeRecipientAddress,
+      number_of_validators: params.numberOfValidators,
+      network: this.nativeStakingConnector.network
+    }
+
+    return this.nativeStakingConnector.createBatch(request)
+  }
+
+  /**
+   * Gets the status of a validator batch.
+   *
+   * This method retrieves the current status of a validator batch, including the deposit data
+   * for each validator when ready. Optionally, it can also retrieve exit messages for a specific epoch.
+   *
+   * @param params - Parameters for getting batch status
+   * @param params.batchId - The batch identifier
+   * @param params.epoch - (Optional) Epoch number for generating exit messages
+   *
+   * @returns Returns a promise that resolves to the batch status information.
+   */
+  async getValidatorBatchStatus (params: { batchId: string; epoch?: string }): Promise<BatchStatusResponse> {
+    if (!this.nativeStakingConnector) {
+      throw new Error('Native staking is not enabled. Please provide nativeStakingApiToken in constructor.')
+    }
+
+    return this.nativeStakingConnector.getBatchStatus(params.batchId, params.epoch)
+  }
+
+  /**
+   * Exports deposit data in the format required by the Ethereum Staking Launchpad.
+   *
+   * This method retrieves the deposit data for a batch and formats it for use with
+   * the official Ethereum Staking Launchpad or other deposit tools.
+   *
+   * @param params - Parameters for exporting deposit data
+   * @param params.batchId - The batch identifier
+   *
+   * @returns Returns a promise that resolves to an array of deposit data objects.
+   */
+  async exportDepositData (params: {
+    batchId: string
+  }): Promise<{ depositData: ValidatorDepositData[]; statusCode?: number }> {
+    const batchStatus = await this.getValidatorBatchStatus(params)
+
+    if (batchStatus.statusCode === 206) {
+      return { depositData: [], statusCode: 206 }
+    }
+
+    if (batchStatus.statusCode !== 200) {
+      throw new Error(`Unexpected response from API. Status code: ${batchStatus.statusCode}`)
+    }
+
+    const depositData = batchStatus.validators
+      .filter((validator) => validator.status === 'created')
+      .map((validator) => validator.deposit_data)
+
+    return { depositData, statusCode: 200 }
+  }
+
+  /**
+   * Builds deposit transactions for native Ethereum staking.
+   *
+   * This method creates transactions for depositing validators to the Ethereum deposit contract.
+   * Each validator requires exactly 32 ETH to be deposited along with the deposit data.
+   *
+   * @param params - Parameters for building deposit transactions
+   * @param params.batchId - The batch identifier to get deposit data from
+   *
+   * @returns Returns a promise that resolves to an array of deposit transactions.
+   */
+  async buildDepositTx (params: { batchId: string }): Promise<{ transactions: Transaction[]; statusCode?: number }> {
+    if (!this.nativeStakingConnector) {
+      throw new Error('Native staking is not enabled. Please provide nativeStakingApiToken in constructor.')
+    }
+
+    const batchStatus = await this.getValidatorBatchStatus({ batchId: params.batchId })
+
+    if (batchStatus.statusCode === 206) {
+      return { transactions: [], statusCode: 206 }
+    }
+
+    if (batchStatus.statusCode !== 200) {
+      throw new Error(`Unexpected response from API. Status code: ${batchStatus.statusCode}`)
+    }
+
+    const validatorsToDeposit = batchStatus.validators.filter((validator) => validator.status === 'created')
+
+    if (validatorsToDeposit.length === 0) {
+      throw new Error('No validators found that need to be deposited. All validators may have already been deposited.')
+    }
+
+    const transactions: Transaction[] = []
+
+    for (const validator of validatorsToDeposit) {
+      const depositData = validator.deposit_data
+
+      const depositFunctionData = this.encodeDepositFunction({
+        pubkey: depositData.pubkey,
+        withdrawalCredentials: depositData.withdrawal_credentials,
+        signature: depositData.signature,
+        depositDataRoot: depositData.deposit_data_root
+      })
+
+      const transaction: Transaction = {
+        to: this.nativeStakingConnector.depositContractAddress,
+        value: parseEther('32'), // Each validator requires exactly 32 ETH
+        data: depositFunctionData
+      }
+
+      transactions.push(transaction)
+    }
+
+    return { transactions, statusCode: 200 }
+  }
+
+  /**
+   * Encodes the deposit function call for the Ethereum deposit contract.
+   */
+  private encodeDepositFunction (params: {
+    pubkey: string
+    withdrawalCredentials: string
+    signature: string
+    depositDataRoot: string
+  }): Hex {
+    return encodeFunctionData({
+      abi: depositAbi,
+      functionName: 'deposit',
+      args: [
+        params.pubkey.startsWith('0x') ? (params.pubkey as Hex) : (`0x${params.pubkey}` as Hex),
+        params.withdrawalCredentials.startsWith('0x')
+          ? (params.withdrawalCredentials as Hex)
+          : (`0x${params.withdrawalCredentials}` as Hex),
+        params.signature.startsWith('0x') ? (params.signature as Hex) : (`0x${params.signature}` as Hex),
+        params.depositDataRoot.startsWith('0x')
+          ? (params.depositDataRoot as Hex)
+          : (`0x${params.depositDataRoot}` as Hex)
+      ]
+    })
   }
 
   /**
