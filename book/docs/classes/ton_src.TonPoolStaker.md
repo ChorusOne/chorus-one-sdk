@@ -12,6 +12,7 @@
 
 ## Methods
 
+- [calculateUnstakePoolAmount](ton_src.TonPoolStaker.md#calculateunstakepoolamount)
 - [getAddressDerivationFn](ton_src.TonPoolStaker.md#getaddressderivationfn)
 - [getMnemonicToSeedFn](ton_src.TonPoolStaker.md#getmnemonictoseedfn)
 - [getSeedToKeypairFn](ton_src.TonPoolStaker.md#getseedtokeypairfn)
@@ -20,7 +21,7 @@
 - [getStake](ton_src.TonPoolStaker.md#getstake)
 - [getPoolParams](ton_src.TonPoolStaker.md#getpoolparams)
 - [getTxStatus](ton_src.TonPoolStaker.md#gettxstatus)
-- [getMinStake](ton_src.TonPoolStaker.md#getminstake)
+- [getElectionMinStake](ton_src.TonPoolStaker.md#getelectionminstake)
 - [getPoolStatus](ton_src.TonPoolStaker.md#getpoolstatus)
 - [getPastElections](ton_src.TonPoolStaker.md#getpastelections)
 - [init](ton_src.TonPoolStaker.md#init)
@@ -58,6 +59,35 @@ An instance of TonStaker.
 TonBaseStaker.constructor
 
 # Methods
+
+## calculateUnstakePoolAmount
+
+▸ **calculateUnstakePoolAmount**(`amount`, `minElectionStake`, `«destructured»`, `«destructured»`, `«destructured»`, `«destructured»`): [`bigint`, `bigint`]
+
+Calculates optimal unstake amounts from two pools.
+Tries strategies in order: keep both active → keep one active → deactivate both
+
+TODO: Add transaction simulation to catch false negatives thrown by SDK in case of bugs in calculation logic.
+      Consider adding anonymous telemetry/logging.
+
+TODO: Add `getValidUnstakeRanges()` method to help integrators validate amounts upfront by knowing the valid amounts to unstake.
+
+### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `amount` | `bigint` |
+| `minElectionStake` | `bigint` |
+| `«destructured»` | [`bigint`, `bigint`] |
+| `«destructured»` | [`bigint`, `bigint`] |
+| `«destructured»` | [`bigint`, `bigint`] |
+| `«destructured»` | [`bigint`, `bigint`] |
+
+### Returns
+
+[`bigint`, `bigint`]
+
+___
 
 ## getAddressDerivationFn
 
@@ -193,8 +223,10 @@ to stake to automatically.
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `params` | `Object` | Parameters for building the transaction |
+| `params.delegatorAddress` | `string` | The delegator address |
 | `params.validatorAddressPair` | [`string`, `string`] | The validator address pair to stake to |
 | `params.amount` | `string` | The amount to stake, specified in `TON` |
+| `params.preferredStrategy?` | ``"split"`` \| ``"single"`` \| ``"balanced"`` | (Optional) The stake allocation strategy. Default is `balanced`. * `balanced` - automatically balances the stake between the two pools based on the current pool balances and user stakes * `split` - splits the stake evenly between the two pools * `single` - stakes to a single pool |
 | `params.referrer?` | `string` | (Optional) The address of the referrer. This is used to track the origin of transactions, providing insights into which sources or campaigns are driving activity. This can be useful for analytics and optimizing user acquisition strategies |
 | `params.validUntil?` | `number` | (Optional) The Unix timestamp when the transaction expires |
 
@@ -208,26 +240,32 @@ ___
 
 ## buildUnstakeTx
 
-▸ **buildUnstakeTx**(`params`): `Promise`\<\{ `tx`: [`UnsignedTx`](../interfaces/ton_src.UnsignedTx.md)  }\>
+▸ **buildUnstakeTx**\<`T`\>(`params`): `Promise`\<\{ `tx`: [`UnsignedTx`](../interfaces/ton_src.UnsignedTx.md)  }\>
 
 Builds an unstaking transaction for TON Pool contract.
+
+### Type parameters
+
+| Name | Type |
+| :------ | :------ |
+| `T` | extends `boolean` = ``false`` |
 
 ### Parameters
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `params` | `Object` | Parameters for building the transaction |
-| `params.delegatorAddress` | `string` | - |
+| `params.delegatorAddress` | `string` | The delegator address |
 | `params.validatorAddressPair` | [`string`, `string`] | The validator address pair to unstake from |
-| `params.amount` | `string` | The amount to stake, specified in `TON` |
-| `params.disableStatefulCalculation?` | `boolean` | (Optional) Disables stateful calculation where validator and user stake is taken into account |
+| `params.amount` | `T` extends ``true`` ? [`string`, `string`] : `string` | The amount to unstake, specified in `TON`. When disableStatefulCalculation is true, must be a tuple [string, string] |
+| `params.disableStatefulCalculation?` | `T` | (Optional) Disables stateful calculation where validator and user stake is taken into account |
 | `params.validUntil?` | `number` | (Optional) The Unix timestamp when the transaction expires |
 
 ### Returns
 
 `Promise`\<\{ `tx`: [`UnsignedTx`](../interfaces/ton_src.UnsignedTx.md)  }\>
 
-Returns a promise that resolves to a TON nominator pool staking transaction.
+Returns a promise that resolves to a TON nominator pool unstaking transaction.
 
 ___
 
@@ -303,9 +341,9 @@ TonBaseStaker.getTxStatus
 
 ___
 
-## getMinStake
+## getElectionMinStake
 
-▸ **getMinStake**(): `Promise`\<`bigint`\>
+▸ **getElectionMinStake**(): `Promise`\<`bigint`\>
 
 ### Returns
 

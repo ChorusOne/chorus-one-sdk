@@ -15,6 +15,7 @@ It also provides the ability to retrieve staking information and rewards for an 
 - [buildCreateStakeAccountTx](solana_src.SolanaStaker.md#buildcreatestakeaccounttx)
 - [buildStakeTx](solana_src.SolanaStaker.md#buildstaketx)
 - [buildUnstakeTx](solana_src.SolanaStaker.md#buildunstaketx)
+- [buildPartialUnstakeTx](solana_src.SolanaStaker.md#buildpartialunstaketx)
 - [buildWithdrawStakeTx](solana_src.SolanaStaker.md#buildwithdrawstaketx)
 - [buildMergeStakesTx](solana_src.SolanaStaker.md#buildmergestakestx)
 - [buildSplitStakeTx](solana_src.SolanaStaker.md#buildsplitstaketx)
@@ -128,6 +129,7 @@ Builds a staking transaction.
 | `params.validatorAddress` | `string` | The validatiors vote account address to delegate the stake to |
 | `params.stakeAccountAddress?` | `string` | The stake account address to delegate from. If not provided, a new stake account will be created. |
 | `params.amount?` | `string` | The amount to stake, specified in `SOL`. If `stakeAccountAddress` is not provided, this parameter is required. |
+| `params.referrer?` | `string` | (Optional) A custom tracking reference. If not provided, the default tracking reference will be used. |
 
 ### Returns
 
@@ -150,12 +152,39 @@ Builds an unstaking transaction.
 | `params` | `Object` | Parameters for building the transaction |
 | `params.ownerAddress` | `string` | The stake account owner's address |
 | `params.stakeAccountAddress` | `string` | The stake account address to deactivate |
+| `params.referrer?` | `string` | (Optional) A custom tracking reference. If not provided, the default tracking reference will be used. |
 
 ### Returns
 
 `Promise`\<\{ `tx`: `SolanaTransaction`  }\>
 
 Returns a promise that resolves to a SOLANA unstaking transaction.
+
+___
+
+## buildPartialUnstakeTx
+
+▸ **buildPartialUnstakeTx**(`params`): `Promise`\<\{ `transactions`: `SolanaTransaction`[] ; `accounts`: `StakeAccount`[]  }\>
+
+Builds a partial unstake transaction.
+
+This method allows for unstaking a specific amount from multiple stake accounts.
+It will split the stake accounts if necessary to achieve the desired unstake amount.
+
+### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | Parameters for building the transaction |
+| `params.ownerAddress` | `string` | The stake account owner's address |
+| `params.amount` | `string` | The amount to unstake, specified in `SOL` |
+| `params.referrer?` | `string` | (Optional) A custom tracking reference. If not provided, the default tracking reference will be used. |
+
+### Returns
+
+`Promise`\<\{ `transactions`: `SolanaTransaction`[] ; `accounts`: `StakeAccount`[]  }\>
+
+Returns a promise that resolves to an array of SOLANA transactions for partial unstaking and the affected stake accounts.
 
 ___
 
@@ -256,7 +285,7 @@ ___
 
 ## sign
 
-▸ **sign**(`params`): `Promise`\<\{ `signedTx`: `Transaction`  }\>
+▸ **sign**(`params`): `Promise`\<\{ `signedTx`: `VersionedTransaction`  }\>
 
 Signs a transaction using the provided signer.
 
@@ -271,7 +300,7 @@ Signs a transaction using the provided signer.
 
 ### Returns
 
-`Promise`\<\{ `signedTx`: `Transaction`  }\>
+`Promise`\<\{ `signedTx`: `VersionedTransaction`  }\>
 
 A promise that resolves to an object containing the signed transaction.
 
@@ -288,7 +317,7 @@ Broadcasts a signed transaction to the network.
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `params` | `Object` | Parameters for the broadcast process |
-| `params.signedTx` | `Transaction` | The signed transaction to broadcast |
+| `params.signedTx` | `VersionedTransaction` | The signed transaction to broadcast |
 
 ### Returns
 

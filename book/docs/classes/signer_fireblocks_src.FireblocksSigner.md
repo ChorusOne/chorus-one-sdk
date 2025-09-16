@@ -1,9 +1,3 @@
-The FireblocksSigner in the Chorus One SDK is a specialized implementation of the Signer interface that integrates
-with the Fireblocks platform.
-
-Fireblocks is known for its advanced security features, including multi-party computation (MPC) and secure wallet
-infrastructure, making it an ideal choice for enterprises requiring robust security and compliance.
-
 # Table of contents
 
 ## Constructors
@@ -14,6 +8,7 @@ infrastructure, making it an ideal choice for enterprises requiring robust secur
 
 - [init](signer_fireblocks_src.FireblocksSigner.md#init)
 - [sign](signer_fireblocks_src.FireblocksSigner.md#sign)
+- [contractCall](signer_fireblocks_src.FireblocksSigner.md#contractcall)
 - [getPublicKey](signer_fireblocks_src.FireblocksSigner.md#getpublickey)
 
 # Constructors
@@ -81,6 +76,34 @@ Signs the provided data using the private key associated with the signer's addre
 `Promise`\<\{ `sig`: `Signature` ; `pk`: `Uint8Array`  }\>
 
 A promise that resolves to an object containing the signature and public key.
+
+___
+
+## contractCall
+
+▸ **contractCall**(`params`): `Promise`\<`FireblocksTxStatus`\>
+
+Signs an Ethereum contract call transaction using Fireblocks.
+
+### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | Parameters for the contract call |
+| `params.to` | \`0x$\{string}\` | The destination contract address |
+| `params.value?` | `bigint` | The amount to send in wei (optional) |
+| `params.data` | \`0x$\{string}\` | The contract call data |
+| `params.gas` | `bigint` | - |
+| `params.maxFeePerGas` | `bigint` | Maximum fee per gas in wei (optional) |
+| `params.maxPriorityFeePerGas` | `bigint` | Maximum priority fee per gas in wei (optional) |
+| `params.gasPrice` | `bigint` | - |
+| `params.note?` | `string` | Optional note for the transaction |
+
+### Returns
+
+`Promise`\<`FireblocksTxStatus`\>
+
+A promise that resolves to the transaction response from Fireblocks.
 
 ___
 

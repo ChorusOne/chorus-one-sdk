@@ -17,6 +17,8 @@ It also provides the ability to retrieve staking information and rewards for a d
 - [buildRedelegateTx](cosmos_src.CosmosStaker.md#buildredelegatetx)
 - [buildWithdrawRewardsTx](cosmos_src.CosmosStaker.md#buildwithdrawrewardstx)
 - [getStake](cosmos_src.CosmosStaker.md#getstake)
+- [getUnbondingStake](cosmos_src.CosmosStaker.md#getunbondingstake)
+- [getBalance](cosmos_src.CosmosStaker.md#getbalance)
 - [getRewards](cosmos_src.CosmosStaker.md#getrewards)
 - [sign](cosmos_src.CosmosStaker.md#sign)
 - [broadcast](cosmos_src.CosmosStaker.md#broadcast)
@@ -40,8 +42,9 @@ This creates a new CosmosStaker instance.
 | `params.bechPrefix` | `string` | Address prefix (e.g. celestia) |
 | `params.denom` | `string` | Coin denom (e.g `utia`) |
 | `params.denomMultiplier` | `string` | Multiplier to convert the base coin unit to its smallest subunit (e.g., `1000000` for 1 TIA = 1000000 utia) |
-| `params.gas` | `number` | Default TX gas (e.g 200000) |
+| `params.gas` | `number` \| ``"auto"`` | Default TX gas (e.g 200000). If set to "auto", the gas will be automatically estimated via RPC node. |
 | `params.gasPrice` | `string` | Gas price (e.g "0.4") See: [Chain registry - Celestia](https://github.com/cosmos/chain-registry/blob/master/celestia/chain.json) |
+| `params.extraGas?` | `number` | (Optional) Additional "buffer" gas to be added to the gas limit (sometimes the gas estimation is not accurate, so this is a way to add a buffer) |
 | `params.fee?` | `string` | (Optional) Override with a fixed fee (e.g "5000" for "5000 uatom" or "0.005 ATOM") |
 | `params.isEVM?` | `boolean` | (Optional) Use different address derivation logic for EVM compatible chains (e.g. evmos, zetachain) |
 
@@ -201,7 +204,7 @@ ___
 
 ▸ **getStake**(`params`): `Promise`\<\{ `balance`: `string`  }\>
 
-Retrieves the staking information for a specified delegator.
+Retrieves the staked balance for a specified delegator.
 
 ### Parameters
 
@@ -216,6 +219,49 @@ Retrieves the staking information for a specified delegator.
 `Promise`\<\{ `balance`: `string`  }\>
 
 Returns a promise that resolves to the staking information for the specified delegator.
+
+___
+
+## getUnbondingStake
+
+▸ **getUnbondingStake**(`params`): `Promise`\<\{ `balance`: `string`  }\>
+
+Retrieves the unbonding balance for a specified delegator.
+
+### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | Parameters for the request |
+| `params.delegatorAddress` | `string` | The delegator (wallet) address |
+| `params.validatorAddress?` | `string` | (Optional) The validator address to gather staking information from |
+
+### Returns
+
+`Promise`\<\{ `balance`: `string`  }\>
+
+Returns a promise that resolves to the unbonding information for the specified delegator.
+
+___
+
+## getBalance
+
+▸ **getBalance**(`params`): `Promise`\<\{ `balance`: `string`  }\>
+
+Retrieves the delegator's available balance.
+
+### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | Parameters for the request |
+| `params.delegatorAddress` | `string` | The delegator (wallet) address |
+
+### Returns
+
+`Promise`\<\{ `balance`: `string`  }\>
+
+Returns a promise that resolves to the available balance for the specified delegator.
 
 ___
 

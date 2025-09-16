@@ -37,7 +37,7 @@ This **static** method is used to generate the network configuration for the Cos
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `network` | `string` | Network name (e.g. celestia) |
-| `gas?` | `number` | (Optional) Gas limit for the transaction |
+| `gas?` | `number` \| ``"auto"`` | (Optional) Gas limit for the transaction |
 | `gasPrice?` | `string` | (Optional) Gas price per unit of gas |
 
 ### Returns
