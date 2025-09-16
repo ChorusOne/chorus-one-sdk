@@ -3,7 +3,8 @@ import type {
   TransactionArguments,
   VaultAccountResponse,
   PublicKeyInfoForVaultAccountArgs,
-  PublicKeyResponse
+  PublicKeyResponse,
+  TransactionResponse
 } from 'fireblocks-sdk'
 
 import { FireblocksSDK } from 'fireblocks-sdk'
@@ -12,7 +13,8 @@ import type { Logger } from '@chorus-one/utils'
 import type { FireblocksSignerConfig } from './types'
 import { nopLogger } from '@chorus-one/utils'
 import { getAuthProvider } from './authProvider'
-
+import { formatEther } from 'viem'
+import type { Hex } from 'viem'
 /**
  * The FireblocksSigner in the Chorus One SDK is a specialized implementation of the Signer interface that integrates
  * with the Fireblocks platform.
@@ -20,6 +22,12 @@ import { getAuthProvider } from './authProvider'
  * Fireblocks is known for its advanced security features, including multi-party computation (MPC) and secure wallet
  * infrastructure, making it an ideal choice for enterprises requiring robust security and compliance.
  */
+
+interface FireblocksTxStatus {
+  status: 'success' | 'failure' | 'pending' | 'unknown'
+  reason?: string
+  receipt: TransactionResponse | null
+}
 export class FireblocksSigner {
   private readonly config: FireblocksSignerConfig
   private fireblocksClient?: FireblocksSDK
@@ -78,7 +86,7 @@ export class FireblocksSigner {
       })
 
     if (vaults.length !== 1) {
-      throw new Error('fireblocks vault name not found, expecte exactly 1 result, got: ' + vaults.length)
+      throw new Error('fireblocks vault name not found, expected exactly 1 result, got: ' + vaults.length)
     }
 
     this.fireblocksClient = backend
@@ -198,6 +206,129 @@ export class FireblocksSigner {
     return {
       sig: txInfo.signedMessages[0].signature,
       pk: Uint8Array.from(Buffer.from(txInfo.signedMessages[0].publicKey, 'hex'))
+    }
+  }
+
+  /**
+   * Signs an Ethereum contract call transaction using Fireblocks.
+   *
+   * @param params - Parameters for the contract call
+   * @param params.to - The destination contract address
+   * @param params.value - The amount to send in wei (optional)
+   * @param params.data - The contract call data
+   * @param params.gasLimit - Gas limit for the transaction (optional)
+   * @param params.maxFeePerGas - Maximum fee per gas in wei (optional)
+   * @param params.maxPriorityFeePerGas - Maximum priority fee per gas in wei (optional)
+   * @param params.note - Optional note for the transaction
+   *
+   * @returns A promise that resolves to the transaction response from Fireblocks.
+   */
+  async contractCall (params: {
+    to: Hex
+    value?: bigint
+    data: Hex
+    gas: bigint
+    maxFeePerGas: bigint
+    maxPriorityFeePerGas: bigint
+    gasPrice: bigint
+    note?: string
+  }): Promise<FireblocksTxStatus> {
+    const { to, value, data, gas, maxFeePerGas, maxPriorityFeePerGas, gasPrice, note } = params
+    if (!this.vault) {
+      throw new Error('FireblocksSigner instance is not initialized')
+    }
+
+    if (!this.fireblocksClient) {
+      throw new Error('FireblocksSigner instance is not initialized')
+    }
+
+    const amount = value ? formatEther(value) : '0'
+
+    const args: TransactionArguments = {
+      assetId: this.config.assetId,
+      source: {
+        type: PeerType.VAULT_ACCOUNT,
+        id: this.vault.id
+      },
+      destination: {
+        type: PeerType.ONE_TIME_ADDRESS,
+        oneTimeAddress: {
+          address: to
+        }
+      },
+      amount: amount,
+      note,
+      operation: TransactionOperation.CONTRACT_CALL,
+      extraParameters: {
+        contractCallData: data
+      },
+      gasLimit: gas?.toString(),
+      maxFee: maxFeePerGas?.toString(),
+      priorityFee: maxPriorityFeePerGas?.toString(),
+      gasPrice: gasPrice?.toString()
+    }
+
+    this.logger.info('Creating contract call transaction in Fireblocks')
+    const { id } = await this.fireblocksClient.createTransaction(args)
+
+    // Wait for transaction completion
+    let txInfo = await this.fireblocksClient.getTransactionById(id)
+    let status = txInfo.status
+
+    const completedStates = [TransactionStatus.COMPLETED]
+    const failedStates = [
+      TransactionStatus.FAILED,
+      TransactionStatus.BLOCKED,
+      TransactionStatus.CANCELLED,
+      TransactionStatus.REJECTED
+    ]
+
+    const pollInterval = this.config.pollInterval ?? 1000
+    const startTime = Date.now()
+
+    while (!completedStates.includes(status) && !failedStates.includes(status)) {
+      try {
+        this.logger.info(`* Contract call transaction ID: ${id} with status: ${status}`)
+        txInfo = await this.fireblocksClient.getTransactionById(id)
+        status = txInfo.status
+      } catch (err) {
+        this.logger.error('Error checking transaction status', err)
+      }
+
+      // Handle failed states
+      if (failedStates.includes(status)) {
+        const errorMessages: Record<string, string> = {
+          BLOCKED: 'The transaction has been blocked by the TAP security policy.',
+          FAILED: 'The transaction has failed.',
+          CANCELLED: 'The transaction has been cancelled.',
+          REJECTED: 'The transaction has been rejected by the TAP security policy.'
+        }
+
+        return {
+          status: 'failure',
+          reason: errorMessages[status],
+          receipt: txInfo
+        }
+      }
+
+      // Trigger timeout if the transaction takes too long
+      if (this.config.timeout !== undefined && Date.now() - startTime > this.config.timeout) {
+        return {
+          status: 'failure',
+          reason: 'Timeout waiting for the contract call transaction to complete',
+          receipt: txInfo
+        }
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, pollInterval))
+    }
+
+    const details = txInfo.subStatus === '' ? 'none' : txInfo.subStatus
+    this.logger.info(`* Contract call transaction completed with status ${status}; details: ${details}`)
+
+    return {
+      status: 'success',
+      receipt: txInfo
     }
   }
 
