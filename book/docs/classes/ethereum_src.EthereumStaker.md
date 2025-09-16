@@ -24,6 +24,10 @@ It also provides the ability to retrieve staking information and rewards for an 
 - [getUnstakeQueue](ethereum_src.EthereumStaker.md#getunstakequeue)
 - [getMint](ethereum_src.EthereumStaker.md#getmint)
 - [getMintHealth](ethereum_src.EthereumStaker.md#getminthealth)
+- [createValidatorBatch](ethereum_src.EthereumStaker.md#createvalidatorbatch)
+- [getValidatorBatchStatus](ethereum_src.EthereumStaker.md#getvalidatorbatchstatus)
+- [exportDepositData](ethereum_src.EthereumStaker.md#exportdepositdata)
+- [buildDepositTx](ethereum_src.EthereumStaker.md#builddeposittx)
 - [sign](ethereum_src.EthereumStaker.md#sign)
 - [broadcast](ethereum_src.EthereumStaker.md#broadcast)
 - [getTxStatus](ethereum_src.EthereumStaker.md#gettxstatus)
@@ -43,6 +47,7 @@ Creates a EthereumStaker instance.
 | `params` | `Object` | Initialization configuration |
 | `params.network` | `Networks` | The network to connect to |
 | `params.rpcUrl?` | `string` | (Optional) The URL of the RPC endpoint. If not provided, the public RPC URL for the network will be used. |
+| `params.nativeStakingApiToken?` | `string` | (Optional) API token for native staking operations. Required for native staking methods. |
 
 ### Returns
 
@@ -267,7 +272,7 @@ ___
 
 ## getRewardsHistory
 
-▸ **getRewardsHistory**(`params`): `Promise`\<\{ `timestamp`: `number` ; `amount`: `string`  }[]\>
+▸ **getRewardsHistory**(`params`): `Promise`\<\{ `timestamp`: `number` = item.timestamp; `amount`: `string` ; `totalRewards`: `string` ; `dailyRewards`: `string`  }[]\>
 
 Retrieves the rewards history for a specified delegator.
 
@@ -283,7 +288,7 @@ Retrieves the rewards history for a specified delegator.
 
 ### Returns
 
-`Promise`\<\{ `timestamp`: `number` ; `amount`: `string`  }[]\>
+`Promise`\<\{ `timestamp`: `number` = item.timestamp; `amount`: `string` ; `totalRewards`: `string` ; `dailyRewards`: `string`  }[]\>
 
 Returns a promise that resolves to the rewards data for the specified delegator.
 
@@ -313,7 +318,7 @@ ___
 
 ## getUnstakeQueue
 
-▸ **getUnstakeQueue**(`params`): `Promise`\<\{ `positionTicket`: `string` ; `timestamp`: `number` ; `isWithdrawable`: `boolean` = item.isWithdrawable; `totalAmount`: `string` ; `withdrawableAmount`: `string`  }[]\>
+▸ **getUnstakeQueue**(`params`): `Promise`\<\{ `positionTicket`: `string` ; `exitQueueIndex`: `string` ; `timestamp`: `number` = item.timestamp; `isWithdrawable`: `boolean` = item.isWithdrawable; `totalAmount`: `string` ; `withdrawableAmount`: `string` ; `withdrawalTimestamp`: `number` = item.withdrawalTimestamp }[]\>
 
 Retrieves the unstake queue for a specified delegator.
 
@@ -335,7 +340,7 @@ To prepare the transaction for withdrawing these assets, use the `buildWithdrawT
 
 ### Returns
 
-`Promise`\<\{ `positionTicket`: `string` ; `timestamp`: `number` ; `isWithdrawable`: `boolean` = item.isWithdrawable; `totalAmount`: `string` ; `withdrawableAmount`: `string`  }[]\>
+`Promise`\<\{ `positionTicket`: `string` ; `exitQueueIndex`: `string` ; `timestamp`: `number` = item.timestamp; `isWithdrawable`: `boolean` = item.isWithdrawable; `totalAmount`: `string` ; `withdrawableAmount`: `string` ; `withdrawalTimestamp`: `number` = item.withdrawalTimestamp }[]\>
 
 Returns a promise that resolves to the unstake queue for the specified delegator.
 
@@ -392,13 +397,114 @@ Risky positions may enter redemption processes, while positions deemed unhealthy
 | `params` | `Object` | Parameters for the request |
 | `params.stakeAmount` | `string` | The amount of ETH staked |
 | `params.mintAmount` | `string` | The amount of osETH minted |
-| `params.vault` | `Hex` | The vault address |
+| `params.validatorAddress` | \`0x$\{string}\` | The validator (vault) address |
 
 ### Returns
 
-`Promise`\<\{ `health`: ``"healthy"`` \| ``"risky"`` \`  }\>
+`Promise`\<\{ `health`: ``"healthy"`` \| ``"risky"``  }\>
 
-Returns a promise that resolves to the mint health status('healthy' | 'moderate' | 'risky' | 'unhealthy')
+Returns a promise that resolves to the mint health status('healthy' | 'risky' )
+
+___
+
+## createValidatorBatch
+
+▸ **createValidatorBatch**(`params`): `Promise`\<`CreateBatchResponse`\>
+
+Creates a batch of validators for native Ethereum staking.
+
+This method creates a new batch of validators using the Chorus One Native Staking API.
+Each validator requires 32 ETH to be deposited. The batch will generate deposit data
+that can be used to deposit validators on the Ethereum network.
+
+### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | Parameters for creating the validator batch |
+| `params.batchId` | `string` | Unique identifier for the batch |
+| `params.withdrawalAddress` | \`0x$\{string}\` | The withdrawal address that will control the staked funds |
+| `params.feeRecipientAddress` | \`0x$\{string}\` | The address that will receive MEV rewards |
+| `params.numberOfValidators` | `number` | Number of validators to create (each requires 32 ETH) |
+
+### Returns
+
+`Promise`\<`CreateBatchResponse`\>
+
+Returns a promise that resolves to the batch creation response.
+
+___
+
+## getValidatorBatchStatus
+
+▸ **getValidatorBatchStatus**(`params`): `Promise`\<`BatchStatusResponse`\>
+
+Gets the status of a validator batch.
+
+This method retrieves the current status of a validator batch, including the deposit data
+for each validator when ready. Optionally, it can also retrieve exit messages for a specific epoch.
+
+### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | Parameters for getting batch status |
+| `params.batchId` | `string` | The batch identifier |
+| `params.epoch?` | `string` | (Optional) Epoch number for generating exit messages |
+
+### Returns
+
+`Promise`\<`BatchStatusResponse`\>
+
+Returns a promise that resolves to the batch status information.
+
+___
+
+## exportDepositData
+
+▸ **exportDepositData**(`params`): `Promise`\<\{ `depositData`: `ValidatorDepositData`[] ; `statusCode?`: `number`  }\>
+
+Exports deposit data in the format required by the Ethereum Staking Launchpad.
+
+This method retrieves the deposit data for a batch and formats it for use with
+the official Ethereum Staking Launchpad or other deposit tools.
+
+### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | Parameters for exporting deposit data |
+| `params.batchId` | `string` | The batch identifier |
+
+### Returns
+
+`Promise`\<\{ `depositData`: `ValidatorDepositData`[] ; `statusCode?`: `number`  }\>
+
+Returns a promise that resolves to an array of deposit data objects.
+
+___
+
+## buildDepositTx
+
+▸ **buildDepositTx**(`params`): `Promise`\<\{ `transactions`: [`Transaction`](../interfaces/ethereum_src.Transaction.md)[] ; `statusCode?`: `number`  }\>
+
+Builds deposit transactions for native Ethereum staking.
+
+This method creates transactions for depositing validators to the Ethereum deposit contract.
+Each validator requires exactly 32 ETH to be deposited along with the deposit data.
+
+### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | Parameters for building deposit transactions |
+| `params.batchId` | `string` | The batch identifier to get deposit data from |
+
+### Returns
+
+`Promise`\<\{ `transactions`: [`Transaction`](../interfaces/ethereum_src.Transaction.md)[] ; `statusCode?`: `number`  }\>
+
+Returns a promise that resolves to an array of deposit transactions.
 
 ___
 
