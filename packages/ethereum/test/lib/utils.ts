@@ -4,29 +4,82 @@ import { privateKeyToAccount } from 'viem/accounts'
 import { hardhat } from 'viem/chains'
 import { getConfig } from './getConfig'
 import { assert } from 'chai'
+import { NativeStakingConnector } from '../../src/lib/nativeStakingConnector'
+import { BeaconConnector } from '../../src/lib/beaconConnector'
+import { Networks } from '../../src/lib/types/networks'
+import { CreateBatchResponse, BatchDetailsResponse, ListBatchesResponse } from '../../src/lib/types/nativeStaking'
+import { use, spy } from 'chai'
+import spies from 'chai-spies'
+
+use(spies)
+
+export interface TestConfig {
+  network?: Networks
+  apiToken?: string
+  mockResponses?: MockResponses
+  beaconRpcUrl?: string
+  useRealFetch?: boolean
+}
+
+export interface TestSetup {
+  validatorAddress: Hex
+  walletClient: WalletClient
+  publicClient: PublicClient
+  staker: EthereumStaker
+  osEthTokenAddress: Hex
+  network: string
+  nativeStakingConnector?: NativeStakingConnector
+  beaconConnector?: BeaconConnector
+  cleanup: () => void
+}
 
 export const prepareTests = async () => {
   const config = getConfig()
+
+  if (!config.accounts?.[0]?.privateKey) {
+    throw new Error('No private key found in test configuration')
+  }
+
   const privateKey = config.accounts[0].privateKey as Hex
   const account = privateKeyToAccount(privateKey)
-  if (!account) throw new Error('Account not found')
+
+  if (!account) {
+    throw new Error('Failed to create account from private key')
+  }
+
   const walletClient = createWalletClient({
     account,
     chain: hardhat,
     transport: http()
   })
+
   const publicClient = createPublicClient({
     chain: hardhat,
     transport: http()
   })
+
+  if (!config.networkConfig?.name) {
+    throw new Error('Network configuration name is missing')
+  }
+
   const staker = new EthereumStaker({
     network: config.networkConfig.name,
     rpcUrl: hardhat.rpcUrls.default.http[0]
   })
+
   await staker.init()
 
+  const validatorAddress = CHORUS_ONE_ETHEREUM_VALIDATORS[config.networkConfig.name]?.mevMaxVault
+  if (!validatorAddress) {
+    throw new Error(`No validator address found for network: ${config.networkConfig.name}`)
+  }
+
+  if (!config.networkConfig.addresses?.osEthToken) {
+    throw new Error('osEthToken address is missing from network configuration')
+  }
+
   return {
-    validatorAddress: CHORUS_ONE_ETHEREUM_VALIDATORS[config.networkConfig.name].mevMaxVault,
+    validatorAddress,
     walletClient,
     publicClient,
     staker,
@@ -105,4 +158,143 @@ export const mint = async ({
 
   const receipt = await publicClient.waitForTransactionReceipt({ hash })
   assert.equal(receipt.status, 'success')
+}
+
+type MockResponses = {
+  createBatch?: CreateBatchResponse
+  getBatchStatus?: BatchDetailsResponse
+  listBatches?: ListBatchesResponse
+}
+
+export const setupNativeStakingConnector = ({
+  network = 'ethereum',
+  apiToken = 'test-token',
+  mockResponses = {},
+  useRealFetch = false
+}: {
+  network?: Networks
+  apiToken?: string
+  mockResponses?: MockResponses
+  useRealFetch?: boolean
+}) => {
+  const connector = new NativeStakingConnector(network, apiToken, 'https://dummy-rpc-url.test')
+  let fetchSpy: any = null
+
+  if (!useRealFetch) {
+    const originalFetch = global.fetch
+    fetchSpy = spy.on(global, 'fetch', async (url: string, options: RequestInit = {}) => {
+      if (url.includes('https://native-staking.chorus.one')) {
+        const method = options.method || 'GET'
+
+        if (method === 'POST' && url.endsWith('/batches/new')) {
+          const mock = mockResponses.createBatch || {
+            data: {
+              batch_id: 'test-batch-id',
+              message: 'Batch test-batch-id created successfully'
+            }
+          }
+          return new Response(JSON.stringify(mock), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          })
+        }
+
+        if (method === 'GET' && url.includes('/batches/')) {
+          const mock = mockResponses.getBatchStatus || {
+            data: {
+              validators: [],
+              status: 'ready',
+              created: new Date().toISOString(),
+              is_compounding: false,
+              deposit_gwei_per_validator: 32000000000
+            }
+          }
+          return new Response(JSON.stringify(mock), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          })
+        }
+
+        if (method === 'GET' && url.endsWith('/batches')) {
+          const mock = mockResponses.listBatches || {
+            data: { requests: [] }
+          }
+          return new Response(JSON.stringify(mock), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          })
+        }
+
+        return new Response('Not Found', { status: 404 })
+      }
+
+      return originalFetch(url, options)
+    })
+  }
+
+  return { connector, fetchSpy }
+}
+
+export const setupBeaconConnector = ({
+  network = 'ethereum',
+  beaconRpcUrl = 'https://dummy-beacon-url.test'
+}: {
+  network?: Networks
+  beaconRpcUrl?: string
+} = {}) => {
+  const connector = new BeaconConnector(network, beaconRpcUrl)
+
+  const checkExitSpy = spy.on(connector, 'checkExitEligibility', () => {
+    return Promise.resolve([])
+  })
+
+  const submitExitSpy = spy.on(connector, 'submitVoluntaryExits', () => {
+    return Promise.resolve(new Set<number>())
+  })
+
+  return { connector, checkExitSpy, submitExitSpy }
+}
+
+export const setupTestEnvironment = async (config: TestConfig = {}): Promise<TestSetup> => {
+  const baseSetup = await prepareTests()
+  const spies: any[] = []
+
+  let nativeStakingConnector: NativeStakingConnector | undefined
+  let beaconConnector: BeaconConnector | undefined
+
+  if (config.apiToken) {
+    const { connector, fetchSpy } = setupNativeStakingConnector({
+      network: config.network,
+      apiToken: config.apiToken,
+      mockResponses: config.mockResponses,
+      useRealFetch: config.useRealFetch
+    })
+    nativeStakingConnector = connector
+    if (fetchSpy) spies.push(fetchSpy)
+  }
+
+  if (config.beaconRpcUrl !== null) {
+    const { connector, checkExitSpy, submitExitSpy } = setupBeaconConnector({
+      network: config.network,
+      beaconRpcUrl: config.beaconRpcUrl
+    })
+    beaconConnector = connector
+    spies.push(checkExitSpy, submitExitSpy)
+  }
+
+  const cleanup = () => {
+    spies.forEach((spyInstance) => {
+      if (spyInstance) {
+        spy.restore(spyInstance)
+      }
+    })
+    spy.restore()
+  }
+
+  return {
+    ...baseSetup,
+    nativeStakingConnector,
+    beaconConnector,
+    cleanup
+  }
 }
