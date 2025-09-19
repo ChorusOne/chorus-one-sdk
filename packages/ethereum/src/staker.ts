@@ -13,6 +13,7 @@ import {
 } from 'viem'
 import { StakewiseConnector } from './lib/connector'
 import { NativeStakingConnector } from './lib/nativeStakingConnector'
+import { BeaconConnector } from './lib/beaconConnector'
 
 import {
   buildStakeTx,
@@ -35,10 +36,13 @@ import { Networks } from './lib/types/networks'
 import { Transaction } from './lib/types/transaction'
 import { EthereumTxStatus } from './lib/types/txStatus'
 import {
+  BatchDetailsDepositData,
+  BatchDetailsResponse,
+  BatchValidators,
   CreateBatchRequest,
   CreateBatchResponse,
-  BatchStatusResponse,
-  ValidatorDepositData
+  ListBatchesResponse,
+  ValidatorExitMessage
 } from './lib/types/nativeStaking'
 import { depositAbi } from './lib/contracts/depositContractAbi'
 
@@ -50,6 +54,7 @@ import { depositAbi } from './lib/contracts/depositContractAbi'
 export class EthereumStaker {
   private connector: StakewiseConnector
   private nativeStakingConnector?: NativeStakingConnector
+  private beaconConnector?: BeaconConnector
 
   /**
    * This **static** method is used to derive an address from a public key.
@@ -74,16 +79,18 @@ export class EthereumStaker {
    * @param params.network - The network to connect to
    * @param params.rpcUrl - (Optional) The URL of the RPC endpoint. If not provided, the public RPC URL for the network will be used.
    * @param params.nativeStakingApiToken - (Optional) API token for native staking operations. Required for native staking methods.
+   * @param params.beaconRpcUrl - (Optional) The URL of the Beacon Node RPC endpoint. If not provided, a default public endpoint will be used.
    *
    * @returns  An instance of EthereumStaker.
    */
-  constructor (params: { network: Networks; rpcUrl?: string; nativeStakingApiToken?: string }) {
+  constructor (params: { network: Networks; rpcUrl?: string; nativeStakingApiToken?: string; beaconRpcUrl?: string }) {
     const network = params.network
 
     this.connector = new StakewiseConnector(network, params.rpcUrl)
 
     if (params.nativeStakingApiToken) {
       this.nativeStakingConnector = new NativeStakingConnector(network, params.nativeStakingApiToken, params.rpcUrl)
+      this.beaconConnector = new BeaconConnector(network, params.beaconRpcUrl)
     }
   }
 
@@ -483,54 +490,97 @@ export class EthereumStaker {
   }
 
   /**
-   * Gets the status of a validator batch.
+   * Lists all validator batches for the authenticated tenant.
    *
-   * This method retrieves the current status of a validator batch, including the deposit data
-   * for each validator when ready. Optionally, it can also retrieve exit messages for a specific epoch.
+   * This method retrieves all validator batches that have been created for the current tenant.
    *
-   * @param params - Parameters for getting batch status
-   * @param params.batchId - The batch identifier
-   * @param params.epoch - (Optional) Epoch number for generating exit messages
-   *
-   * @returns Returns a promise that resolves to the batch status information.
+   * @returns Returns a promise that resolves to an array of validator batches.
    */
-  async getValidatorBatchStatus (params: { batchId: string; epoch?: string }): Promise<BatchStatusResponse> {
+  async listValidatorBatches (): Promise<ListBatchesResponse> {
     if (!this.nativeStakingConnector) {
       throw new Error('Native staking is not enabled. Please provide nativeStakingApiToken in constructor.')
     }
 
-    return this.nativeStakingConnector.getBatchStatus(params.batchId, params.epoch)
+    return this.nativeStakingConnector.listBatches()
+  }
+
+  /**
+   * Gets the status of a validator batch.
+   *
+   * This method retrieves the current status of a validator batch, including the deposit data
+   * for each validator when ready.
+   *
+   * @param params - Parameters for getting batch status
+   * @param params.batchId - The batch identifier
+   * @param params.epoch - (Optional) Epoch number for generating exit messages. If not provided, the latest epoch will be used.
+   *
+   * @returns Returns a promise that resolves to the batch information.
+   */
+  async getValidatorBatchStatus (params: { batchId: string; epoch?: number }): Promise<BatchValidators> {
+    if (!this.nativeStakingConnector || !this.beaconConnector) {
+      throw new Error('Native staking or Beacon Node connectors are not enabled.')
+    }
+    const batchDetails = await this.nativeStakingConnector.getBatchDetails(params.batchId, params.epoch)
+
+    const activePubkeys = batchDetails.validators
+      .filter((validator) => validator.status === 'active' && validator.deposit_data?.pubkey)
+      .map((validator) => validator.deposit_data.pubkey)
+
+    const eligibilityResults =
+      activePubkeys.length > 0 ? await this.beaconConnector?.checkExitEligibility(activePubkeys) : []
+
+    const eligibilityMap = new Map(eligibilityResults.map((result) => [result.pubkey, result]))
+
+    const validators = batchDetails.validators.map((validator) => {
+      let eligible_for_exit = false
+      let epochs_until_eligible: number | undefined
+
+      if (validator.status === 'active' && validator.deposit_data?.pubkey) {
+        const eligibilityData = eligibilityMap.get(validator.deposit_data.pubkey)
+        if (eligibilityData) {
+          eligible_for_exit = eligibilityData.eligible
+          epochs_until_eligible = eligibilityData.epochsUntilEligible
+        }
+      }
+
+      return {
+        ...validator,
+        eligible_for_exit,
+        epochs_until_eligible
+      }
+    })
+
+    return {
+      ...batchDetails,
+      validators
+    }
   }
 
   /**
    * Exports deposit data in the format required by the Ethereum Staking Launchpad.
    *
-   * This method retrieves the deposit data for a batch and formats it for use with
-   * the official Ethereum Staking Launchpad or other deposit tools.
+   * This method the deposit data for each validator in the batch, which can be used to deposit
+   * validators with the oficial Ethereum Staking Launchpad or other depositing tools.
    *
    * @param params - Parameters for exporting deposit data
-   * @param params.batchId - The batch identifier
+   * @param params.batchData -  Pre-fetched batch of validators
    *
    * @returns Returns a promise that resolves to an array of deposit data objects.
    */
-  async exportDepositData (params: {
-    batchId: string
-  }): Promise<{ depositData: ValidatorDepositData[]; statusCode?: number }> {
-    const batchStatus = await this.getValidatorBatchStatus(params)
-
-    if (batchStatus.statusCode === 206) {
-      return { depositData: [], statusCode: 206 }
+  async exportDepositData ({
+    batchData
+  }: {
+    batchData: BatchDetailsResponse
+  }): Promise<{ depositData: BatchDetailsDepositData[] }> {
+    if (batchData.status !== 'ready') {
+      return { depositData: [] }
     }
 
-    if (batchStatus.statusCode !== 200) {
-      throw new Error(`Unexpected response from API. Status code: ${batchStatus.statusCode}`)
-    }
-
-    const depositData = batchStatus.validators
+    const depositData = batchData.validators
       .filter((validator) => validator.status === 'created')
       .map((validator) => validator.deposit_data)
 
-    return { depositData, statusCode: 200 }
+    return { depositData }
   }
 
   /**
@@ -540,26 +590,24 @@ export class EthereumStaker {
    * Each validator requires exactly 32 ETH to be deposited along with the deposit data.
    *
    * @param params - Parameters for building deposit transactions
-   * @param params.batchId - The batch identifier to get deposit data from
+   * @param params.batchData -  Pre-fetched batch of validators
    *
    * @returns Returns a promise that resolves to an array of deposit transactions.
    */
-  async buildDepositTx (params: { batchId: string }): Promise<{ transactions: Transaction[]; statusCode?: number }> {
+  async buildDepositTx ({
+    batchData
+  }: {
+    batchData: BatchDetailsResponse
+  }): Promise<{ transactions: Transaction[]; statusCode?: number }> {
     if (!this.nativeStakingConnector) {
       throw new Error('Native staking is not enabled. Please provide nativeStakingApiToken in constructor.')
     }
 
-    const batchStatus = await this.getValidatorBatchStatus({ batchId: params.batchId })
-
-    if (batchStatus.statusCode === 206) {
-      return { transactions: [], statusCode: 206 }
+    if (batchData.status !== 'ready') {
+      return { transactions: [] }
     }
 
-    if (batchStatus.statusCode !== 200) {
-      throw new Error(`Unexpected response from API. Status code: ${batchStatus.statusCode}`)
-    }
-
-    const validatorsToDeposit = batchStatus.validators.filter((validator) => validator.status === 'created')
+    const validatorsToDeposit = batchData.validators.filter((validator) => validator.status === 'created')
 
     if (validatorsToDeposit.length === 0) {
       throw new Error('No validators found that need to be deposited. All validators may have already been deposited.')
@@ -586,7 +634,7 @@ export class EthereumStaker {
       transactions.push(transaction)
     }
 
-    return { transactions, statusCode: 200 }
+    return { transactions }
   }
 
   /**
@@ -612,6 +660,25 @@ export class EthereumStaker {
           : (`0x${params.depositDataRoot}` as Hex)
       ]
     })
+  }
+
+  /**
+   * Submits exit messages to the beacon chain to voluntarily exit validators.
+   *
+   * This method takes pre-signed exit messages and submits them to the beacon chain.
+   * Once submitted, validators will begin the exit process.
+   *
+   * @param params - Parameters for submitting exit messages
+   * @param params.exitMessages - Array of pre-signed exit messages
+   *
+   * @returns Returns a promise that resolves when all exit messages have been submitted.
+   */
+  async submitValidatorExits (params: { exitMessages: ValidatorExitMessage[] }): Promise<Set<number>> {
+    if (!this.beaconConnector) {
+      throw new Error('Beacon connector is not available.')
+    }
+
+    return this.beaconConnector.submitVoluntaryExits(params.exitMessages)
   }
 
   /**
