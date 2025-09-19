@@ -1,7 +1,12 @@
 import { createPublicClient, PublicClient, http, Hex, Chain } from 'viem'
 import { hoodi, mainnet } from 'viem/chains'
 import { Networks } from './types/networks'
-import { CreateBatchRequest, CreateBatchResponse, BatchStatusResponse, ValidatorBatch } from './types/nativeStaking'
+import {
+  CreateBatchRequest,
+  CreateBatchResponse,
+  BatchDetailsResponse,
+  ListBatchesResponse
+} from './types/nativeStaking'
 
 export class NativeStakingConnector {
   /** Base URL for Native Staking API */
@@ -51,7 +56,7 @@ export class NativeStakingConnector {
   /**
    * Makes an authenticated API request to the Native Staking API
    */
-  private async apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T & { statusCode?: number }> {
+  private async apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseURL}${endpoint}`
 
     const response = await fetch(url, {
@@ -71,7 +76,7 @@ export class NativeStakingConnector {
     }
 
     const data = (await response.json()) as T
-    return { ...data, statusCode: response.status } as T & { statusCode?: number }
+    return data
   }
 
   /**
@@ -87,21 +92,21 @@ export class NativeStakingConnector {
   }
 
   /**
-   * Gets the status of a validator batch
+   * Gets detailed information about a validator batch including validators and exit messages
    */
-  async getBatchStatus (batchId: string, epoch?: string): Promise<BatchStatusResponse> {
+  async getBatchDetails (batchId: string, epoch?: number): Promise<BatchDetailsResponse> {
     const queryParams = epoch ? `?epoch=${epoch}` : ''
     const endpoint = `/ethereum/${this.network}/batches/${batchId}${queryParams}`
 
-    return this.apiRequest<BatchStatusResponse>(endpoint)
+    return this.apiRequest<BatchDetailsResponse>(endpoint)
   }
 
   /**
    * Lists all batches for the authenticated tenant
    */
-  async listBatches (): Promise<{ batches: ValidatorBatch[] }> {
+  async listBatches (): Promise<ListBatchesResponse> {
     const endpoint = `/ethereum/${this.network}/batches`
 
-    return this.apiRequest<{ batches: ValidatorBatch[] }>(endpoint)
+    return this.apiRequest<ListBatchesResponse>(endpoint)
   }
 }
