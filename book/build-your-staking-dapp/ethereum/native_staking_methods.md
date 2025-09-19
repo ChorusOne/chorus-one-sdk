@@ -6,23 +6,23 @@ The Chorus One Native Staking SDK supports a range of staking operations includi
 
 ### Description
 
-The `createValidatorBatch` method creates a new batch of validators with each validator requires 32 ETH to be deposited. The batch will generate deposit data that can be used to deposit validators on the Ethereum network. 
+The `createValidatorBatch` method creates a new batch of validators with each validator requires 32 ETH to be deposited. The batch will generate deposit data that can be used to deposit validators on the Ethereum network.
 
 ### How to Use
 
-To create validators, you need to specify a UUID batch id, an Ethereum withdrawal address,  a fee recipient address, the number of validators, and an authentication token received from our team.
+To create validators, you need to specify a UUID batch id, an Ethereum withdrawal address, a fee recipient address, the number of validators, and an authentication token received from our team.
 
 **Note**: A single batch request can not exceed 200 validators, if you need more, please issue multiple batch requests.
 
 ### Example
 
 ```javascript
-    const result = await staker.createValidatorBatch({
-      batchId: '4da22c97-b7d5-4e31-8c3a-03870ebc7b20',
-      withdrawalAddress:'0x70aEe8a9099ebADB186C2D530F72CF5dC7FE6B30',
-      feeRecipientAddress:'0xe6d8d8ac54461b1c5ed15740eee322043f696c08',
-      numberOfValidators: 2
-    })
+const result = await staker.createValidatorBatch({
+  batchId: '4da22c97-b7d5-4e31-8c3a-03870ebc7b20',
+  withdrawalAddress: '0x70aEe8a9099ebADB186C2D530F72CF5dC7FE6B30',
+  feeRecipientAddress: '0xe6d8d8ac54461b1c5ed15740eee322043f696c08',
+  numberOfValidators: 2
+})
 ```
 
 In this example, we're staking 64 ETH with two validators in a batch.
@@ -37,11 +37,30 @@ The `getValidatorBatchStatus` method retrieves the current status of a validator
 
 ### How to Use
 
-To retrieve the status of a validator batch, you need to specify the batch id of the validator batch and optionally the epoch number for generating exit messages. 
+To retrieve the status of a validator batch, you need to specify the batch id of the validator batch and optionally the epoch number for generating exit messages.
+
 ### Example
 
 ```javascript
-const status = await staker.getValidatorBatchStatus({batchId:'4da22c97-b7d5-4e31-8c3a-03870ebc7b20'})
+const status = await staker.getValidatorBatchStatus({ batchId: '4da22c97-b7d5-4e31-8c3a-03870ebc7b20' })
+```
+
+---
+
+## listValidatorBatches
+
+### Description
+
+The `listValidatorBatches` method retrieves all validator batches that have been created for the authenticated tenant. This method is useful for getting an overview of all your validator batches and their current status.
+
+### How to Use
+
+This method doesn't require any parameters and returns a list of all validator batches associated with your API token.
+
+### Example
+
+```javascript
+const batches = await staker.listValidatorBatches()
 ```
 
 ---
@@ -54,12 +73,16 @@ The `exportDepositData` method retrieves the deposit data for a batch and format
 
 ### How to Use
 
-To export the deposit data for a batch, you need to specify the batch id for the validator batch. 
+To export the deposit data for a batch, you need to provide the batch data object. This is typically obtained from `getValidatorBatchStatus` method.
 
 ### Example
 
 ```javascript
-const depositData = await staker.exportDepositData({batchId:'4da22c97-b7d5-4e31-8c3a-03870ebc7b20'})
+// First get the batch data
+const batchData = await staker.getValidatorBatchStatus({ batchId: '4da22c97-b7d5-4e31-8c3a-03870ebc7b20' })
+
+// Then export the deposit data
+const { depositData } = await staker.exportDepositData({ batchData })
 ```
 
 ---
@@ -72,13 +95,47 @@ The `buildDepositTx` method creates transactions for depositing validators to th
 
 ### How to Use
 
-To build the deposit transaction for a batch, you need to specify the batch id for the validator batch. 
+To build the deposit transaction for a batch, you need to provide the batch data object. This can be obtained from `getValidatorBatchStatus` method.
 
 ### Example
 
 ```javascript
-const { transactions } = await staker.buildDepositTx({batchId:'4da22c97-b7d5-4e31-8c3a-03870ebc7b20'})
+// First get the batch data
+const batchData = await staker.getValidatorBatchStatus({ batchId: '4da22c97-b7d5-4e31-8c3a-03870ebc7b20' })
+
+// Then build the deposit transactions
+const { transactions } = await staker.buildDepositTx({ batchData })
 ```
+
+---
+
+## submitValidatorExits
+
+### Description
+
+The `submitValidatorExits` method submits exit messages to the beacon chain to voluntarily exit validators. This method takes pre-signed exit messages and submits them to the beacon chain. Once submitted, validators will begin the exit process.
+
+### How to Use
+
+To submit validator exits, you need to provide an array of pre-signed exit messages. These exit messages are typically obtained from the validator batch status when validators are eligible for exit.
+
+### Example
+
+```javascript
+const exitMessages = [
+  {
+    message: {
+      epoch: '12345',
+      validator_index: '67890'
+    },
+    signature: '0x1234567890abcdef...'
+  }
+]
+
+const submittedExits = await staker.submitValidatorExits({ exitMessages })
+```
+
+**Note**: Validators must be eligible for exit before exit messages can be submitted. You can check exit eligibility using the `getValidatorBatchStatus` method.
 
 ## Further Reading
 
