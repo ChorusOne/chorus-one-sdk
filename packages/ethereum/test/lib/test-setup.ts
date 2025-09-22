@@ -1,21 +1,16 @@
 import { NativeStakingConnector } from '../../src/lib/nativeStakingConnector'
 import { Networks } from '../../src/lib/types/networks'
-import { CreateBatchResponse, BatchStatusResponse, ValidatorBatch } from '../../src/lib/types/nativeStaking'
+import { CreateBatchResponse, BatchDetailsResponse, ListBatchesResponse } from '../../src/lib/types/nativeStaking'
 import { use, spy } from 'chai'
 import spies from 'chai-spies'
 
 // Enable chai-spies plugin
 use(spies)
 
-type MockResponse<T> = {
-  data: T
-  status?: number
-}
-
 type MockResponses = {
-  createBatch?: MockResponse<CreateBatchResponse>
-  getBatchStatus?: MockResponse<BatchStatusResponse>
-  listBatches?: MockResponse<{ batches: ValidatorBatch[] }>
+  createBatch?: CreateBatchResponse
+  getBatchStatus?: BatchDetailsResponse
+  listBatches?: ListBatchesResponse
 }
 
 /**
@@ -30,8 +25,7 @@ export const setupNativeStakingConnector = ({
   apiToken?: string
   mockResponses?: MockResponses
 }) => {
-  // Use a dummy RPC URL since we're only testing API calls, not on-chain interactions
-  const connector = new NativeStakingConnector(network, apiToken, 'https://dummy-rpc-url.test')
+  const connector = new NativeStakingConnector(network, apiToken)
 
   const originalFetch = global.fetch
   spy.on(global, 'fetch', async (url: string, options: RequestInit = {}) => {
@@ -44,11 +38,10 @@ export const setupNativeStakingConnector = ({
           data: {
             batch_id: 'test-batch-id',
             message: 'Batch test-batch-id created successfully'
-          },
-          status: 200
+          }
         }
-        return new Response(JSON.stringify(mock.data), {
-          status: mock.status || 200,
+        return new Response(JSON.stringify(mock), {
+          status: 200,
           headers: { 'Content-Type': 'application/json' }
         })
       }
@@ -57,17 +50,15 @@ export const setupNativeStakingConnector = ({
       if (method === 'GET' && url.includes('/batches/')) {
         const mock = mockResponses.getBatchStatus || {
           data: {
-            batch_id: 'test-batch-id',
-            status: 'ready',
             validators: [],
-            statusCode: 200
-          },
-          status: 200
+            status: 'ready',
+            created: new Date().toISOString(),
+            is_compounding: false,
+            deposit_gwei_per_validator: 32000000000
+          }
         }
-        // For getBatchStatus, also add statusCode to the response data
-        const responseData = { ...mock.data, statusCode: mock.status || 200 }
-        return new Response(JSON.stringify(responseData), {
-          status: mock.status || 200,
+        return new Response(JSON.stringify(mock), {
+          status: 200,
           headers: { 'Content-Type': 'application/json' }
         })
       }
@@ -75,11 +66,10 @@ export const setupNativeStakingConnector = ({
       // GET /batches - List all batches
       if (method === 'GET' && url.endsWith('/batches')) {
         const mock = mockResponses.listBatches || {
-          data: { batches: [] },
-          status: 200
+          data: { requests: [] }
         }
-        return new Response(JSON.stringify(mock.data), {
-          status: mock.status || 200,
+        return new Response(JSON.stringify(mock), {
+          status: 200,
           headers: { 'Content-Type': 'application/json' }
         })
       }
