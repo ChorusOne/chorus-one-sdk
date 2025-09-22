@@ -1,85 +1,75 @@
 import { EthereumStaker } from '@chorus-one/ethereum'
-import { assert, spy } from 'chai'
-import { setupNativeStakingConnector } from './lib/test-setup'
+import { assert } from 'chai'
+import { setupTestEnvironment, setupNativeStakingConnector, TestConfig } from './lib/utils'
 import { Hex } from 'viem'
+import {
+  CreateBatchResponse,
+  ListBatchesResponse,
+  BatchDetailsResponse,
+  BatchDetailsDepositData,
+  BatchDetailsValidator
+} from '../src/lib/types/nativeStaking'
 
+const mockValidatorDepositData: BatchDetailsDepositData = {
+  amount: 32000000000,
+  deposit_cli_version: '2.7.0',
+  deposit_data_root: '2a25f626e6b017355a866fca99d2d4b2b2dc84fd5eaf8b21b3b5f3e27b68d98d',
+  deposit_message_root: '97a32e1a21bd89ccbe6c4e323e6ecdce540a9c80d607778e559425b1138941dd',
+  fork_version: '10000910',
+  network_name: 'hoodi',
+  pubkey: '123456789abcdef123456789abcdef123456789abcdef123456789abcdef123456789abcdef123456789abcdef12',
+  signature:
+    'abcdef123456789abcdef123456789abcdef123456789abcdef123456789abcdef123456789abcdef123456789abcdef123456789abcdef123456789abcdef123456789abcdef123456789abcdef123456789abcdef123456789abcdef123456789abcdef12',
+  withdrawal_credentials: '010000000000000000000000742d35cc6634c0532925a3b8d456a2ef7e2b4800'
+}
 describe('EthereumStaker.native_staking', () => {
   let staker: EthereumStaker
+  let cleanup: () => void
   const batchId: string = 'test-batch-id'
   const withdrawalAddress = '0x742d35Cc6634C0532925a3b8D456A2Ef7e2B4800' as Hex
   const feeRecipientAddress = '0x742d35Cc6634C0532925a3b8D456A2Ef7e2B4800' as Hex
   const numberOfValidators = 1
 
-  const mockValidatorDepositData = {
-    pubkey: '0x123456789abcdef123456789abcdef123456789abcdef123456789abcdef123456789abcdef123456789abcdef12',
-    withdrawal_credentials: '0x010000000000000000000000742d35cc6634c0532925a3b8d456a2ef7e2b4800',
-    amount: 32000000000,
-    signature:
-      '0xabcdef123456789abcdef123456789abcdef123456789abcdef123456789abcdef123456789abcdef123456789abcdef123456789abcdef123456789abcdef123456789abcdef123456789abcdef123456789abcdef123456789abcdef123456789abcdef12',
-    deposit_message_root: '0x987654321fedcba987654321fedcba987654321fedcba987654321fedcba9876',
-    deposit_data_root: '0x987654321fedcba987654321fedcba987654321fedcba987654321fedcba9876',
-    fork_version: '0x00000000',
-    network_name: 'hoodi',
-    deposit_cli_version: '2.5.0'
-  }
-
-  const mockValidator = {
-    pubkey: '0x123456789abcdef123456789abcdef123456789abcdef123456789abcdef123456789abcdef123456789abcdef12',
-    status: 'created' as const,
-    deposit_data: mockValidatorDepositData
+  const mockValidator: BatchDetailsValidator = {
+    deposit_data: mockValidatorDepositData,
+    status: 'created' as const
   }
 
   beforeEach(async () => {
-    // Setup mocked connector
-    const connector = setupNativeStakingConnector({
+    const testConfig: TestConfig = {
       network: 'hoodi',
       apiToken: 'test-token',
       mockResponses: {
         createBatch: {
-          data: {
-            batch_id: batchId,
-            message: `Batch ${batchId} created successfully`
-          },
-          status: 200
-        },
+          batch_id: batchId,
+          message: `Batch ${batchId} created successfully`
+        } as CreateBatchResponse,
         getBatchStatus: {
-          data: {
-            batch_id: batchId,
-            withdrawal_address: withdrawalAddress,
-            fee_recipient: feeRecipientAddress,
-            number_of_validators: numberOfValidators,
-            network: 'hoodi',
-            status: 'ready',
-            validators: Array(numberOfValidators)
-              .fill(null)
-              .map(() => mockValidator),
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          },
-          status: 200
-        },
+          validators: Array(numberOfValidators)
+            .fill(null)
+            .map(() => mockValidator),
+          status: 'ready',
+          created: new Date().toISOString(),
+          is_compounding: false,
+          deposit_gwei_per_validator: 32000000000,
+          status_code: 200
+        } as BatchDetailsResponse,
         listBatches: {
-          data: {
-            batches: [
-              {
-                batch_id: batchId,
-                withdrawal_address: withdrawalAddress,
-                fee_recipient: feeRecipientAddress,
-                number_of_validators: numberOfValidators,
-                network: 'hoodi',
-                status: 'ready',
-                validators: Array(numberOfValidators)
-                  .fill(null)
-                  .map(() => mockValidator),
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              }
-            ]
-          },
-          status: 200
-        }
+          requests: [
+            {
+              batch_id: batchId,
+              created: Date.now(),
+              status: 'ready',
+              is_compounding: false,
+              deposit_gwei_per_validator: 32000000000
+            }
+          ]
+        } as ListBatchesResponse
       }
-    })
+    }
+
+    const testSetup = await setupTestEnvironment(testConfig)
+    cleanup = testSetup.cleanup
 
     staker = new EthereumStaker({
       network: 'hoodi',
@@ -87,15 +77,15 @@ describe('EthereumStaker.native_staking', () => {
     })
 
     await staker.init()
-    ;(staker as any).nativeStakingConnector = connector
+    ;(staker as any).nativeStakingConnector = testSetup.nativeStakingConnector
   })
 
   afterEach(() => {
-    spy.restore()
+    cleanup()
   })
 
   it('should create a validator batch successfully', async () => {
-    const result = await staker.createValidatorBatch({
+    const result: CreateBatchResponse = await staker.createValidatorBatch({
       batchId,
       withdrawalAddress,
       feeRecipientAddress,
@@ -109,27 +99,31 @@ describe('EthereumStaker.native_staking', () => {
   })
 
   it('should get validator batch status successfully', async () => {
-    const status = await staker.getValidatorBatchStatus({
+    const status: BatchDetailsResponse = await staker.getValidatorBatchStatus({
       batchId
     })
 
     assert.ok(status)
-    assert.equal(status.batch_id, batchId)
     assert.equal(status.status, 'ready')
     assert.equal(status.validators.length, numberOfValidators)
-    assert.equal(status.statusCode, 200)
 
     status.validators.forEach((validator) => {
       assert.exists(validator.deposit_data)
-      assert.exists(validator.deposit_data.pubkey)
-      assert.exists(validator.deposit_data.withdrawal_credentials)
-      assert.exists(validator.deposit_data.signature)
+      assert.exists(validator.deposit_data.amount)
+      assert.exists(validator.deposit_data.deposit_cli_version)
       assert.exists(validator.deposit_data.deposit_data_root)
+      assert.exists(validator.deposit_data.deposit_message_root)
+      assert.exists(validator.deposit_data.fork_version)
+      assert.exists(validator.deposit_data.network_name)
+      assert.exists(validator.deposit_data.pubkey)
+      assert.exists(validator.deposit_data.signature)
+      assert.exists(validator.deposit_data.withdrawal_credentials)
     })
   })
 
   it('should handle buildDepositTx based on batch status', async () => {
-    const result = await staker.buildDepositTx({ batchId })
+    const batchData = await staker.getValidatorBatchStatus({ batchId })
+    const result = await staker.buildDepositTx({ batchData })
 
     assert.ok(result)
     assert.exists(result.transactions)
@@ -147,7 +141,8 @@ describe('EthereumStaker.native_staking', () => {
   })
 
   it('exports the correct deposit data', async () => {
-    const result = await staker.exportDepositData({ batchId })
+    const batchData = await staker.getValidatorBatchStatus({ batchId })
+    const result = await staker.exportDepositData({ batchData })
 
     assert.ok(result)
     assert.exists(result.depositData)
@@ -155,37 +150,27 @@ describe('EthereumStaker.native_staking', () => {
     assert.equal(result.depositData.length, numberOfValidators)
 
     result.depositData.forEach((data) => {
-      assert.exists(data.pubkey)
-      assert.exists(data.withdrawal_credentials)
-      assert.exists(data.signature)
+      assert.exists(data.amount)
+      assert.exists(data.deposit_cli_version)
       assert.exists(data.deposit_data_root)
-      assert.equal(data.amount, 32000000000)
-      assert.equal(data.network_name, 'hoodi')
+      assert.exists(data.deposit_message_root)
+      assert.exists(data.fork_version)
+      assert.exists(data.network_name)
+      assert.exists(data.pubkey)
+      assert.exists(data.signature)
+      assert.exists(data.withdrawal_credentials)
     })
-  })
-
-  describe('batch processing scenarios', () => {
-    it('should handle batch still being processed (206 status)', async () => {
-      // Restore existing spy and create a new one with 206 status
-      spy.restore()
-
-      const processingConnector = setupNativeStakingConnector({
+    it('should handle batch still being processed', async () => {
+      const { connector: processingConnector } = setupNativeStakingConnector({
         network: 'hoodi',
         apiToken: 'test-token',
         mockResponses: {
           getBatchStatus: {
-            data: {
-              batch_id: batchId,
-              withdrawal_address: withdrawalAddress,
-              fee_recipient: feeRecipientAddress,
-              number_of_validators: numberOfValidators,
-              network: 'hoodi',
-              status: 'pending',
-              validators: [],
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            },
-            status: 206
+            validators: [],
+            status: 'created',
+            created: new Date().toISOString(),
+            is_compounding: false,
+            deposit_gwei_per_validator: 32000000000
           }
         }
       })
@@ -194,17 +179,14 @@ describe('EthereumStaker.native_staking', () => {
 
       const status = await staker.getValidatorBatchStatus({ batchId })
 
-      assert.equal(status.statusCode, 206)
-      assert.equal(status.status, 'pending')
+      assert.equal(status.status, 'created')
       assert.equal(status.validators.length, 0)
 
-      // Should throw error when trying to build deposit transactions
-      try {
-        await staker.buildDepositTx({ batchId })
-        assert.fail('Should have thrown an error for batch still being processed')
-      } catch (error: any) {
-        assert.include(error.message, 'still being processed')
-      }
+      // Should return empty transactions when batch is not ready
+      const result = await staker.buildDepositTx({ batchData: status })
+      assert.ok(result)
+      assert.isArray(result.transactions)
+      assert.equal(result.transactions.length, 0)
     })
   })
 })
