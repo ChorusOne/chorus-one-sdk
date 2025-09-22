@@ -20,6 +20,7 @@ import {
   buildWithdrawTx,
   buildMintTx,
   buildBurnTx,
+  buildValidatorExitTx,
   getVault,
   getStake,
   getMaxUnstake,
@@ -35,10 +36,11 @@ import { Networks } from './lib/types/networks'
 import { Transaction } from './lib/types/transaction'
 import { EthereumTxStatus } from './lib/types/txStatus'
 import {
+  BatchDetailsDepositData,
+  BatchDetailsResponse,
   CreateBatchRequest,
   CreateBatchResponse,
-  BatchStatusResponse,
-  ValidatorDepositData
+  ListBatchesResponse
 } from './lib/types/nativeStaking'
 import { depositAbi } from './lib/contracts/depositContractAbi'
 
@@ -83,7 +85,7 @@ export class EthereumStaker {
     this.connector = new StakewiseConnector(network, params.rpcUrl)
 
     if (params.nativeStakingApiToken) {
-      this.nativeStakingConnector = new NativeStakingConnector(network, params.nativeStakingApiToken, params.rpcUrl)
+      this.nativeStakingConnector = new NativeStakingConnector(network, params.nativeStakingApiToken)
     }
   }
 
@@ -483,54 +485,63 @@ export class EthereumStaker {
   }
 
   /**
-   * Gets the status of a validator batch.
+   * Lists all validator batches for the authenticated tenant.
    *
-   * This method retrieves the current status of a validator batch, including the deposit data
-   * for each validator when ready. Optionally, it can also retrieve exit messages for a specific epoch.
+   * This method retrieves all validator batches that have been created for the current tenant.
    *
-   * @param params - Parameters for getting batch status
-   * @param params.batchId - The batch identifier
-   * @param params.epoch - (Optional) Epoch number for generating exit messages
-   *
-   * @returns Returns a promise that resolves to the batch status information.
+   * @returns Returns a promise that resolves to an array of validator batches.
    */
-  async getValidatorBatchStatus (params: { batchId: string; epoch?: string }): Promise<BatchStatusResponse> {
+  async listValidatorBatches (): Promise<ListBatchesResponse> {
     if (!this.nativeStakingConnector) {
       throw new Error('Native staking is not enabled. Please provide nativeStakingApiToken in constructor.')
     }
 
-    return this.nativeStakingConnector.getBatchStatus(params.batchId, params.epoch)
+    return this.nativeStakingConnector.listBatches()
+  }
+
+  /**
+   * Gets the status of a validator batch.
+   *
+   * This method retrieves the current status of a validator batch, including the deposit data
+   * for each validator when ready.
+   *
+   * @param params - Parameters for getting batch status
+   * @param params.batchId - The batch identifier
+   *
+   * @returns Returns a promise that resolves to the batch information.
+   */
+  async getValidatorBatchStatus (params: { batchId: string }): Promise<BatchDetailsResponse> {
+    if (!this.nativeStakingConnector) {
+      throw new Error('Native staking is not enabled. Please provide nativeStakingApiToken in constructor.')
+    }
+    return await this.nativeStakingConnector.getBatchDetails(params.batchId)
   }
 
   /**
    * Exports deposit data in the format required by the Ethereum Staking Launchpad.
    *
-   * This method retrieves the deposit data for a batch and formats it for use with
-   * the official Ethereum Staking Launchpad or other deposit tools.
+   * This method the deposit data for each validator in the batch, which can be used to deposit
+   * validators with the oficial Ethereum Staking Launchpad or other depositing tools.
    *
    * @param params - Parameters for exporting deposit data
-   * @param params.batchId - The batch identifier
+   * @param params.batchData -  Pre-fetched batch of validators
    *
    * @returns Returns a promise that resolves to an array of deposit data objects.
    */
-  async exportDepositData (params: {
-    batchId: string
-  }): Promise<{ depositData: ValidatorDepositData[]; statusCode?: number }> {
-    const batchStatus = await this.getValidatorBatchStatus(params)
-
-    if (batchStatus.statusCode === 206) {
-      return { depositData: [], statusCode: 206 }
+  async exportDepositData ({
+    batchData
+  }: {
+    batchData: BatchDetailsResponse
+  }): Promise<{ depositData: BatchDetailsDepositData[] }> {
+    if (batchData.status !== 'ready') {
+      return { depositData: [] }
     }
 
-    if (batchStatus.statusCode !== 200) {
-      throw new Error(`Unexpected response from API. Status code: ${batchStatus.statusCode}`)
-    }
-
-    const depositData = batchStatus.validators
+    const depositData = batchData.validators
       .filter((validator) => validator.status === 'created')
       .map((validator) => validator.deposit_data)
 
-    return { depositData, statusCode: 200 }
+    return { depositData }
   }
 
   /**
@@ -540,29 +551,22 @@ export class EthereumStaker {
    * Each validator requires exactly 32 ETH to be deposited along with the deposit data.
    *
    * @param params - Parameters for building deposit transactions
-   * @param params.batchId - The batch identifier to get deposit data from
+   * @param params.batchData -  Pre-fetched batch of validators
    *
    * @returns Returns a promise that resolves to an array of deposit transactions.
    */
-  async buildDepositTx (params: { batchId: string }): Promise<{ transactions: Transaction[]; statusCode?: number }> {
-    if (!this.nativeStakingConnector) {
-      throw new Error('Native staking is not enabled. Please provide nativeStakingApiToken in constructor.')
+  async buildDepositTx ({ batchData }: { batchData: BatchDetailsResponse }): Promise<{ transactions: Transaction[] }> {
+    if (batchData.status !== 'ready') {
+      return { transactions: [] }
     }
 
-    const batchStatus = await this.getValidatorBatchStatus({ batchId: params.batchId })
-
-    if (batchStatus.statusCode === 206) {
-      return { transactions: [], statusCode: 206 }
-    }
-
-    if (batchStatus.statusCode !== 200) {
-      throw new Error(`Unexpected response from API. Status code: ${batchStatus.statusCode}`)
-    }
-
-    const validatorsToDeposit = batchStatus.validators.filter((validator) => validator.status === 'created')
+    const validatorsToDeposit = batchData.validators.filter((validator) => validator.status === 'created')
 
     if (validatorsToDeposit.length === 0) {
       throw new Error('No validators found that need to be deposited. All validators may have already been deposited.')
+    }
+    if (!this.nativeStakingConnector) {
+      throw new Error('Native staking is not enabled. Please provide nativeStakingApiToken in constructor.')
     }
 
     const transactions: Transaction[] = []
@@ -578,7 +582,7 @@ export class EthereumStaker {
       })
 
       const transaction: Transaction = {
-        to: this.nativeStakingConnector.depositContractAddress,
+        to: this.nativeStakingConnector.config.depositContractAddress,
         value: parseEther('32'), // Each validator requires exactly 32 ETH
         data: depositFunctionData
       }
@@ -586,7 +590,7 @@ export class EthereumStaker {
       transactions.push(transaction)
     }
 
-    return { transactions, statusCode: 200 }
+    return { transactions }
   }
 
   /**
@@ -612,6 +616,29 @@ export class EthereumStaker {
           : (`0x${params.depositDataRoot}` as Hex)
       ]
     })
+  }
+
+  /**
+   * Builds a withdrawal request transaction for a validator based on EIP-7002.
+   *
+   * This method creates a transaction that triggers a full validator exit through
+   * the execution layer withdrawal credentials (0x01) as specified in EIP-7002.
+   *
+   * @param params - Parameters for building the withdrawal transaction
+   * @param params.validatorPubkey - The validator public key (48 bytes)
+   *
+   * @returns Returns a promise that resolves to a withdrawal transaction.
+   */
+  async buildValidatorExitTx (params: { validatorPubkey: string }): Promise<{ tx: Transaction }> {
+    if (!this.nativeStakingConnector) {
+      throw new Error('Native staking is not enabled. Please provide nativeStakingApiToken in constructor.')
+    }
+    const tx = await buildValidatorExitTx({
+      connector: this.nativeStakingConnector,
+      validatorPubkey: params.validatorPubkey
+    })
+
+    return { tx }
   }
 
   /**
