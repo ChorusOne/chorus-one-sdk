@@ -1,6 +1,6 @@
 This section provides an overview of the key methods available in the **Chorus One SDK** for **Native Staking** on the Ethereum network.
 
-The Chorus One Native Staking SDK supports a range of staking operations including creating validator batches, retrieving batch status, exporting deposit data as well as building deposit transactions. Below, we will explore each method with practical examples to help you get started.
+The Chorus One Native Staking SDK supports a range of staking operations including creating validator batches, retrieving batch status, exporting deposit data, building deposit transactions, and submitting validator exits. Below, we will explore each method with practical examples to help you get started.
 
 ## Setting Up the Staker
 
@@ -77,12 +77,30 @@ The `getValidatorBatchStatus` method retrieves the current status of a validator
 
 ### How to Use
 
-To retrieve the status of a validator batch, you need to specify the batch id of the validator batch and optionally the epoch number for generating exit messages.
+To retrieve the status of a validator batch, you need to specify the batch id of the validator batch.
 
 ### Example
 
 ```javascript
 const status = await staker.getValidatorBatchStatus({ batchId: '4da22c97-b7d5-4e31-8c3a-03870ebc7b20' })
+```
+
+---
+
+## listValidatorBatches
+
+### Description
+
+The `listValidatorBatches` method retrieves all validator batches that have been created for the authenticated tenant. This method is useful for getting an overview of all your validator batches and their current status.
+
+### How to Use
+
+This method doesn't require any parameters and returns a list of all validator batches associated with your API token.
+
+### Example
+
+```javascript
+const batches = await staker.listValidatorBatches()
 ```
 
 ---
@@ -95,12 +113,16 @@ The `exportDepositData` method retrieves the deposit data for a batch and format
 
 ### How to Use
 
-To export the deposit data for a batch, you need to specify the batch id for the validator batch.
+To export the deposit data for a batch, you need to provide the batch data object. This is typically obtained from `getValidatorBatchStatus` method.
 
 ### Example
 
 ```javascript
-const depositData = await staker.exportDepositData({ batchId: '4da22c97-b7d5-4e31-8c3a-03870ebc7b20' })
+// First get the batch data
+const batchData = await staker.getValidatorBatchStatus({ batchId: '4da22c97-b7d5-4e31-8c3a-03870ebc7b20' })
+
+// Then export the deposit data
+const { depositData } = await staker.exportDepositData({ batchData })
 ```
 
 ---
@@ -113,12 +135,37 @@ The `buildDepositTx` method creates transactions for depositing validators to th
 
 ### How to Use
 
-To build the deposit transaction for a batch, you need to specify the batch id for the validator batch.
+To build the deposit transaction for a batch, you need to provide the batch data object. This is typically obtained from `getValidatorBatchStatus` method.
 
 ### Example
 
 ```javascript
-const { transactions } = await staker.buildDepositTx({ batchId: '4da22c97-b7d5-4e31-8c3a-03870ebc7b20' })
+// First get the batch data
+const batchData = await staker.getValidatorBatchStatus({ batchId: '4da22c97-b7d5-4e31-8c3a-03870ebc7b20' })
+
+// Then build the deposit transactions
+const { transactions } = await staker.buildDepositTx({ batchData })
+```
+
+---
+
+## buildValidatorExitTx
+
+### Description
+
+The `buildValidatorExitTx` method creates transactions for exiting validators from the Ethereum network. This is useful when you want to stop staking with specific validators.
+
+### How to Use
+
+To build the exit transaction for a validator, you need to provide the validator's public key. A validator can only exit if it is eligible to do so, which means it must have been active for at least 256 epochs.
+
+### Example
+
+```javascript
+// Build exit transaction for a specific validator
+const { tx } = await staker.buildValidatorExitTx({
+  validatorPubkey: '8c3a5e3f4b2c1d6e7f8a9b0c1d2e3f4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f'
+})
 ```
 
 ## Further Reading

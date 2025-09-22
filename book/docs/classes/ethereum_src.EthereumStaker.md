@@ -25,9 +25,11 @@ It also provides the ability to retrieve staking information and rewards for an 
 - [getMint](ethereum_src.EthereumStaker.md#getmint)
 - [getMintHealth](ethereum_src.EthereumStaker.md#getminthealth)
 - [createValidatorBatch](ethereum_src.EthereumStaker.md#createvalidatorbatch)
+- [listValidatorBatches](ethereum_src.EthereumStaker.md#listvalidatorbatches)
 - [getValidatorBatchStatus](ethereum_src.EthereumStaker.md#getvalidatorbatchstatus)
 - [exportDepositData](ethereum_src.EthereumStaker.md#exportdepositdata)
 - [buildDepositTx](ethereum_src.EthereumStaker.md#builddeposittx)
+- [buildValidatorExitTx](ethereum_src.EthereumStaker.md#buildvalidatorexittx)
 - [sign](ethereum_src.EthereumStaker.md#sign)
 - [broadcast](ethereum_src.EthereumStaker.md#broadcast)
 - [getTxStatus](ethereum_src.EthereumStaker.md#gettxstatus)
@@ -435,14 +437,30 @@ Returns a promise that resolves to the batch creation response.
 
 ___
 
+## listValidatorBatches
+
+▸ **listValidatorBatches**(): `Promise`\<`ListBatchesResponse`\>
+
+Lists all validator batches for the authenticated tenant.
+
+This method retrieves all validator batches that have been created for the current tenant.
+
+### Returns
+
+`Promise`\<`ListBatchesResponse`\>
+
+Returns a promise that resolves to an array of validator batches.
+
+___
+
 ## getValidatorBatchStatus
 
-▸ **getValidatorBatchStatus**(`params`): `Promise`\<`BatchStatusResponse`\>
+▸ **getValidatorBatchStatus**(`params`): `Promise`\<`BatchDetailsResponse`\>
 
 Gets the status of a validator batch.
 
 This method retrieves the current status of a validator batch, including the deposit data
-for each validator when ready. Optionally, it can also retrieve exit messages for a specific epoch.
+for each validator when ready.
 
 ### Parameters
 
@@ -450,35 +468,34 @@ for each validator when ready. Optionally, it can also retrieve exit messages fo
 | :------ | :------ | :------ |
 | `params` | `Object` | Parameters for getting batch status |
 | `params.batchId` | `string` | The batch identifier |
-| `params.epoch?` | `string` | (Optional) Epoch number for generating exit messages |
 
 ### Returns
 
-`Promise`\<`BatchStatusResponse`\>
+`Promise`\<`BatchDetailsResponse`\>
 
-Returns a promise that resolves to the batch status information.
+Returns a promise that resolves to the batch information.
 
 ___
 
 ## exportDepositData
 
-▸ **exportDepositData**(`params`): `Promise`\<\{ `depositData`: `ValidatorDepositData`[] ; `statusCode?`: `number`  }\>
+▸ **exportDepositData**(`params`): `Promise`\<\{ `depositData`: `BatchDetailsDepositData`[]  }\>
 
 Exports deposit data in the format required by the Ethereum Staking Launchpad.
 
-This method retrieves the deposit data for a batch and formats it for use with
-the official Ethereum Staking Launchpad or other deposit tools.
+This method the deposit data for each validator in the batch, which can be used to deposit
+validators with the oficial Ethereum Staking Launchpad or other depositing tools.
 
 ### Parameters
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `params` | `Object` | Parameters for exporting deposit data |
-| `params.batchId` | `string` | The batch identifier |
+| `params.batchData` | `BatchDetailsResponse` | Pre-fetched batch of validators |
 
 ### Returns
 
-`Promise`\<\{ `depositData`: `ValidatorDepositData`[] ; `statusCode?`: `number`  }\>
+`Promise`\<\{ `depositData`: `BatchDetailsDepositData`[]  }\>
 
 Returns a promise that resolves to an array of deposit data objects.
 
@@ -486,7 +503,7 @@ ___
 
 ## buildDepositTx
 
-▸ **buildDepositTx**(`params`): `Promise`\<\{ `transactions`: [`Transaction`](../interfaces/ethereum_src.Transaction.md)[] ; `statusCode?`: `number`  }\>
+▸ **buildDepositTx**(`params`): `Promise`\<\{ `transactions`: [`Transaction`](../interfaces/ethereum_src.Transaction.md)[]  }\>
 
 Builds deposit transactions for native Ethereum staking.
 
@@ -498,13 +515,37 @@ Each validator requires exactly 32 ETH to be deposited along with the deposit da
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `params` | `Object` | Parameters for building deposit transactions |
-| `params.batchId` | `string` | The batch identifier to get deposit data from |
+| `params.batchData` | `BatchDetailsResponse` | Pre-fetched batch of validators |
 
 ### Returns
 
-`Promise`\<\{ `transactions`: [`Transaction`](../interfaces/ethereum_src.Transaction.md)[] ; `statusCode?`: `number`  }\>
+`Promise`\<\{ `transactions`: [`Transaction`](../interfaces/ethereum_src.Transaction.md)[]  }\>
 
 Returns a promise that resolves to an array of deposit transactions.
+
+___
+
+## buildValidatorExitTx
+
+▸ **buildValidatorExitTx**(`params`): `Promise`\<\{ `tx`: [`Transaction`](../interfaces/ethereum_src.Transaction.md)  }\>
+
+Builds a withdrawal request transaction for a validator based on EIP-7002.
+
+This method creates a transaction that triggers a full validator exit through
+the execution layer withdrawal credentials (0x01) as specified in EIP-7002.
+
+### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | Parameters for building the withdrawal transaction |
+| `params.validatorPubkey` | `string` | The validator public key (48 bytes) |
+
+### Returns
+
+`Promise`\<\{ `tx`: [`Transaction`](../interfaces/ethereum_src.Transaction.md)  }\>
+
+Returns a promise that resolves to a withdrawal transaction.
 
 ___
 
