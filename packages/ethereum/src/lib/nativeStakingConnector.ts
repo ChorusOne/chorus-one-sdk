@@ -1,7 +1,12 @@
-import { createPublicClient, PublicClient, http, Hex, Chain } from 'viem'
-import { hoodi, mainnet } from 'viem/chains'
 import { Networks } from './types/networks'
-import { CreateBatchRequest, CreateBatchResponse, BatchStatusResponse, ValidatorBatch } from './types/nativeStaking'
+import {
+  CreateBatchRequest,
+  CreateBatchResponse,
+  BatchDetailsResponse,
+  ListBatchesResponse
+} from './types/nativeStaking'
+import { Hex, http, PublicClient, createPublicClient } from 'viem'
+import { hoodi, mainnet } from 'viem/chains'
 
 export class NativeStakingConnector {
   /** Base URL for Native Staking API */
@@ -9,13 +14,19 @@ export class NativeStakingConnector {
   /** API token for authentication */
   apiToken: string
   /** Network name for API endpoints */
-  network: string
-  /** Web3 connector for deposit contract interactions */
+  network: 'mainnet' | 'hoodi'
+  /** Web3 connector for calling read-only contract methods */
   eth: PublicClient
-  /** Ethereum chain configuration */
-  chain: Chain
-  /** Deposit contract address */
-  depositContractAddress: Hex
+  /** Configuration parameters */
+  config: {
+    depositContractAddress: Hex
+    withdrawalContractAddress: Hex
+    excessInhibitor: Hex
+    compoundingFeeAddition: bigint
+    excessWithdrawalRequestsStorageSlot: bigint
+    consolidationRequestFeeAddition: bigint
+    minConsolidationRequestFee: bigint
+  }
 
   constructor (network: Networks, apiToken: string, rpcUrl?: string) {
     this.apiToken = apiToken
@@ -26,22 +37,35 @@ export class NativeStakingConnector {
     switch (network) {
       case 'ethereum':
         this.network = 'mainnet'
-        this.chain = mainnet
         this.eth = createPublicClient({
           chain: mainnet,
           transport
         })
-        // Official Ethereum Deposit Contract
-        this.depositContractAddress = '0x00000000219ab540356cBB839Cbe05303d7705Fa'
+        this.config = {
+          depositContractAddress: '0x00000000219ab540356cBB839Cbe05303d7705Fa',
+          withdrawalContractAddress: '0x00000961Ef480Eb55e80D19ad83579A64c007002',
+          excessInhibitor: ('0x' + BigInt(2 ** 256 - 1).toString(16)) as Hex,
+          compoundingFeeAddition: 3n,
+          excessWithdrawalRequestsStorageSlot: 0n,
+          consolidationRequestFeeAddition: 17n,
+          minConsolidationRequestFee: 1n
+        }
         break
       case 'hoodi':
         this.network = 'hoodi'
-        this.chain = hoodi
         this.eth = createPublicClient({
           chain: hoodi,
           transport
         })
-        this.depositContractAddress = '0x00000000219ab540356cBB839Cbe05303d7705Fa'
+        this.config = {
+          depositContractAddress: '0x00000000219ab540356cBB839Cbe05303d7705Fa',
+          withdrawalContractAddress: '0x00000961Ef480Eb55e80D19ad83579A64c007002',
+          excessInhibitor: ('0x' + BigInt(2 ** 256 - 1).toString(16)) as Hex,
+          compoundingFeeAddition: 3n,
+          excessWithdrawalRequestsStorageSlot: 0n,
+          consolidationRequestFeeAddition: 17n,
+          minConsolidationRequestFee: 1n
+        }
         break
       default:
         throw new Error(`Invalid network passed: ${network}`)
@@ -51,7 +75,7 @@ export class NativeStakingConnector {
   /**
    * Makes an authenticated API request to the Native Staking API
    */
-  private async apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T & { statusCode?: number }> {
+  private async apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseURL}${endpoint}`
 
     const response = await fetch(url, {
@@ -71,7 +95,7 @@ export class NativeStakingConnector {
     }
 
     const data = (await response.json()) as T
-    return { ...data, statusCode: response.status } as T & { statusCode?: number }
+    return data
   }
 
   /**
@@ -87,21 +111,20 @@ export class NativeStakingConnector {
   }
 
   /**
-   * Gets the status of a validator batch
+   * Gets detailed information about a validator batch including validator deposit data
    */
-  async getBatchStatus (batchId: string, epoch?: string): Promise<BatchStatusResponse> {
-    const queryParams = epoch ? `?epoch=${epoch}` : ''
-    const endpoint = `/ethereum/${this.network}/batches/${batchId}${queryParams}`
+  async getBatchDetails (batchId: string): Promise<BatchDetailsResponse> {
+    const endpoint = `/ethereum/${this.network}/batches/${batchId}`
 
-    return this.apiRequest<BatchStatusResponse>(endpoint)
+    return this.apiRequest<BatchDetailsResponse>(endpoint)
   }
 
   /**
    * Lists all batches for the authenticated tenant
    */
-  async listBatches (): Promise<{ batches: ValidatorBatch[] }> {
+  async listBatches (): Promise<ListBatchesResponse> {
     const endpoint = `/ethereum/${this.network}/batches`
 
-    return this.apiRequest<{ batches: ValidatorBatch[] }>(endpoint)
+    return this.apiRequest<ListBatchesResponse>(endpoint)
   }
 }
