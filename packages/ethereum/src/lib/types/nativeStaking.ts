@@ -15,7 +15,7 @@ export interface CreateBatchResponse {
   batch_id: string
   message: string
 }
-
+// https://native-staking.chorus.one/docs
 export interface BatchDetailsDepositData {
   amount: number
   deposit_cli_version: string
