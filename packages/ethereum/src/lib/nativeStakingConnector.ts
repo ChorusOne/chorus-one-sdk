@@ -41,6 +41,8 @@ export class NativeStakingConnector {
           chain: mainnet,
           transport
         })
+        // https://github.com/ethereum/EIPs/blob/dd845b91eb7445877f2d5b4381319a72dea0a766/EIPS/eip-7910.md?plain=1#L181
+        // https://eips.ethereum.org/EIPS/eip-7002#specification
         this.config = {
           depositContractAddress: '0x00000000219ab540356cBB839Cbe05303d7705Fa',
           withdrawalContractAddress: '0x00000961Ef480Eb55e80D19ad83579A64c007002',

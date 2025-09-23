@@ -31,7 +31,6 @@ export const getWithdrawalQueueLength = async (conn: NativeStakingConnector): Pr
       address: conn.config.withdrawalContractAddress!,
       slot: toHex(conn.config.excessWithdrawalRequestsStorageSlot)
     })
-    console.log(`Raw withdrawal queue length from storage: ${queueLengthHex}`)
 
     if (!queueLengthHex) {
       throw new Error('Unable to get withdrawal queue length')

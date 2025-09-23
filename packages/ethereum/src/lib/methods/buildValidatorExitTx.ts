@@ -11,7 +11,6 @@ export async function buildValidatorExitTx (request: {
   const { connector, validatorPubkey } = request
 
   const queue = await getWithdrawalQueue(connector)
-  console.log(`Current withdrawal queue: ${queue}, fee: ${queue.fee} wei`)
 
   const pubkey = validatorPubkey.startsWith('0x') ? validatorPubkey.slice(2) : validatorPubkey
 
