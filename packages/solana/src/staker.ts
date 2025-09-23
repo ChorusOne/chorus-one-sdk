@@ -311,12 +311,6 @@ export class SolanaStaker {
         `Unstaking from largest account: ${largest.address} with amount: ${largest.amount}. Remaining: ${remainingAmount}`
       )
 
-      if (largest.amount < remainingAmount) {
-        throw new Error(
-          `Unable to unstake ${remainingAmount} lamports without exceeding the requested amount. ` +
-            `The only available account (${largest.address}) holds ${largest.amount} lamports.`
-        )
-      }
       const { tx } = await this.buildUnstakeTx({
         ownerAddress,
         stakeAccountAddress: largest.address,
