@@ -5,8 +5,17 @@ import {
   BatchDetailsResponse,
   ListBatchesResponse
 } from './types/nativeStaking'
+import { isCompoundingAddress, isStandardAddress } from './utils/addressValidation'
 import { Hex, http, PublicClient, createPublicClient } from 'viem'
 import { hoodi, mainnet } from 'viem/chains'
+
+/**
+ * Connector for interacting with the Native Staking API
+ * API documentation: https://native-staking.chorus.one/docs
+ * Used for creating and managing validator batches
+ * Requires an API token from Chorus One
+ * Supports Ethereum mainnet and Hoodi testnet
+ */
 
 export class NativeStakingConnector {
   /** Base URL for Native Staking API */
@@ -104,11 +113,33 @@ export class NativeStakingConnector {
    * Creates a new batch of validators
    */
   async createBatch (params: CreateBatchRequest): Promise<CreateBatchResponse> {
+    const isCompounding = params.is_compounding ?? false
+
+    if (isCompounding) {
+      if (!isCompoundingAddress(params.withdrawal_address)) {
+        throw new Error('Compounding validators require withdrawal address in 0x02 format')
+      }
+    } else {
+      if (!isStandardAddress(params.withdrawal_address)) {
+        throw new Error('Non-compounding validators require standard withdrawal address format')
+      }
+    }
+
+    const requestParams: CreateBatchRequest = {
+      batch_id: params.batch_id,
+      withdrawal_address: params.withdrawal_address,
+      fee_recipient: params.fee_recipient,
+      number_of_validators: params.number_of_validators,
+      network: params.network,
+      is_compounding: isCompounding,
+      deposit_gwei_per_validator: params.deposit_gwei_per_validator
+    }
+
     const endpoint = `/ethereum/${this.network}/batches/new`
 
     return this.apiRequest<CreateBatchResponse>(endpoint, {
       method: 'POST',
-      body: JSON.stringify(params)
+      body: JSON.stringify(requestParams)
     })
   }
 
