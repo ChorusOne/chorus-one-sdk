@@ -16,6 +16,6 @@ packages/ethereum/hardhat.log
 packages/ethereum/hardhat.pid
 packages/ethereum/edr-fork-cache
 
-
+.env
 packages/**/.env
 
