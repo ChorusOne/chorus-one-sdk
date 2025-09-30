@@ -43,6 +43,7 @@ import {
   ListBatchesResponse
 } from './lib/types/nativeStaking'
 import { depositAbi } from './lib/contracts/depositContractAbi'
+import { toHexString } from './lib/utils/toHexString'
 
 /**
  * This class provides the functionality to stake, unstake, and withdraw for Ethereum network.
@@ -457,17 +458,21 @@ export class EthereumStaker {
    *
    * @param params - Parameters for creating the validator batch
    * @param params.batchId - Unique identifier for the batch
-   * @param params.withdrawalAddress - The withdrawal address that will control the staked funds
+   * @param params.withdrawalAddress - The withdrawal address that will control the staked funds. It must be in 0x01 or 0x02 format.
    * @param params.feeRecipientAddress - The address that will receive MEV rewards
    * @param params.numberOfValidators - Number of validators to create (each requires 32 ETH)
+   * @param params.isCompounding - (Optional) Whether to create compounding validators (0x02 withdrawal credentials). Default is false.
+   * @param params.depositGweiPerValidator - (Optional) The deposit in gwei per validator. Default is 32000000000 gwei i.e. 32ETH.
    *
    * @returns Returns a promise that resolves to the batch creation response.
    */
   async createValidatorBatch (params: {
     batchId: string
-    withdrawalAddress: Hex
+    withdrawalAddress: `0x01${string}` | `0x02${string}`
     feeRecipientAddress: Hex
     numberOfValidators: number
+    isCompounding?: boolean
+    depositGweiPerValidator?: bigint
   }): Promise<CreateBatchResponse> {
     if (!this.nativeStakingConnector) {
       throw new Error('Native staking is not enabled. Please provide nativeStakingApiToken in constructor.')
@@ -478,7 +483,9 @@ export class EthereumStaker {
       withdrawal_address: params.withdrawalAddress,
       fee_recipient: params.feeRecipientAddress,
       number_of_validators: params.numberOfValidators,
-      network: this.nativeStakingConnector.network
+      network: this.nativeStakingConnector.network,
+      is_compounding: params.isCompounding,
+      deposit_gwei_per_validator: params.depositGweiPerValidator
     }
 
     return this.nativeStakingConnector.createBatch(request)
@@ -575,14 +582,14 @@ export class EthereumStaker {
       const depositData = validator.deposit_data
 
       const depositFunctionData = this.encodeDepositFunction({
-        pubkey: depositData.pubkey,
-        withdrawalCredentials: depositData.withdrawal_credentials,
-        signature: depositData.signature,
-        depositDataRoot: depositData.deposit_data_root
+        pubkey: toHexString(depositData.pubkey),
+        withdrawalCredentials: toHexString(depositData.withdrawal_credentials),
+        signature: toHexString(depositData.signature),
+        depositDataRoot: toHexString(depositData.deposit_data_root)
       })
 
       const transaction: Transaction = {
-        to: this.nativeStakingConnector.config.depositContractAddress,
+        to: this.nativeStakingConnector?.config.depositContractAddress,
         value: parseEther('32'), // Each validator requires exactly 32 ETH
         data: depositFunctionData
       }
@@ -597,24 +604,15 @@ export class EthereumStaker {
    * Encodes the deposit function call for the Ethereum deposit contract.
    */
   private encodeDepositFunction (params: {
-    pubkey: string
-    withdrawalCredentials: string
-    signature: string
-    depositDataRoot: string
+    pubkey: Hex
+    withdrawalCredentials: Hex
+    signature: Hex
+    depositDataRoot: Hex
   }): Hex {
     return encodeFunctionData({
       abi: depositAbi,
       functionName: 'deposit',
-      args: [
-        params.pubkey.startsWith('0x') ? (params.pubkey as Hex) : (`0x${params.pubkey}` as Hex),
-        params.withdrawalCredentials.startsWith('0x')
-          ? (params.withdrawalCredentials as Hex)
-          : (`0x${params.withdrawalCredentials}` as Hex),
-        params.signature.startsWith('0x') ? (params.signature as Hex) : (`0x${params.signature}` as Hex),
-        params.depositDataRoot.startsWith('0x')
-          ? (params.depositDataRoot as Hex)
-          : (`0x${params.depositDataRoot}` as Hex)
-      ]
+      args: [params.pubkey, params.withdrawalCredentials, params.signature, params.depositDataRoot]
     })
   }
 
@@ -669,7 +667,7 @@ export class EthereumStaker {
       ...baseFees,
       baseFeeMultiplier: baseFeeMultiplier ?? baseFees.baseFeeMultiplier,
       defaultPriorityFee:
-        defaultPriorityFee === undefined ? baseFees.defaultPriorityFee : this.parseEther(defaultPriorityFee)
+        defaultPriorityFee === undefined ? baseFees.maxPriorityFeePerGas : this.parseEther(defaultPriorityFee)
     }
 
     const chain: Chain = {

@@ -1,7 +1,7 @@
 import { Hex } from 'viem'
 
 export type ValidatorStatus = 'created' | 'active' | 'exited'
-export type BatchStatusEnum = 'created' | 'ready'
+export type BatchStatus = 'created' | 'ready'
 
 export interface CreateBatchRequest {
   batch_id: string
@@ -9,13 +9,29 @@ export interface CreateBatchRequest {
   fee_recipient: Hex
   number_of_validators: number
   network: string
+  is_compounding?: boolean
+  deposit_gwei_per_validator?: bigint
 }
 
 export interface CreateBatchResponse {
   batch_id: string
   message: string
+  is_compounding?: boolean
+  deposit_gwei_per_validator?: number
 }
 // https://native-staking.chorus.one/docs
+export interface BatchDetailsResponse {
+  validators: BatchDetailsValidator[]
+  status: BatchStatus
+  created: string
+  is_compounding: boolean
+  deposit_gwei_per_validator: number
+  status_code?: number // Optional HTTP status code
+}
+export interface BatchDetailsValidator {
+  deposit_data: BatchDetailsDepositData
+  status: ValidatorStatus
+}
 export interface BatchDetailsDepositData {
   amount: number
   deposit_cli_version: string
@@ -27,29 +43,13 @@ export interface BatchDetailsDepositData {
   signature: string
   withdrawal_credentials: string
 }
-
-export interface BatchDetailsValidator {
-  deposit_data: BatchDetailsDepositData
-  status: ValidatorStatus
+export interface ListBatchesResponse {
+  requests: ListBatchItem[]
 }
-
-export interface BatchDetailsResponse {
-  validators: BatchDetailsValidator[]
-  status: BatchStatusEnum
-  created: string
-  is_compounding: boolean
-  deposit_gwei_per_validator: number
-  status_code?: number // Optional HTTP status code
-}
-
 export interface ListBatchItem {
   batch_id: string
   created: number
-  status: BatchStatusEnum
+  status: BatchStatus
   is_compounding: boolean
   deposit_gwei_per_validator: number
-}
-
-export interface ListBatchesResponse {
-  requests: ListBatchItem[]
 }
