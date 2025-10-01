@@ -44,6 +44,7 @@ import {
 } from './lib/types/nativeStaking'
 import { depositAbi } from './lib/contracts/depositContractAbi'
 import { toHexString } from './lib/utils/toHexString'
+import { getNetworkConfig } from './lib/utils/getNetworkConfig'
 
 /**
  * This class provides the functionality to stake, unstake, and withdraw for Ethereum network.
@@ -575,9 +576,8 @@ export class EthereumStaker {
     if (validatorsToDeposit.length === 0) {
       throw new Error('No validators found that need to be deposited. All validators may have already been deposited.')
     }
-    if (!this.nativeStakingConnector) {
-      throw new Error('Native staking is not enabled. Please provide nativeStakingApiToken in constructor.')
-    }
+
+    const config = getNetworkConfig(this.network)
 
     const transactions: Transaction[] = []
 
@@ -592,7 +592,7 @@ export class EthereumStaker {
       })
 
       const transaction: Transaction = {
-        to: this.nativeStakingConnector?.config.depositContractAddress,
+        to: config.depositContractAddress,
         value: parseEther('32'), // Each validator requires exactly 32 ETH
         data: depositFunctionData
       }
@@ -631,7 +631,6 @@ export class EthereumStaker {
    * @returns Returns a promise that resolves to a withdrawal transaction.
    */
   async buildValidatorExitTx (params: { validatorPubkey: string }): Promise<{ tx: Transaction }> {
-    const { getNetworkConfig } = await import('./lib/utils/getNetworkConfig')
     const config = getNetworkConfig(this.network)
 
     const tx = await buildValidatorExitTx({
