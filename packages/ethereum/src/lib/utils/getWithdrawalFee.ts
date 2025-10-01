@@ -1,5 +1,5 @@
-import { toHex } from 'viem'
-import { NativeStakingConnector } from '../nativeStakingConnector'
+import { PublicClient, toHex } from 'viem'
+import { NetworkConfig } from './getNetworkConfig'
 
 export type Queue = {
   length: bigint
@@ -7,35 +7,34 @@ export type Queue = {
 }
 
 // https://eips.ethereum.org/EIPS/eip-7002#fee-calculation
-export const getWithdrawalQueue = async (conn: NativeStakingConnector): Promise<Queue> => {
-  const length = await getWithdrawalQueueLength(conn)
+export const getWithdrawalQueue = async (ethPublicClient: PublicClient, config: NetworkConfig): Promise<Queue> => {
+  const length = await getWithdrawalQueueLength(ethPublicClient, config)
 
   // Add 10 to the length as a buffer to avoid underestimating the fee
   // This accounts for new requests that may be added before ours is processed
   // and helps ensure the transaction goes through without being underpriced
   const excess = length + 10n
 
-  const fee = getRequiredFee(
-    conn.config.consolidationRequestFeeAddition,
-    excess,
-    conn.config.minConsolidationRequestFee
-  )
+  const fee = getRequiredFee(config.consolidationRequestFeeAddition, excess, config.minConsolidationRequestFee)
 
   return { length, fee }
 }
 
-export const getWithdrawalQueueLength = async (conn: NativeStakingConnector): Promise<bigint> => {
-  let queueLengthHex
+export const getWithdrawalQueueLength = async (
+  ethPublicClient: PublicClient,
+  config: NetworkConfig
+): Promise<bigint> => {
+  let queueLengthHex: string | undefined
   try {
-    queueLengthHex = await conn.eth.getStorageAt({
-      address: conn.config.withdrawalContractAddress!,
-      slot: toHex(conn.config.excessWithdrawalRequestsStorageSlot)
+    queueLengthHex = await ethPublicClient.getStorageAt({
+      address: config.withdrawalContractAddress!,
+      slot: toHex(config.excessWithdrawalRequestsStorageSlot)
     })
 
     if (!queueLengthHex) {
       throw new Error('Unable to get withdrawal queue length')
     }
-    if (queueLengthHex === conn.config.excessInhibitor) {
+    if (queueLengthHex === config.excessInhibitor) {
       throw new Error('Withdrawal queue is disabled')
     }
   } catch (error) {

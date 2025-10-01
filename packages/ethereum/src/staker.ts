@@ -53,6 +53,8 @@ import { toHexString } from './lib/utils/toHexString'
 export class EthereumStaker {
   private connector: StakewiseConnector
   private nativeStakingConnector?: NativeStakingConnector
+  private network: Networks
+  private rpcUrl?: string
 
   /**
    * This **static** method is used to derive an address from a public key.
@@ -81,12 +83,13 @@ export class EthereumStaker {
    * @returns  An instance of EthereumStaker.
    */
   constructor (params: { network: Networks; rpcUrl?: string; nativeStakingApiToken?: string }) {
-    const network = params.network
+    this.network = params.network
+    this.rpcUrl = params.rpcUrl
 
-    this.connector = new StakewiseConnector(network, params.rpcUrl)
+    this.connector = new StakewiseConnector(this.network, this.rpcUrl)
 
     if (params.nativeStakingApiToken) {
-      this.nativeStakingConnector = new NativeStakingConnector(network, params.nativeStakingApiToken)
+      this.nativeStakingConnector = new NativeStakingConnector(this.network, params.nativeStakingApiToken, this.rpcUrl)
     }
   }
 
@@ -628,11 +631,12 @@ export class EthereumStaker {
    * @returns Returns a promise that resolves to a withdrawal transaction.
    */
   async buildValidatorExitTx (params: { validatorPubkey: string }): Promise<{ tx: Transaction }> {
-    if (!this.nativeStakingConnector) {
-      throw new Error('Native staking is not enabled. Please provide nativeStakingApiToken in constructor.')
-    }
+    const { getNetworkConfig } = await import('./lib/utils/getNetworkConfig')
+    const config = getNetworkConfig(this.network)
+
     const tx = await buildValidatorExitTx({
-      connector: this.nativeStakingConnector,
+      ethPublicClient: this.connector.eth,
+      config,
       validatorPubkey: params.validatorPubkey
     })
 
