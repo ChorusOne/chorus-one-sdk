@@ -6,8 +6,9 @@ import {
   ListBatchesResponse
 } from './types/nativeStaking'
 import { isCompoundingAddress, isStandardAddress } from './utils/addressValidation'
-import { Hex, http, PublicClient, createPublicClient } from 'viem'
+import { http, PublicClient, createPublicClient } from 'viem'
 import { hoodi, mainnet } from 'viem/chains'
+import { getNetworkConfig, NetworkConfig } from './utils/getNetworkConfig'
 
 /**
  * Connector for interacting with the Native Staking API
@@ -27,15 +28,7 @@ export class NativeStakingConnector {
   /** Web3 connector for calling read-only contract methods */
   eth: PublicClient
   /** Configuration parameters */
-  config: {
-    depositContractAddress: Hex
-    withdrawalContractAddress: Hex
-    excessInhibitor: Hex
-    compoundingFeeAddition: bigint
-    excessWithdrawalRequestsStorageSlot: bigint
-    consolidationRequestFeeAddition: bigint
-    minConsolidationRequestFee: bigint
-  }
+  config: NetworkConfig
 
   constructor (network: Networks, apiToken: string, rpcUrl?: string) {
     this.apiToken = apiToken
@@ -50,17 +43,6 @@ export class NativeStakingConnector {
           chain: mainnet,
           transport
         })
-        // https://github.com/ethereum/EIPs/blob/dd845b91eb7445877f2d5b4381319a72dea0a766/EIPS/eip-7910.md?plain=1#L181
-        // https://eips.ethereum.org/EIPS/eip-7002#specification
-        this.config = {
-          depositContractAddress: '0x00000000219ab540356cBB839Cbe05303d7705Fa',
-          withdrawalContractAddress: '0x00000961Ef480Eb55e80D19ad83579A64c007002',
-          excessInhibitor: ('0x' + BigInt(2 ** 256 - 1).toString(16)) as Hex,
-          compoundingFeeAddition: 3n,
-          excessWithdrawalRequestsStorageSlot: 0n,
-          consolidationRequestFeeAddition: 17n,
-          minConsolidationRequestFee: 1n
-        }
         break
       case 'hoodi':
         this.network = 'hoodi'
@@ -68,19 +50,12 @@ export class NativeStakingConnector {
           chain: hoodi,
           transport
         })
-        this.config = {
-          depositContractAddress: '0x00000000219ab540356cBB839Cbe05303d7705Fa',
-          withdrawalContractAddress: '0x00000961Ef480Eb55e80D19ad83579A64c007002',
-          excessInhibitor: ('0x' + BigInt(2 ** 256 - 1).toString(16)) as Hex,
-          compoundingFeeAddition: 3n,
-          excessWithdrawalRequestsStorageSlot: 0n,
-          consolidationRequestFeeAddition: 17n,
-          minConsolidationRequestFee: 1n
-        }
         break
       default:
         throw new Error(`Invalid network passed: ${network}`)
     }
+
+    this.config = getNetworkConfig(network)
   }
 
   /**

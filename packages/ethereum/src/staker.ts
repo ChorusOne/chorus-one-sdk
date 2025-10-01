@@ -44,6 +44,7 @@ import {
 } from './lib/types/nativeStaking'
 import { depositAbi } from './lib/contracts/depositContractAbi'
 import { toHexString } from './lib/utils/toHexString'
+import { getNetworkConfig } from './lib/utils/getNetworkConfig'
 
 /**
  * This class provides the functionality to stake, unstake, and withdraw for Ethereum network.
@@ -53,6 +54,8 @@ import { toHexString } from './lib/utils/toHexString'
 export class EthereumStaker {
   private connector: StakewiseConnector
   private nativeStakingConnector?: NativeStakingConnector
+  private network: Networks
+  private rpcUrl?: string
 
   /**
    * This **static** method is used to derive an address from a public key.
@@ -81,12 +84,13 @@ export class EthereumStaker {
    * @returns  An instance of EthereumStaker.
    */
   constructor (params: { network: Networks; rpcUrl?: string; nativeStakingApiToken?: string }) {
-    const network = params.network
+    this.network = params.network
+    this.rpcUrl = params.rpcUrl
 
-    this.connector = new StakewiseConnector(network, params.rpcUrl)
+    this.connector = new StakewiseConnector(this.network, this.rpcUrl)
 
     if (params.nativeStakingApiToken) {
-      this.nativeStakingConnector = new NativeStakingConnector(network, params.nativeStakingApiToken)
+      this.nativeStakingConnector = new NativeStakingConnector(this.network, params.nativeStakingApiToken, this.rpcUrl)
     }
   }
 
@@ -572,9 +576,8 @@ export class EthereumStaker {
     if (validatorsToDeposit.length === 0) {
       throw new Error('No validators found that need to be deposited. All validators may have already been deposited.')
     }
-    if (!this.nativeStakingConnector) {
-      throw new Error('Native staking is not enabled. Please provide nativeStakingApiToken in constructor.')
-    }
+
+    const config = getNetworkConfig(this.network)
 
     const transactions: Transaction[] = []
 
@@ -589,7 +592,7 @@ export class EthereumStaker {
       })
 
       const transaction: Transaction = {
-        to: this.nativeStakingConnector?.config.depositContractAddress,
+        to: config.depositContractAddress,
         value: parseEther('32'), // Each validator requires exactly 32 ETH
         data: depositFunctionData
       }
@@ -628,11 +631,11 @@ export class EthereumStaker {
    * @returns Returns a promise that resolves to a withdrawal transaction.
    */
   async buildValidatorExitTx (params: { validatorPubkey: string }): Promise<{ tx: Transaction }> {
-    if (!this.nativeStakingConnector) {
-      throw new Error('Native staking is not enabled. Please provide nativeStakingApiToken in constructor.')
-    }
+    const config = getNetworkConfig(this.network)
+
     const tx = await buildValidatorExitTx({
-      connector: this.nativeStakingConnector,
+      ethPublicClient: this.connector.eth,
+      config,
       validatorPubkey: params.validatorPubkey
     })
 
