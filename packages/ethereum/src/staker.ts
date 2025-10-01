@@ -462,7 +462,7 @@ export class EthereumStaker {
    *
    * @param params - Parameters for creating the validator batch
    * @param params.batchId - Unique identifier for the batch
-   * @param params.withdrawalAddress - The withdrawal address that will control the staked funds. It must be in 0x01 or 0x02 format.
+   * @param params.withdrawalAddress - The withdrawal address that will control the staked funds.Must be 0x02 compounding credentials for compounding validators.
    * @param params.feeRecipientAddress - The address that will receive MEV rewards
    * @param params.numberOfValidators - Number of validators to create (each requires 32 ETH)
    * @param params.isCompounding - (Optional) Whether to create compounding validators (0x02 withdrawal credentials). Default is false.
@@ -472,7 +472,7 @@ export class EthereumStaker {
    */
   async createValidatorBatch (params: {
     batchId: string
-    withdrawalAddress: `0x01${string}` | `0x02${string}`
+    withdrawalAddress: Hex
     feeRecipientAddress: Hex
     numberOfValidators: number
     isCompounding?: boolean
