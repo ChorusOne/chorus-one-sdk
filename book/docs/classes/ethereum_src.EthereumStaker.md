@@ -425,9 +425,11 @@ that can be used to deposit validators on the Ethereum network.
 | :------ | :------ | :------ |
 | `params` | `Object` | Parameters for creating the validator batch |
 | `params.batchId` | `string` | Unique identifier for the batch |
-| `params.withdrawalAddress` | \`0x$\{string}\` | The withdrawal address that will control the staked funds |
+| `params.withdrawalAddress` | \`0x$\{string}\` | The withdrawal address that will control the staked funds. |
 | `params.feeRecipientAddress` | \`0x$\{string}\` | The address that will receive MEV rewards |
 | `params.numberOfValidators` | `number` | Number of validators to create (each requires 32 ETH) |
+| `params.isCompounding?` | `boolean` | (Optional) Whether to create compounding validators (0x02 withdrawal credentials). Default is false. |
+| `params.depositGweiPerValidator?` | `bigint` | (Optional) The deposit in gwei per validator. Default is 32000000000 gwei i.e. 32ETH. |
 
 ### Returns
 
