@@ -425,7 +425,7 @@ that can be used to deposit validators on the Ethereum network.
 | :------ | :------ | :------ |
 | `params` | `Object` | Parameters for creating the validator batch |
 | `params.batchId` | `string` | Unique identifier for the batch |
-| `params.withdrawalAddress` | \`0x$\{string}\` | The withdrawal address that will control the staked funds. |
+| `params.withdrawalAddress` | \`0x$\{string}\` | The withdrawal address that will control the staked funds.Must be 0x02 compounding credentials for compounding validators. |
 | `params.feeRecipientAddress` | \`0x$\{string}\` | The address that will receive MEV rewards |
 | `params.numberOfValidators` | `number` | Number of validators to create (each requires 32 ETH) |
 | `params.isCompounding?` | `boolean` | (Optional) Whether to create compounding validators (0x02 withdrawal credentials). Default is false. |
@@ -542,6 +542,7 @@ the execution layer withdrawal credentials (0x01) as specified in EIP-7002.
 | :------ | :------ | :------ |
 | `params` | `Object` | Parameters for building the withdrawal transaction |
 | `params.validatorPubkey` | `string` | The validator public key (48 bytes) |
+| `params.value?` | `bigint` | (Optional) The amount of ETH to send with the transaction. Default is 1 wei. |
 
 ### Returns
 

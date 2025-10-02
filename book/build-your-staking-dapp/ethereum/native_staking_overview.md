@@ -153,20 +153,91 @@ const { transactions } = await staker.buildDepositTx({ batchData })
 
 ### Description
 
-The `buildValidatorExitTx` method creates transactions for exiting validators from the Ethereum network. This is useful when you want to stop staking with specific validators.
+The `buildValidatorExitTx` method creates a withdrawal request transaction for exiting validators from the Ethereum network based on [EIP-7002](https://eips.ethereum.org/EIPS/eip-7002). This method triggers a full validator exit through the execution layer withdrawal credentials (0x01).
 
 ### How to Use
 
 To build the exit transaction for a validator, you need to provide the validator's public key. A validator can only exit if it is eligible to do so, which means it must have been active for at least 256 epochs.
 
+**Parameters:**
+
+- `validatorPubkey` (required): The validator's public key (48 bytes)
+- `value` (optional): The amount of ETH to send with the transaction. Defaults to **1 wei** (the minimum valid fee)
+
+**Important:** The default value of 1 wei is sufficient for most cases since validator exits are processed through the consensus layer. You only need to provide a custom `value` if you want to ensure priority processing during periods of high withdrawal request volume.
+
 ### Example
 
 ```javascript
-// Build exit transaction for a specific validator
+// Build exit transaction with default fee (1 wei)
 const { tx } = await staker.buildValidatorExitTx({
   validatorPubkey: '8c3a5e3f4b2c1d6e7f8a9b0c1d2e3f4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f'
 })
 ```
+
+### Understanding Withdrawal Request Fees
+
+EIP-7002 implements a dynamic fee mechanism for withdrawal requests that grows **exponentially** based on the withdrawal queue length.
+
+When the withdrawal queue is congested (many pending requests), this exponential calculation can result in extremely high fees (potentially thousands of ETH). However, for normal validator exits:
+
+- **Most validator exits use 1 wei**: Since validators exit through the consensus layer, the minimum fee is typically sufficient
+- **High fees only apply during congestion**: The exponential fee mechanism is designed to prevent spam during high-demand periods
+- **You can calculate fees beforehand**: Use the `getWithdrawalQueue` utility (see below) if you need to check current fees
+
+⚠️ **Warning:** Do not blindly use the fee returned by `getWithdrawalQueue` during periods of high congestion, as it may be unnecessarily high. The default 1 wei value is recommended unless you have a specific need for priority processing.
+
+---
+
+## getWithdrawalQueue
+
+### Description
+
+The `getWithdrawalQueue` utility function allows you to query the current withdrawal request queue status and calculate the dynamic fee based on EIP-7002. This is useful if you want to inspect the current network conditions before building a validator exit transaction.
+
+**Note:** This is a standalone utility function exported from the Ethereum package. You don't need to call `init()` on the staker to use it.
+
+### How to Use
+
+The function requires an Ethereum public client (from viem) and a network configuration object.
+
+**Returns:**
+
+- `length`: The current number of pending withdrawal requests in the queue
+- `fee`: The calculated fee in wei based on the current queue length (using the exponential formula)
+
+### Example
+
+```javascript
+import { EthereumStaker, getWithdrawalQueue } from '@chorus-one/ethereum'
+
+const staker = new EthereumStaker({
+  network: 'mainnet',
+  rpcUrl: 'https://ethereum-rpc.publicnode.com'
+})
+await staker.init()
+
+// Get the withdrawal queue status
+const queue = await getWithdrawalQueue(staker.connector.eth, staker.getNetworkConfig())
+
+console.log(`Queue length: ${queue.length}`)
+console.log(`Calculated fee: ${queue.fee} wei`)
+
+// Use custom fee if needed (though 1 wei is usually sufficient)
+const { tx } = await staker.buildValidatorExitTx({
+  validatorPubkey: '8c3a5e3f4b2c1d6e7f8a9b0c1d2e3f4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f',
+  value: queue.fee // Only use this if you specifically need priority processing
+})
+```
+
+**Important Considerations:**
+
+- The calculated `fee` can be extremely high (thousands of ETH) if the number of pending requests is large, see [fee analysis docs](https://eips.ethereum.org/assets/eip-7002/fee_analysis)
+- For normal validator exits, using the default 1 wei is recommended
+- Only provide a custom fee if you have a specific operational requirement for priority processing
+- The queue length and fee can change rapidly, so values may be outdated by the time your transaction is broadcast
+
+---
 
 ## Further Reading
 
