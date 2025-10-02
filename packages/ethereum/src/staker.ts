@@ -627,16 +627,17 @@ export class EthereumStaker {
    *
    * @param params - Parameters for building the withdrawal transaction
    * @param params.validatorPubkey - The validator public key (48 bytes)
+   * @param params.value - (Optional) The amount of ETH to send with the transaction. Default is 1 wei.
    *
    * @returns Returns a promise that resolves to a withdrawal transaction.
    */
-  async buildValidatorExitTx (params: { validatorPubkey: string }): Promise<{ tx: Transaction }> {
+  async buildValidatorExitTx (params: { validatorPubkey: string; value?: bigint }): Promise<{ tx: Transaction }> {
     const config = getNetworkConfig(this.network)
 
     const tx = await buildValidatorExitTx({
-      ethPublicClient: this.connector.eth,
       config,
-      validatorPubkey: params.validatorPubkey
+      validatorPubkey: params.validatorPubkey,
+      value: params.value
     })
 
     return { tx }
