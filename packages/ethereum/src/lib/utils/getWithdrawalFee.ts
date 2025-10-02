@@ -10,12 +10,7 @@ export type Queue = {
 export const getWithdrawalQueue = async (ethPublicClient: PublicClient, config: NetworkConfig): Promise<Queue> => {
   const length = await getWithdrawalQueueLength(ethPublicClient, config)
 
-  // Add 10 to the length as a buffer to avoid underestimating the fee
-  // This accounts for new requests that may be added before ours is processed
-  // and helps ensure the transaction goes through without being underpriced
-  const excess = length + 10n
-
-  const fee = getRequiredFee(config.consolidationRequestFeeAddition, excess, config.minConsolidationRequestFee)
+  const fee = getRequiredFee(config.consolidationRequestFeeAddition, length, config.minConsolidationRequestFee)
 
   return { length, fee }
 }
