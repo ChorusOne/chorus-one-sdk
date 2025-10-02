@@ -1,17 +1,14 @@
-import { Hex, PublicClient } from 'viem'
+import { Hex } from 'viem'
 import { Transaction } from '../types/transaction'
-import { getWithdrawalQueue } from '../utils/getWithdrawalFee'
 import { NetworkConfig } from '../utils/getNetworkConfig'
 
 // https://eips.ethereum.org/EIPS/eip-7002#add-withdrawal-request
 export async function buildValidatorExitTx (request: {
-  ethPublicClient: PublicClient
   config: NetworkConfig
   validatorPubkey: string
+  value?: bigint
 }): Promise<Transaction> {
-  const { ethPublicClient, config, validatorPubkey } = request
-
-  const queue = await getWithdrawalQueue(ethPublicClient, config)
+  const { value, config, validatorPubkey } = request
 
   const pubkey = validatorPubkey.startsWith('0x') ? validatorPubkey.slice(2) : validatorPubkey
 
@@ -31,6 +28,6 @@ export async function buildValidatorExitTx (request: {
   return {
     to: config.withdrawalContractAddress,
     data: calldata,
-    value: queue.fee
+    value: value ?? config.minConsolidationRequestFee // 1 wei is the minimum value to make the tx valid
   }
 }
