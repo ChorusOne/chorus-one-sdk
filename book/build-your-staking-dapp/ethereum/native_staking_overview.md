@@ -164,12 +164,9 @@ To build the exit transaction for a validator, you need to provide the validator
 - `validatorPubkey` (required): The validator's public key (48 bytes)
 - `value` (optional): The amount of ETH to send with the transaction. Defaults to **1 wei** (the minimum valid fee)
 
-**Important:** The default value of 1 wei is sufficient for most cases since validator exits are processed through the consensus layer. You only need to provide a custom `value` if you want to ensure priority processing during periods of high withdrawal request volume.
-
 ### Example
 
 ```javascript
-// Build exit transaction with default fee (1 wei)
 const { tx } = await staker.buildValidatorExitTx({
   validatorPubkey: '8c3a5e3f4b2c1d6e7f8a9b0c1d2e3f4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f'
 })
@@ -179,13 +176,11 @@ const { tx } = await staker.buildValidatorExitTx({
 
 EIP-7002 implements a dynamic fee mechanism for withdrawal requests that grows **exponentially** based on the withdrawal queue length.
 
-When the withdrawal queue is congested (many pending requests), this exponential calculation can result in extremely high fees (potentially thousands of ETH). However, for normal validator exits:
+When the withdrawal queue is congested (many pending requests), this exponential calculation can result in extremely high fees (potentially thousands of ETH) see [fee analysis docs](https://eips.ethereum.org/assets/eip-7002/fee_analysis). However, for normal validator exits:
 
 - **Most validator exits use 1 wei**: Since validators exit through the consensus layer, the minimum fee is typically sufficient
-- **High fees only apply during congestion**: The exponential fee mechanism is designed to prevent spam during high-demand periods
+- **High fees only apply during congestion**: if there is a long queue of withdrawal requests, fees can rise significantly
 - **You can calculate fees beforehand**: Use the `getWithdrawalQueue` utility (see below) if you need to check current fees
-
-⚠️ **Warning:** Do not blindly use the fee returned by `getWithdrawalQueue` during periods of high congestion, as it may be unnecessarily high. The default 1 wei value is recommended unless you have a specific need for priority processing.
 
 ---
 
@@ -195,8 +190,6 @@ When the withdrawal queue is congested (many pending requests), this exponential
 
 The `getWithdrawalQueue` utility function allows you to query the current withdrawal request queue status and calculate the dynamic fee based on EIP-7002. This is useful if you want to inspect the current network conditions before building a validator exit transaction.
 
-**Note:** This is a standalone utility function exported from the Ethereum package. You don't need to call `init()` on the staker to use it.
-
 ### How to Use
 
 The function requires an Ethereum public client (from viem) and a network configuration object.
@@ -204,7 +197,7 @@ The function requires an Ethereum public client (from viem) and a network config
 **Returns:**
 
 - `length`: The current number of pending withdrawal requests in the queue
-- `fee`: The calculated fee in wei based on the current queue length (using the exponential formula)
+- `fee`: The calculated fee in wei based on the current queue length
 
 ### Example
 
@@ -223,19 +216,11 @@ const queue = await getWithdrawalQueue(staker.connector.eth, staker.getNetworkCo
 console.log(`Queue length: ${queue.length}`)
 console.log(`Calculated fee: ${queue.fee} wei`)
 
-// Use custom fee if needed (though 1 wei is usually sufficient)
 const { tx } = await staker.buildValidatorExitTx({
   validatorPubkey: '8c3a5e3f4b2c1d6e7f8a9b0c1d2e3f4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f',
-  value: queue.fee // Only use this if you specifically need priority processing
+  value: queue.fee
 })
 ```
-
-**Important Considerations:**
-
-- The calculated `fee` can be extremely high (thousands of ETH) if the number of pending requests is large, see [fee analysis docs](https://eips.ethereum.org/assets/eip-7002/fee_analysis)
-- For normal validator exits, using the default 1 wei is recommended
-- Only provide a custom fee if you have a specific operational requirement for priority processing
-- The queue length and fee can change rapidly, so values may be outdated by the time your transaction is broadcast
 
 ---
 
