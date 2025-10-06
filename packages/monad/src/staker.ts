@@ -420,7 +420,7 @@ export class MonadStaker {
    *     false = stake changes activate in epoch n+1
    *     true = stake changes activate in epoch n+2
    */
-  private async getEpoch (): Promise<EpochInfo> {
+  async getEpoch (): Promise<EpochInfo> {
     if (!this.contract) {
       throw new Error('MonadStaker not initialized. Did you forget to call init()?')
     }
