@@ -5,7 +5,7 @@ import type { PendingActivation } from './types'
  * @param validatorId - Validator ID to validate
  * @returns True if valid validator ID
  */
-export function isValidValidatorId(validatorId: number): boolean {
+export function isValidValidatorId (validatorId: number): boolean {
   return Number.isInteger(validatorId) && validatorId >= 0 && validatorId < 2 ** 64
 }
 
@@ -14,7 +14,7 @@ export function isValidValidatorId(validatorId: number): boolean {
  * @param withdrawalId - Withdrawal ID to validate
  * @returns True if valid withdrawal ID
  */
-export function isValidWithdrawalId(withdrawalId: number): boolean {
+export function isValidWithdrawalId (withdrawalId: number): boolean {
   return Number.isInteger(withdrawalId) && withdrawalId >= 0 && withdrawalId <= 255
 }
 
@@ -24,12 +24,12 @@ export function isValidWithdrawalId(withdrawalId: number): boolean {
  * @param blocksPerEpoch - Number of blocks per epoch
  * @returns Number of blocks remaining until the next epoch
  */
-function calculateBlocksRemainingInEpoch(currentBlock: bigint, blocksPerEpoch: number): number {
+function calculateBlocksRemainingInEpoch (currentBlock: bigint, blocksPerEpoch: number): number {
   const blockPositionInEpoch = Number(currentBlock % BigInt(blocksPerEpoch))
   return blocksPerEpoch - blockPositionInEpoch
 }
 
-export function calculateActivationTiming(
+export function calculateActivationTiming (
   activationEpoch: bigint,
   currentEpoch: bigint,
   currentBlock: bigint,
@@ -54,8 +54,8 @@ export function calculateActivationTiming(
     const blocksRemainingInCurrentEpoch = calculateBlocksRemainingInEpoch(currentBlock, blocksPerEpoch)
     const fullEpochsAway = epochsRemaining - 1
 
-    secondsRemaining = blocksRemainingInCurrentEpoch * blockTimeSeconds +
-                      fullEpochsAway * blocksPerEpoch * blockTimeSeconds
+    secondsRemaining =
+      blocksRemainingInCurrentEpoch * blockTimeSeconds + fullEpochsAway * blocksPerEpoch * blockTimeSeconds
   }
 
   return {
@@ -67,7 +67,7 @@ export function calculateActivationTiming(
   }
 }
 
-export function calculateWithdrawalTiming(
+export function calculateWithdrawalTiming (
   withdrawEpoch: bigint,
   currentEpoch: bigint,
   currentBlock: bigint,
@@ -97,8 +97,8 @@ export function calculateWithdrawalTiming(
     const blocksRemainingInCurrentEpoch = calculateBlocksRemainingInEpoch(currentBlock, blocksPerEpoch)
     const fullEpochsAway = epochsRemaining - 1
 
-    secondsRemaining = blocksRemainingInCurrentEpoch * blockTimeSeconds +
-                      fullEpochsAway * blocksPerEpoch * blockTimeSeconds
+    secondsRemaining =
+      blocksRemainingInCurrentEpoch * blockTimeSeconds + fullEpochsAway * blocksPerEpoch * blockTimeSeconds
   }
 
   return {
