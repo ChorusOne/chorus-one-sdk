@@ -19,7 +19,6 @@ import type {
   WithdrawOptions,
   ClaimRewardsOptions,
   UndelegateOptions,
-  ValidatorInfo,
   DelegatorInfo,
   WithdrawalRequestInfo,
   EpochInfo
@@ -100,9 +99,11 @@ export class MonadStaker {
   /**
    * Builds a delegation transaction
    *
+   * Stake becomes active in epoch n+1 (if before boundary block) or epoch n+2 (if after).
+   *
    * @param params - Parameters for building the transaction
-   * @param params.validatorId - The validator ID to delegate to
-   * @param params.amount - The amount to delegate in MON
+   * @param params.validatorId - Unique identifier (uint64) for the validator. Assigned when validator joined the network.
+   * @param params.amount - The amount to delegate in MON (will be converted to wei internally)
    *
    * @returns Returns a promise that resolves to a transaction object for viem's sendTransaction
    */
@@ -135,13 +136,14 @@ export class MonadStaker {
    * Builds an undelegation transaction
    *
    * Creates a withdrawal request to undelegate tokens from a validator.
-   * Tokens become available for withdrawal after the epoch delay.
+   * Stake becomes inactive in epoch n+1 or n+2, then moves to pending state for WITHDRAWAL_DELAY epochs (1 epoch).
+   * After delay, call withdraw() to claim funds back to your wallet.
    *
    * @param params - Parameters for building the transaction
-   * @param params.delegatorAddress - The delegator's address
-   * @param params.validatorId - The validator ID to undelegate from
-   * @param params.amount - The amount to undelegate in MON
-   * @param params.withdrawalId - Withdrawal request ID (0-255)
+   * @param params.delegatorAddress - The delegator's address that will receive funds after withdrawal
+   * @param params.validatorId - Unique identifier for the validator to undelegate from
+   * @param params.amount - The amount to undelegate in MON (will be converted to wei internally)
+   * @param params.withdrawalId - User-chosen ID (0-255) to track this withdrawal request. Allows up to 256 concurrent withdrawals per validator. Can be reused after calling withdraw().
    *
    * @returns Returns a promise that resolves to a transaction object for viem's sendTransaction
    */
@@ -196,13 +198,13 @@ export class MonadStaker {
   /**
    * Builds a withdraw transaction
    *
-   * Withdraws tokens from a completed undelegation request.
-   * Can only be executed after the withdrawal epoch has passed.
+   * Completes an undelegation by claiming the tokens back to your wallet.
+   * Can only be executed once current epoch >= withdrawEpoch (check via getWithdrawalRequest).
    *
    * @param params - Parameters for building the transaction
-   * @param params.delegatorAddress - The delegator's address
-   * @param params.validatorId - The validator ID
-   * @param params.withdrawalId - Withdrawal request ID to withdraw from
+   * @param params.delegatorAddress - The delegator's address that will receive the funds
+   * @param params.validatorId - Unique identifier for the validator you undelegated from
+   * @param params.withdrawalId - The same ID (0-255) you used when calling undelegate. After successful withdrawal, this ID becomes available for reuse.
    *
    * @returns Returns a promise that resolves to a transaction object for viem's sendTransaction
    */
@@ -257,11 +259,12 @@ export class MonadStaker {
   /**
    * Builds a compound rewards transaction
    *
-   * Automatically restakes accumulated rewards as additional delegation.
+   * Converts accumulated unclaimedRewards into additional stake (auto-restaking).
+   * The compounded amount becomes active in epoch n+1 or n+2 (same timing as delegate).
    *
    * @param params - Parameters for building the transaction
    * @param params.delegatorAddress - The delegator's address
-   * @param params.validatorId - The validator ID to compound rewards for
+   * @param params.validatorId - Unique identifier for the validator to compound rewards for
    *
    * @returns Returns a promise that resolves to a transaction object for viem's sendTransaction
    */
@@ -300,11 +303,12 @@ export class MonadStaker {
   /**
    * Builds a claim rewards transaction
    *
-   * Claims accumulated staking rewards to the delegator's address.
+   * Claims accumulated unclaimedRewards and sends them to your wallet (not auto-restaked like compound).
+   * Rewards are available immediately after the transaction.
    *
    * @param params - Parameters for building the transaction
-   * @param params.delegatorAddress - The delegator's address
-   * @param params.validatorId - The validator ID to claim rewards from
+   * @param params.delegatorAddress - The delegator's address that will receive the rewards
+   * @param params.validatorId - Unique identifier for the validator to claim rewards from
    *
    * @returns Returns a promise that resolves to a transaction object for viem's sendTransaction
    */
@@ -343,45 +347,23 @@ export class MonadStaker {
   // ========== QUERY METHODS ==========
 
   /**
-   * Retrieves validator information
-   *
-   * @param params - Parameters for the query
-   * @param params.validatorId - Validator ID to query
-   *
-   * @returns Promise resolving to validator information
-   */
-  async getValidator (params: { validatorId: number }): Promise<ValidatorInfo> {
-    if (!this.contract) {
-      throw new Error('MonadStaker not initialized. Did you forget to call init()?')
-    }
-    const { validatorId } = params
-
-    const result = await this.contract.read.getValidator([BigInt(validatorId)])
-
-    return {
-      authAddress: result[0],
-      flags: result[1],
-      stake: result[2],
-      accRewardPerToken: result[3],
-      commission: result[4],
-      unclaimedRewards: result[5],
-      consensusStake: result[6],
-      consensusCommission: result[7],
-      snapshotStake: result[8],
-      snapshotCommission: result[9],
-      secpPubKey: result[10],
-      blsPubKey: result[11]
-    }
-  }
-
-  /**
    * Retrieves delegator information for a specific validator
    *
    * @param params - Parameters for the query
-   * @param params.validatorId - Validator ID
-   * @param params.delegatorAddress - Delegator address
+   * @param params.validatorId - Unique identifier for the validator
+   * @param params.delegatorAddress - Ethereum address of the delegator to query
    *
-   * @returns Promise resolving to delegator information
+   * @returns Promise resolving to delegator information including:
+   *   - stake: Currently active stake earning rewards right now (in wei). Does NOT include pending activations.
+   *   - accRewardPerToken: Last checked accumulator value (internal accounting, multiplied by 1e36)
+   *   - unclaimedRewards: Rewards earned but not yet claimed or compounded (in wei)
+   *   - deltaStake: Pending stake activating at deltaEpoch (submitted before boundary block, in wei)
+   *   - nextDeltaStake: Pending stake activating at nextDeltaEpoch (submitted after boundary block, in wei)
+   *   - deltaEpoch: Epoch number when deltaStake becomes active
+   *   - nextDeltaEpoch: Epoch number when nextDeltaStake becomes active
+   *
+   * Note: Two pending slots exist because stakes before boundary block activate in epoch n+1 (deltaStake),
+   * while stakes after boundary block activate in epoch n+2 (nextDeltaStake).
    */
   async getDelegator (params: { validatorId: number; delegatorAddress: Address }): Promise<DelegatorInfo> {
     if (!this.contract) {
@@ -406,12 +388,19 @@ export class MonadStaker {
   /**
    * Retrieves withdrawal request information
    *
-   * @param params - Parameters for the query
-   * @param params.validatorId - Validator ID
-   * @param params.delegatorAddress - Delegator address
-   * @param params.withdrawalId - Withdrawal request ID
+   * Use this to check if your undelegated tokens are ready to withdraw.
    *
-   * @returns Promise resolving to withdrawal request information
+   * @param params - Parameters for the query
+   * @param params.validatorId - Unique identifier for the validator you undelegated from
+   * @param params.delegatorAddress - Address that initiated the undelegation
+   * @param params.withdrawalId - The ID (0-255) you assigned when calling undelegate
+   *
+   * @returns Promise resolving to withdrawal information:
+   *   - withdrawalAmount: Amount in wei that will be returned when you call withdraw (0 if no request exists)
+   *   - accRewardPerToken: Validator's accumulator value when undelegate was called (used for reward calculations)
+   *   - withdrawEpoch: Epoch number when funds become withdrawable. Compare with current epoch from getEpoch() to check if ready.
+   *
+   * To check if withdrawable: currentEpoch >= withdrawEpoch (get currentEpoch via getEpoch())
    */
   async getWithdrawalRequest (params: {
     validatorId: number
@@ -436,7 +425,11 @@ export class MonadStaker {
   /**
    * Retrieves current epoch information
    *
-   * @returns Promise resolving to epoch information
+   * @returns Promise resolving to epoch timing information:
+   *   - epoch: Current consensus epoch number. An epoch is ~5.5 hours on mainnet (50,000 blocks) during which the validator set remains unchanged.
+   *   - inEpochDelayPeriod: Boolean indicating if we're past the "boundary block" (the last 10% of blocks in an epoch).
+   *     false = stake changes activate in epoch n+1
+   *     true = stake changes activate in epoch n+2
    */
   private async getEpoch (): Promise<EpochInfo> {
     if (!this.contract) {
