@@ -13,8 +13,8 @@
  * import { privateKeyToAccount } from 'viem/accounts'
  *
  * const staker = new MonadStaker({
- *   rpcUrl: 'https://your-monad-rpc.com',
- *   contractAddress: '0x0000000000000000000000000000000000001000'
+ *   rpcUrl: 'https://your-monad-rpc.com'
+ *   // contractAddress: '0x0000000000000000000000000000000000001000' (optional, defaults to precompile address)
  * })
  *
  * await staker.init()

@@ -6,8 +6,8 @@ import type { Address } from 'viem'
 export interface MonadNetworkConfig {
   /** RPC endpoint URL */
   rpcUrl: string
-  /** Staking contract address */
-  contractAddress: Address
+  /** Staking contract address (defaults to 0x0000000000000000000000000000000000001000 if not provided) */
+  contractAddress?: Address
 }
 
 /**

@@ -24,7 +24,7 @@ import type {
   EpochInfo
 } from './types'
 import { isValidValidatorId, isValidWithdrawalId } from './utils'
-import { MONAD_STAKING_ABI } from './constants'
+import { MONAD_STAKING_ABI, MONAD_STAKING_CONTRACT_ADDRESS } from './constants'
 
 /**
  * MonadStaker - TypeScript SDK for Monad blockchain staking operations
@@ -46,13 +46,13 @@ export class MonadStaker {
    *
    * @param params - Initialization configuration
    * @param params.rpcUrl - The URL of the Monad network RPC endpoint
-   * @param params.contractAddress - Staking contract address
+   * @param params.contractAddress - Staking contract address (optional, defaults to 0x0000000000000000000000000000000000001000)
    *
    * @returns An instance of MonadStaker
    */
   constructor (params: MonadNetworkConfig) {
     this.rpcUrl = params.rpcUrl
-    this.contractAddress = params.contractAddress
+    this.contractAddress = params.contractAddress ?? MONAD_STAKING_CONTRACT_ADDRESS
   }
 
   /**
@@ -61,14 +61,12 @@ export class MonadStaker {
    * @returns A promise which resolves once the MonadStaker instance has been initialized
    */
   async init (): Promise<void> {
-    // Create temporary client to fetch chain ID
     const tempClient = createPublicClient({
       transport: http(this.rpcUrl)
     })
 
     const chainId = await tempClient.getChainId()
 
-    // Define Monad chain with fetched chain ID
     this.chain = {
       id: chainId,
       name: 'Monad',
@@ -79,20 +77,17 @@ export class MonadStaker {
       }
     }
 
-    // Create public client with chain
     this.publicClient = createPublicClient({
       chain: this.chain,
       transport: http(this.rpcUrl)
     })
 
-    // Create contract instance
     this.contract = getContract({
       address: this.contractAddress,
       abi: MONAD_STAKING_ABI,
       client: this.publicClient
     })
 
-    // Verify connection
     await this.publicClient.getBlockNumber()
   }
 
@@ -163,7 +158,6 @@ export class MonadStaker {
       throw new Error(`Invalid withdrawal ID: ${withdrawalId}. Must be 0-255.`)
     }
 
-    // Check if withdrawal request already exists
     const existingRequest = await this.getWithdrawalRequest({
       validatorId,
       delegatorAddress,
@@ -174,7 +168,6 @@ export class MonadStaker {
       throw new Error(`Withdrawal request ID ${withdrawalId} already exists for this validator`)
     }
 
-    // Check delegator has sufficient stake
     const delegatorInfo = await this.getDelegator({ validatorId, delegatorAddress })
     const amountWei = parseEther(amount)
 
@@ -224,7 +217,6 @@ export class MonadStaker {
       throw new Error(`Invalid withdrawal ID: ${withdrawalId}`)
     }
 
-    // Verify withdrawal request exists
     const withdrawalRequest = await this.getWithdrawalRequest({
       validatorId,
       delegatorAddress,
@@ -235,7 +227,6 @@ export class MonadStaker {
       throw new Error(`No withdrawal request found for ID ${withdrawalId}`)
     }
 
-    // Check if withdrawal is ready (epoch check)
     const currentEpoch = await this.getEpoch()
     if (currentEpoch.epoch < withdrawalRequest.withdrawEpoch) {
       throw new Error(
@@ -281,7 +272,6 @@ export class MonadStaker {
       throw new Error(`Invalid validator ID: ${validatorId}`)
     }
 
-    // Check if there are rewards to compound
     const delegatorInfo = await this.getDelegator({ validatorId, delegatorAddress })
     if (delegatorInfo.unclaimedRewards === 0n) {
       throw new Error('No rewards available to compound')
@@ -325,7 +315,6 @@ export class MonadStaker {
       throw new Error(`Invalid validator ID: ${validatorId}`)
     }
 
-    // Check if there are rewards to claim
     const delegatorInfo = await this.getDelegator({ validatorId, delegatorAddress })
     if (delegatorInfo.unclaimedRewards === 0n) {
       throw new Error('No rewards available to claim')
@@ -431,7 +420,7 @@ export class MonadStaker {
    *     false = stake changes activate in epoch n+1
    *     true = stake changes activate in epoch n+2
    */
-  async getEpoch (): Promise<EpochInfo> {
+  private async getEpoch (): Promise<EpochInfo> {
     if (!this.contract) {
       throw new Error('MonadStaker not initialized. Did you forget to call init()?')
     }
