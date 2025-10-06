@@ -143,7 +143,7 @@ export class MonadStaker {
    * @param params.delegatorAddress - The delegator's address that will receive funds after withdrawal
    * @param params.validatorId - Unique identifier for the validator to undelegate from
    * @param params.amount - The amount to undelegate in MON (will be converted to wei internally)
-   * @param params.withdrawalId - User-chosen ID (0-255) to track this withdrawal request. Allows up to 256 concurrent withdrawals per validator. Can be reused after calling withdraw().
+   * @param params.withdrawalId - User-chosen ID (0-255) to track this withdrawal request. Allows up to 256 concurrent withdrawals per (validator,delegator) tuple. Can be reused after calling withdraw().
    *
    * @returns Returns a promise that resolves to a transaction object for viem's sendTransaction
    */
@@ -431,7 +431,7 @@ export class MonadStaker {
    *     false = stake changes activate in epoch n+1
    *     true = stake changes activate in epoch n+2
    */
-  private async getEpoch (): Promise<EpochInfo> {
+  async getEpoch (): Promise<EpochInfo> {
     if (!this.contract) {
       throw new Error('MonadStaker not initialized. Did you forget to call init()?')
     }

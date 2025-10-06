@@ -43,7 +43,6 @@ export { MonadStaker } from './staker'
 // Export types
 export type {
   MonadNetworkConfig,
-  ValidatorInfo,
   DelegatorInfo,
   WithdrawalRequestInfo,
   EpochInfo,
