@@ -1,6 +1,18 @@
 import type { Address, Hex } from 'viem'
 
 /**
+ * Network timing configuration
+ */
+export interface MonadTimingConfig {
+  /** Total blocks per epoch */
+  blocksPerEpoch?: number
+  /** Epoch delay period in blocks */
+  epochDelayPeriod?: number
+  /** Block time in seconds */
+  blockTimeSeconds?: number
+}
+
+/**
  * Network configuration for connecting to Monad blockchain
  */
 export interface MonadNetworkConfig {
@@ -8,6 +20,10 @@ export interface MonadNetworkConfig {
   rpcUrl: string
   /** Staking contract address */
   contractAddress: Address
+  /** Network identifier - uses defaults from network config (defaults to 'mainnet') */
+  network?: 'mainnet' | 'testnet2'
+  /** Optional timing configuration for epoch calculations (overrides network defaults) */
+  timing?: MonadTimingConfig
 }
 
 /**
@@ -41,6 +57,22 @@ export interface ValidatorInfo {
 }
 
 /**
+ * Timing information for pending stake activation
+ */
+export interface PendingActivation {
+  /** Amount of stake pending activation in wei */
+  amount: bigint
+  /** Epoch when this stake will activate */
+  activationEpoch: bigint
+  /** Number of epochs until activation */
+  epochsRemaining: number
+  /** Estimated time until activation */
+  estimatedActivationTime: Date
+  /** Estimated hours until activation */
+  hoursRemaining: number
+}
+
+/**
  * Delegator information for a specific validator
  */
 export interface DelegatorInfo {
@@ -58,6 +90,8 @@ export interface DelegatorInfo {
   deltaEpoch: bigint
   /** Epoch when nextDeltaStake becomes active */
   nextDeltaEpoch: bigint
+  /** Pending activations with timing information */
+  pendingActivations: PendingActivation[]
 }
 
 /**
@@ -70,6 +104,14 @@ export interface WithdrawalRequestInfo {
   accRewardPerToken: bigint
   /** Epoch when withdrawal becomes available */
   withdrawEpoch: bigint
+  /** Whether withdrawal is currently available */
+  isWithdrawable: boolean
+  /** Number of epochs until withdrawable (undefined if already withdrawable) */
+  epochsRemaining?: number
+  /** Estimated time when withdrawal becomes available (undefined if already withdrawable) */
+  estimatedWithdrawableTime?: Date
+  /** Estimated hours until withdrawable (undefined if already withdrawable) */
+  hoursRemaining?: number
 }
 
 /**
@@ -80,16 +122,6 @@ export interface EpochInfo {
   epoch: bigint
   /** Whether in epoch delay period (after boundary block) */
   inEpochDelayPeriod: boolean
-}
-
-/**
- * Staking balance information
- */
-export interface StakeBalance {
-  /** Total balance in MON */
-  balance: string
-  /** Validator ID (if querying specific validator) */
-  validatorId?: number
 }
 
 /**
@@ -147,4 +179,3 @@ export interface UndelegateOptions {
   /** Withdrawal request ID (1-255, cannot be 0) */
   withdrawalId: number
 }
-

@@ -43,11 +43,12 @@ export { MonadStaker } from './staker'
 // Export types
 export type {
   MonadNetworkConfig,
+  MonadTimingConfig,
   ValidatorInfo,
   DelegatorInfo,
   WithdrawalRequestInfo,
   EpochInfo,
-  StakeBalance,
+  PendingActivation,
   DelegateOptions,
   CompoundOptions,
   WithdrawOptions,
@@ -56,12 +57,8 @@ export type {
 } from './types'
 
 // Export constants
-export {
-  MONAD_STAKING_CONTRACT_ADDRESS,
-  MONAD_CHAIN_ID,
-  MIN_VALIDATOR_STAKE_MON,
-  WITHDRAWAL_DELAY
-} from './constants'
+export { MONAD_STAKING_CONTRACT_ADDRESS, MONAD_NETWORKS } from './constants'
+export type { MonadNetworkConstants } from './constants'
 
 // Export utilities
 export { isValidValidatorId, isValidWithdrawalId } from './utils'
