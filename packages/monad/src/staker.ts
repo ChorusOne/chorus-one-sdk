@@ -405,10 +405,7 @@ export class MonadStaker {
     const { validatorId, delegatorAddress } = params
 
     // Get current epoch info and block number for timing calculations
-    const [epochInfo, currentBlock] = await Promise.all([
-      this.getEpoch(),
-      this.publicClient.getBlockNumber()
-    ])
+    const [epochInfo, currentBlock] = await Promise.all([this.getEpoch(), this.publicClient.getBlockNumber()])
 
     // @ts-expect-error - getDelegator is marked as nonpayable in precompile ABI but is actually a read function
     const result = await this.contract.read.getDelegator([BigInt(validatorId), delegatorAddress])
@@ -482,10 +479,7 @@ export class MonadStaker {
     const { validatorId, delegatorAddress, withdrawalId } = params
 
     // Get current epoch info and block number for timing calculations
-    const [epochInfo, currentBlock] = await Promise.all([
-      this.getEpoch(),
-      this.publicClient.getBlockNumber()
-    ])
+    const [epochInfo, currentBlock] = await Promise.all([this.getEpoch(), this.publicClient.getBlockNumber()])
 
     // @ts-expect-error - getWithdrawalRequest is marked as nonpayable in precompile ABI but is actually a read function
     const result = await this.contract.read.getWithdrawalRequest([BigInt(validatorId), delegatorAddress, withdrawalId])
