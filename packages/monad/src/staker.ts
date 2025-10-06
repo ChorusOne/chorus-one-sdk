@@ -14,6 +14,7 @@ import {
 } from 'viem'
 import type {
   MonadNetworkConfig,
+  MonadTimingConfig,
   DelegateOptions,
   CompoundOptions,
   WithdrawOptions,
@@ -23,10 +24,10 @@ import type {
   DelegatorInfo,
   WithdrawalRequestInfo,
   EpochInfo,
-  StakeBalance
+  PendingActivation
 } from './types'
-import { isValidValidatorId, isValidWithdrawalId } from './utils'
-import { MONAD_STAKING_ABI } from './constants'
+import { isValidValidatorId, isValidWithdrawalId, calculateActivationTiming, calculateWithdrawalTiming } from './utils'
+import { MONAD_STAKING_ABI, MONAD_NETWORKS } from './constants'
 
 /**
  * MonadStaker - TypeScript SDK for Monad blockchain staking operations
@@ -42,6 +43,7 @@ export class MonadStaker {
   private contract?: GetContractReturnType<typeof MONAD_STAKING_ABI, PublicClient>
   private readonly contractAddress: Address
   private chain!: Chain
+  private readonly timing: Required<MonadTimingConfig>
 
   /**
    * Creates a MonadStaker instance
@@ -49,12 +51,24 @@ export class MonadStaker {
    * @param params - Initialization configuration
    * @param params.rpcUrl - The URL of the Monad network RPC endpoint
    * @param params.contractAddress - Staking contract address
+   * @param params.network - Network identifier (defaults to 'mainnet')
+   * @param params.timing - Optional timing configuration (overrides network defaults)
    *
    * @returns An instance of MonadStaker
    */
-  constructor(params: MonadNetworkConfig) {
+  constructor (params: MonadNetworkConfig) {
     this.rpcUrl = params.rpcUrl
     this.contractAddress = params.contractAddress
+
+    // Get network config (default to mainnet)
+    const networkConfig = MONAD_NETWORKS[params.network ?? 'mainnet']
+
+    // Apply timing configuration (user override > network defaults)
+    this.timing = {
+      blocksPerEpoch: params.timing?.blocksPerEpoch ?? networkConfig.timing.blocksPerEpoch,
+      epochDelayPeriod: params.timing?.epochDelayPeriod ?? networkConfig.timing.epochDelayPeriod,
+      blockTimeSeconds: params.timing?.blockTimeSeconds ?? networkConfig.timing.blockTimeSeconds
+    }
   }
 
   /**
@@ -62,7 +76,7 @@ export class MonadStaker {
    *
    * @returns A promise which resolves once the MonadStaker instance has been initialized
    */
-  async init(): Promise<void> {
+  async init (): Promise<void> {
     // Create temporary client to fetch chain ID
     const tempClient = createPublicClient({
       transport: http(this.rpcUrl)
@@ -107,7 +121,7 @@ export class MonadStaker {
    *
    * @returns Returns a promise that resolves to a transaction object for viem's sendTransaction
    */
-  async buildDelegateTx(params: DelegateOptions): Promise<{ to: Address; data: Hex; value: bigint }> {
+  async buildDelegateTx (params: DelegateOptions): Promise<{ to: Address; data: Hex; value: bigint }> {
     if (!this.contract) {
       throw new Error('MonadStaker not initialized. Did you forget to call init()?')
     }
@@ -146,7 +160,7 @@ export class MonadStaker {
    *
    * @returns Returns a promise that resolves to a transaction object for viem's sendTransaction
    */
-  async buildUndelegateTx(params: UndelegateOptions): Promise<{ to: Address; data: Hex; value: bigint }> {
+  async buildUndelegateTx (params: UndelegateOptions): Promise<{ to: Address; data: Hex; value: bigint }> {
     if (!this.contract) {
       throw new Error('MonadStaker not initialized. Did you forget to call init()?')
     }
@@ -207,7 +221,7 @@ export class MonadStaker {
    *
    * @returns Returns a promise that resolves to a transaction object for viem's sendTransaction
    */
-  async buildWithdrawTx(params: WithdrawOptions): Promise<{ to: Address; data: Hex; value: bigint }> {
+  async buildWithdrawTx (params: WithdrawOptions): Promise<{ to: Address; data: Hex; value: bigint }> {
     if (!this.contract) {
       throw new Error('MonadStaker not initialized. Did you forget to call init()?')
     }
@@ -266,7 +280,7 @@ export class MonadStaker {
    *
    * @returns Returns a promise that resolves to a transaction object for viem's sendTransaction
    */
-  async buildCompoundTx(params: CompoundOptions): Promise<{ to: Address; data: Hex; value: bigint }> {
+  async buildCompoundTx (params: CompoundOptions): Promise<{ to: Address; data: Hex; value: bigint }> {
     if (!this.contract) {
       throw new Error('MonadStaker not initialized. Did you forget to call init()?')
     }
@@ -309,7 +323,7 @@ export class MonadStaker {
    *
    * @returns Returns a promise that resolves to a transaction object for viem's sendTransaction
    */
-  async buildClaimRewardsTx(params: ClaimRewardsOptions): Promise<{ to: Address; data: Hex; value: bigint }> {
+  async buildClaimRewardsTx (params: ClaimRewardsOptions): Promise<{ to: Address; data: Hex; value: bigint }> {
     if (!this.contract) {
       throw new Error('MonadStaker not initialized. Did you forget to call init()?')
     }
@@ -351,7 +365,7 @@ export class MonadStaker {
    *
    * @returns Promise resolving to validator information
    */
-  async getValidator(params: { validatorId: number }): Promise<ValidatorInfo> {
+  async getValidator (params: { validatorId: number }): Promise<ValidatorInfo> {
     if (!this.contract) {
       throw new Error('MonadStaker not initialized. Did you forget to call init()?')
     }
@@ -382,25 +396,68 @@ export class MonadStaker {
    * @param params.validatorId - Validator ID
    * @param params.delegatorAddress - Delegator address
    *
-   * @returns Promise resolving to delegator information
+   * @returns Promise resolving to delegator information with activation timing
    */
-  async getDelegator(params: { validatorId: number; delegatorAddress: Address }): Promise<DelegatorInfo> {
-    if (!this.contract) {
+  async getDelegator (params: { validatorId: number; delegatorAddress: Address }): Promise<DelegatorInfo> {
+    if (!this.contract || !this.publicClient) {
       throw new Error('MonadStaker not initialized. Did you forget to call init()?')
     }
     const { validatorId, delegatorAddress } = params
 
+    // Get current epoch info and block number for timing calculations
+    const [epochInfo, currentBlock] = await Promise.all([
+      this.getEpoch(),
+      this.publicClient.getBlockNumber()
+    ])
+
     // @ts-expect-error - getDelegator is marked as nonpayable in precompile ABI but is actually a read function
     const result = await this.contract.read.getDelegator([BigInt(validatorId), delegatorAddress])
+
+    const deltaStake = result[3]
+    const nextDeltaStake = result[4]
+    const deltaEpoch = result[5]
+    const nextDeltaEpoch = result[6]
+
+    // Calculate pending activations
+    const pendingActivations: PendingActivation[] = []
+
+    if (deltaStake > 0n) {
+      pendingActivations.push(
+        calculateActivationTiming(
+          deltaEpoch,
+          epochInfo.epoch,
+          currentBlock,
+          deltaStake,
+          this.timing.blocksPerEpoch,
+          this.timing.epochDelayPeriod,
+          this.timing.blockTimeSeconds
+        )
+      )
+    }
+
+    if (nextDeltaStake > 0n) {
+      pendingActivations.push(
+        calculateActivationTiming(
+          nextDeltaEpoch,
+          epochInfo.epoch,
+          currentBlock,
+          nextDeltaStake,
+          this.timing.blocksPerEpoch,
+          this.timing.epochDelayPeriod,
+          this.timing.blockTimeSeconds
+        )
+      )
+    }
 
     return {
       stake: result[0],
       accRewardPerToken: result[1],
       unclaimedRewards: result[2],
-      deltaStake: result[3],
-      nextDeltaStake: result[4],
-      deltaEpoch: result[5],
-      nextDeltaEpoch: result[6]
+      deltaStake,
+      nextDeltaStake,
+      deltaEpoch,
+      nextDeltaEpoch,
+      pendingActivations
     }
   }
 
@@ -412,25 +469,45 @@ export class MonadStaker {
    * @param params.delegatorAddress - Delegator address
    * @param params.withdrawalId - Withdrawal request ID
    *
-   * @returns Promise resolving to withdrawal request information
+   * @returns Promise resolving to withdrawal request information with timing
    */
-  async getWithdrawalRequest(params: {
+  async getWithdrawalRequest (params: {
     validatorId: number
     delegatorAddress: Address
     withdrawalId: number
   }): Promise<WithdrawalRequestInfo> {
-    if (!this.contract) {
+    if (!this.contract || !this.publicClient) {
       throw new Error('MonadStaker not initialized. Did you forget to call init()?')
     }
     const { validatorId, delegatorAddress, withdrawalId } = params
 
+    // Get current epoch info and block number for timing calculations
+    const [epochInfo, currentBlock] = await Promise.all([
+      this.getEpoch(),
+      this.publicClient.getBlockNumber()
+    ])
+
     // @ts-expect-error - getWithdrawalRequest is marked as nonpayable in precompile ABI but is actually a read function
     const result = await this.contract.read.getWithdrawalRequest([BigInt(validatorId), delegatorAddress, withdrawalId])
 
+    const withdrawalAmount = result[0]
+    const accRewardPerToken = result[1]
+    const withdrawEpoch = result[2]
+
+    // Calculate withdrawal timing
+    const withdrawalTiming = calculateWithdrawalTiming(
+      withdrawEpoch,
+      epochInfo.epoch,
+      currentBlock,
+      this.timing.blocksPerEpoch,
+      this.timing.blockTimeSeconds
+    )
+
     return {
-      withdrawalAmount: result[0],
-      accRewardPerToken: result[1],
-      withdrawEpoch: result[2]
+      withdrawalAmount,
+      accRewardPerToken,
+      withdrawEpoch,
+      ...withdrawalTiming
     }
   }
 
@@ -439,7 +516,7 @@ export class MonadStaker {
    *
    * @returns Promise resolving to epoch information
    */
-  async getEpoch(): Promise<EpochInfo> {
+  private async getEpoch (): Promise<EpochInfo> {
     if (!this.contract) {
       throw new Error('MonadStaker not initialized. Did you forget to call init()?')
     }
@@ -451,30 +528,5 @@ export class MonadStaker {
       epoch: result[0],
       inEpochDelayPeriod: result[1]
     }
-  }
-
-  /**
-   * Retrieves staking balance for a delegator
-   *
-   * @param params - Parameters for the query
-   * @param params.delegatorAddress - Delegator address
-   * @param params.validatorId - (Optional) Specific validator to query
-   *
-   * @returns Promise resolving to stake balance in MON
-   */
-  async getStake(params: { delegatorAddress: Address; validatorId?: number }): Promise<StakeBalance> {
-    const { delegatorAddress, validatorId } = params
-
-    if (validatorId !== undefined) {
-      const delegatorInfo = await this.getDelegator({ validatorId, delegatorAddress })
-      return {
-        balance: formatEther(delegatorInfo.stake),
-        validatorId
-      }
-    }
-
-    // If no validator specified, would need to query all delegations
-    // This requires implementing get_delegations pagination
-    throw new Error('Querying total stake across all validators not yet implemented')
   }
 }
