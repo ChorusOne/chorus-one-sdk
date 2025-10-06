@@ -1,61 +1,12 @@
 // Docs: https://docs.monad.xyz/developer-essentials/staking/staking-precompile
 
 import type { Address } from 'viem'
-import type { MonadTimingConfig } from './types'
 
 /**
  * Monad Staking Contract Address (precompile)
  * Same across all networks
  */
 export const MONAD_STAKING_CONTRACT_ADDRESS: Address = '0x0000000000000000000000000000000000001000'
-
-/**
- * Network configuration for Monad networks
- */
-export interface MonadNetworkConstants {
-  /** Chain ID */
-  chainId: number
-  /** Network name */
-  name: string
-  /** Timing configuration */
-  timing: Required<MonadTimingConfig>
-  /** Minimum validator stake in MON */
-  minValidatorStake: number
-  /** Withdrawal delay in epochs */
-  withdrawalDelay: number
-}
-
-/**
- * Monad Network Configurations
- *
- * References:
- * - Staking Behavior: https://docs.monad.xyz/developer-essentials/staking/staking-behavior
- * - Staking Precompile: https://docs.monad.xyz/developer-essentials/staking/staking-precompile
- */
-export const MONAD_NETWORKS: Record<'mainnet' | 'testnet2', MonadNetworkConstants> = {
-  mainnet: {
-    chainId: 143,
-    name: 'Monad Mainnet',
-    timing: {
-      blocksPerEpoch: 50_000,
-      epochDelayPeriod: 5_000,
-      blockTimeSeconds: 0.4
-    },
-    minValidatorStake: 0,
-    withdrawalDelay: 1
-  },
-  testnet2: {
-    chainId: 10143,
-    name: 'Monad Testnet 2',
-    timing: {
-      blocksPerEpoch: 5_000,
-      epochDelayPeriod: 500,
-      blockTimeSeconds: 0.4
-    },
-    minValidatorStake: 0,
-    withdrawalDelay: 1
-  }
-}
 
 export const MONAD_STAKING_ABI = [
   {

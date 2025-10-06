@@ -14,7 +14,6 @@ import {
 } from 'viem'
 import type {
   MonadNetworkConfig,
-  MonadTimingConfig,
   DelegateOptions,
   CompoundOptions,
   WithdrawOptions,
@@ -23,11 +22,10 @@ import type {
   ValidatorInfo,
   DelegatorInfo,
   WithdrawalRequestInfo,
-  EpochInfo,
-  PendingActivation
+  EpochInfo
 } from './types'
-import { isValidValidatorId, isValidWithdrawalId, calculateActivationTiming, calculateWithdrawalTiming } from './utils'
-import { MONAD_STAKING_ABI, MONAD_NETWORKS } from './constants'
+import { isValidValidatorId, isValidWithdrawalId } from './utils'
+import { MONAD_STAKING_ABI } from './constants'
 
 /**
  * MonadStaker - TypeScript SDK for Monad blockchain staking operations
@@ -43,7 +41,6 @@ export class MonadStaker {
   private contract?: GetContractReturnType<typeof MONAD_STAKING_ABI, PublicClient>
   private readonly contractAddress: Address
   private chain!: Chain
-  private readonly timing: Required<MonadTimingConfig>
 
   /**
    * Creates a MonadStaker instance
@@ -51,24 +48,12 @@ export class MonadStaker {
    * @param params - Initialization configuration
    * @param params.rpcUrl - The URL of the Monad network RPC endpoint
    * @param params.contractAddress - Staking contract address
-   * @param params.network - Network identifier (defaults to 'mainnet')
-   * @param params.timing - Optional timing configuration (overrides network defaults)
    *
    * @returns An instance of MonadStaker
    */
   constructor (params: MonadNetworkConfig) {
     this.rpcUrl = params.rpcUrl
     this.contractAddress = params.contractAddress
-
-    // Get network config (default to mainnet)
-    const networkConfig = MONAD_NETWORKS[params.network ?? 'mainnet']
-
-    // Apply timing configuration (user override > network defaults)
-    this.timing = {
-      blocksPerEpoch: params.timing?.blocksPerEpoch ?? networkConfig.timing.blocksPerEpoch,
-      epochDelayPeriod: params.timing?.epochDelayPeriod ?? networkConfig.timing.epochDelayPeriod,
-      blockTimeSeconds: params.timing?.blockTimeSeconds ?? networkConfig.timing.blockTimeSeconds
-    }
   }
 
   /**
@@ -396,65 +381,25 @@ export class MonadStaker {
    * @param params.validatorId - Validator ID
    * @param params.delegatorAddress - Delegator address
    *
-   * @returns Promise resolving to delegator information with activation timing
+   * @returns Promise resolving to delegator information
    */
   async getDelegator (params: { validatorId: number; delegatorAddress: Address }): Promise<DelegatorInfo> {
-    if (!this.contract || !this.publicClient) {
+    if (!this.contract) {
       throw new Error('MonadStaker not initialized. Did you forget to call init()?')
     }
     const { validatorId, delegatorAddress } = params
 
-    // Get current epoch info and block number for timing calculations
-    const [epochInfo, currentBlock] = await Promise.all([this.getEpoch(), this.publicClient.getBlockNumber()])
-
     // @ts-expect-error - getDelegator is marked as nonpayable in precompile ABI but is actually a read function
     const result = await this.contract.read.getDelegator([BigInt(validatorId), delegatorAddress])
-
-    const deltaStake = result[3]
-    const nextDeltaStake = result[4]
-    const deltaEpoch = result[5]
-    const nextDeltaEpoch = result[6]
-
-    // Calculate pending activations
-    const pendingActivations: PendingActivation[] = []
-
-    if (deltaStake > 0n) {
-      pendingActivations.push(
-        calculateActivationTiming(
-          deltaEpoch,
-          epochInfo.epoch,
-          currentBlock,
-          deltaStake,
-          this.timing.blocksPerEpoch,
-          this.timing.epochDelayPeriod,
-          this.timing.blockTimeSeconds
-        )
-      )
-    }
-
-    if (nextDeltaStake > 0n) {
-      pendingActivations.push(
-        calculateActivationTiming(
-          nextDeltaEpoch,
-          epochInfo.epoch,
-          currentBlock,
-          nextDeltaStake,
-          this.timing.blocksPerEpoch,
-          this.timing.epochDelayPeriod,
-          this.timing.blockTimeSeconds
-        )
-      )
-    }
 
     return {
       stake: result[0],
       accRewardPerToken: result[1],
       unclaimedRewards: result[2],
-      deltaStake,
-      nextDeltaStake,
-      deltaEpoch,
-      nextDeltaEpoch,
-      pendingActivations
+      deltaStake: result[3],
+      nextDeltaStake: result[4],
+      deltaEpoch: result[5],
+      nextDeltaEpoch: result[6]
     }
   }
 
@@ -466,42 +411,25 @@ export class MonadStaker {
    * @param params.delegatorAddress - Delegator address
    * @param params.withdrawalId - Withdrawal request ID
    *
-   * @returns Promise resolving to withdrawal request information with timing
+   * @returns Promise resolving to withdrawal request information
    */
   async getWithdrawalRequest (params: {
     validatorId: number
     delegatorAddress: Address
     withdrawalId: number
   }): Promise<WithdrawalRequestInfo> {
-    if (!this.contract || !this.publicClient) {
+    if (!this.contract) {
       throw new Error('MonadStaker not initialized. Did you forget to call init()?')
     }
     const { validatorId, delegatorAddress, withdrawalId } = params
 
-    // Get current epoch info and block number for timing calculations
-    const [epochInfo, currentBlock] = await Promise.all([this.getEpoch(), this.publicClient.getBlockNumber()])
-
     // @ts-expect-error - getWithdrawalRequest is marked as nonpayable in precompile ABI but is actually a read function
     const result = await this.contract.read.getWithdrawalRequest([BigInt(validatorId), delegatorAddress, withdrawalId])
 
-    const withdrawalAmount = result[0]
-    const accRewardPerToken = result[1]
-    const withdrawEpoch = result[2]
-
-    // Calculate withdrawal timing
-    const withdrawalTiming = calculateWithdrawalTiming(
-      withdrawEpoch,
-      epochInfo.epoch,
-      currentBlock,
-      this.timing.blocksPerEpoch,
-      this.timing.blockTimeSeconds
-    )
-
     return {
-      withdrawalAmount,
-      accRewardPerToken,
-      withdrawEpoch,
-      ...withdrawalTiming
+      withdrawalAmount: result[0],
+      accRewardPerToken: result[1],
+      withdrawEpoch: result[2]
     }
   }
 
