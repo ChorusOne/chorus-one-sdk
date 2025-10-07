@@ -1,74 +1,71 @@
-# Chorus One SDK: SOLANA
+# Chorus One SDK: Monad
 
-All-in-one toolkit for building staking dApps on SOLANA Protocol.
+All-in-one toolkit for building staking dApps on Monad network.
 
 ## Documentation
 
-For detailed instructions on how to set up and use the Chorus One SDK for SOLANA staking, please visit our [main documentation](https://chorus-one.gitbook.io/sdk/build-your-staking-dapp/solana/overview).
+For detailed instructions on how to set up and use the Chorus One SDK for Monad staking, please visit our [main documentation](https://chorus-one.gitbook.io/sdk/build-your-staking-dapp/monad/overview).
 
 ## Installation
 
-In the project’s root directory, run the following command:
+In the project's root directory, run the following command:
 
 ```bash
-npm install @chorus-one/solana --save
+npm install @chorus-one/monad
 ```
 
 ## Usage
 
-Here is a basic example of how to use the Chorus One SDK to build, sign, and broadcast a staking transaction using Fireblocks as the signer.
+Here is a basic example of how to use the Chorus One SDK to build, sign, and broadcast a staking transaction on Monad using viem.
 
 ```javascript
 // Configuration
 // -------------
 
-import { SolanaStaker, CHORUS_ONE_SOLANA_VALIDATOR } from '@chorus-one/solana'
+import { MonadStaker } from '@chorus-one/monad'
+import { createWalletClient, http } from 'viem'
+import { privateKeyToAccount } from 'viem/accounts'
 
-const staker = new SolanaStaker({
-  rpcUrl: 'https://api.mainnet-beta.solana.com'
+const staker = new MonadStaker({
+  rpcUrl: 'https://your-monad-rpc.com'
+  // contractAddress: '0x0000000000000000000000000000000000001000' (optional, defaults to precompile address)
 })
 
 await staker.init()
 
-// Building the transaction
-// ------------------------
+// Building the delegation transaction
+// ------------------------------------
 
-const delegatorAddress = '3Ps2hwsgGMSuqxAwjcGJHiEpMsSTZcxrCGprHgxWkfma'
+const validatorId = 1 // Unique identifier for the validator
+const amount = '1000' // Amount in MON
 
-// You can use the Chorus One validator address or specify your own
-const validatorAddress = CHORUS_ONE_SOLANA_VALIDATOR
-
-const { tx } = await staker.buildStakeTx({
-  delegatorAddress,
-  validatorAddress,
-  amount: '1' // 1 SOL
+const tx = await staker.buildDelegateTx({
+  validatorId,
+  amount
 })
 
-// Signing the transaction with Fireblocks
-// ---------------------------------------
+// Signing and broadcasting the transaction with viem
+// ---------------------------------------------------
 
-import { FireblocksSigner } from '@chorus-one/signer-fireblocks'
+const account = privateKeyToAccount('0x...')
 
-const signer = new FireblocksSigner({...})
-await signer.init()
-
-const { signedTx } = await staker.sign({
-  signer,
-  signerAddress: delegatorAddress,
-  tx
+const walletClient = createWalletClient({
+  account,
+  chain: {
+    id: 41454, // Monad testnet chain ID
+    name: 'Monad',
+    nativeCurrency: { name: 'Monad', symbol: 'MON', decimals: 18 },
+    rpcUrls: {
+      default: { http: ['https://your-monad-rpc.com'] },
+      public: { http: ['https://your-monad-rpc.com'] }
+    }
+  },
+  transport: http('https://your-monad-rpc.com')
 })
 
-// Broadcasting the transaction
-// ----------------------------
+const txHash = await walletClient.sendTransaction(tx)
 
-const { txHash } = await staker.broadcast({ signedTx })
-
-// Tracking the transaction
-// ------------------------
-
-const { status, receipt } = await staker.getTxStatus({ txHash })
-
-console.log(status) // 'success'
+console.log('Transaction hash:', txHash)
 ```
 
 ## License
