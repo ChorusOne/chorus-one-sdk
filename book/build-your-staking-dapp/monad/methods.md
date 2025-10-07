@@ -105,7 +105,7 @@ Here, we're undelegating 500 MON from validator 1 and tracking it with withdrawa
 
 The `buildWithdrawTx` method allows you to complete a withdrawal by claiming your undelegated tokens back to your wallet.
 
-You can only withdraw after the withdrawal delay period has passed (current epoch > withdrawal epoch).
+You can only withdraw after the withdrawal delay period has passed (current epoch > withdrawal epoch + withdraw delay).
 
 ### How to Use
 
@@ -120,34 +120,12 @@ To build a withdrawal transaction, you need to provide the same validator ID and
 ### Example
 
 ```javascript
-// First, check if the withdrawal is ready
-const withdrawalRequest = await staker.getWithdrawalRequest({
-  validatorId: 1,
+const tx = await staker.buildWithdrawTx({
   delegatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+  validatorId: 1,
   withdrawalId: 0
 })
-
-const currentEpoch = await staker.getEpoch()
-
-if (currentEpoch.epoch > withdrawalRequest.withdrawEpoch) {
-  // Withdrawal is ready!
-  const tx = await staker.buildWithdrawTx({
-    delegatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
-    validatorId: 1,
-    withdrawalId: 0
-  })
-
-  const hash = await walletClient.sendTransaction(tx)
-  console.log('Withdrawal transaction sent:', hash)
-
-  // After successful withdrawal, ID 0 becomes available for reuse
-} else {
-  const epochsRemaining = withdrawalRequest.withdrawEpoch - currentEpoch.epoch
-  console.log(`Wait ${epochsRemaining} more epochs (~${Number(epochsRemaining) * 5.5} hours)`)
-}
 ```
-
-Here, we check if the withdrawal is ready before attempting to withdraw. If ready, we build and send the withdrawal transaction.
 
 - [Read more in the API Reference](../../docs/classes/monad_src.MonadStaker.md#buildwithdrawtx)
 
@@ -249,7 +227,7 @@ Provide the validator ID and your delegator address to query your staking inform
 
 ### Returns
 
-Returns a `DelegatorInfo` object with the following fields:
+Returns the delegator's `DelInfo` with the following fields:
 
 - **stake** (bigint): Currently active stake earning rewards right now (in wei)
 - **unclaimedRewards** (bigint): Rewards available to claim or compound (in wei)
@@ -298,7 +276,7 @@ Provide the validator ID, your delegator address, and the withdrawal ID you used
 
 ### Returns
 
-Returns a `WithdrawalRequestInfo` object with:
+Returns the pending `WithdrawalRequest` with:
 
 - **withdrawalAmount** (bigint): Amount in wei that will be returned when you call withdraw (0 if no request exists)
 - **withdrawEpoch** (bigint): Epoch when undelegate stake deactivates
