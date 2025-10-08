@@ -85,6 +85,9 @@ describe('MonadStaker', () => {
     })
   })
 
+  // Note: buildUndelegateTx, buildWithdrawTx, buildCompoundTx, buildClaimRewardsTx require RPC calls for pre-flight checks
+  // (e.g., checking withdrawal exists, sufficient stake, rewards available). Only input validation is tested here.
+
   describe('buildUndelegateTx - Validation', () => {
     it('should reject invalid delegator address', async () => {
       await expect(
