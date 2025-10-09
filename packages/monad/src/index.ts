@@ -2,39 +2,43 @@
  * @monad/staker - TypeScript SDK for Monad Blockchain Staking
  *
  * This SDK provides a comprehensive interface for interacting with Monad's
- * staking contract, enabling delegation, rewards management, and withdrawals.
+ * staking contract, enabling staking, unstaking, rewards management, and withdrawals.
  *
  * Built with viem for type-safety, performance, and modern patterns.
  *
  * @example
  * ```typescript
- * import { MonadStaker } from '@monad/staker'
- * import { createWalletClient, http } from 'viem'
- * import { privateKeyToAccount } from 'viem/accounts'
+ * import { MonadStaker } from '@chorus-one/monad'
+ * import { FireblocksSigner } from '@chorus-one/signer-fireblocks'
  *
  * const staker = new MonadStaker({
- *   rpcUrl: 'https://your-monad-rpc.com'
- *   // contractAddress: '0x0000000000000000000000000000000000001000' (optional, defaults to precompile address)
+ *   rpcUrl: 'https://testnet-rpc.monad.xyz'
  * })
  *
  * await staker.init()
  *
- * // Build delegation transaction
- * const tx = await staker.buildDelegateTx({
+ * // Build staking transaction
+ * const { tx } = await staker.buildStakeTx({
  *   validatorId: 1,
  *   amount: '1000' // in MON
  * })
  *
- * // Sign and send using viem wallet client
- * const account = privateKeyToAccount('0x...')
- * const walletClient = createWalletClient({
- *   account,
- *   chain: { id: 30143, name: 'Monad', nativeCurrency: { name: 'Monad', symbol: 'MON', decimals: 18 }, rpcUrls: { default: { http: ['https://your-monad-rpc.com'] } } },
- *   transport: http('https://your-monad-rpc.com')
+ * // Sign with Fireblocks
+ * const signer = new FireblocksSigner({...})
+ * await signer.init()
+ *
+ * const { signedTx } = await staker.sign({
+ *   signer,
+ *   signerAddress: '0xYourAddress',
+ *   tx
  * })
  *
- * const hash = await walletClient.sendTransaction(tx)
- * console.log('Transaction:', hash)
+ * // Broadcast transaction
+ * const { txHash } = await staker.broadcast({ signedTx })
+ *
+ * // Check transaction status
+ * const { status, receipt } = await staker.getTxStatus({ txHash })
+ * console.log('Status:', status) // 'success'
  * ```
  */
 
@@ -46,11 +50,13 @@ export type {
   DelegatorInfo,
   WithdrawalRequestInfo,
   EpochInfo,
-  DelegateOptions,
+  StakeOptions,
   CompoundOptions,
   WithdrawOptions,
   ClaimRewardsOptions,
-  UndelegateOptions
+  UnstakeOptions,
+  Transaction,
+  MonadTxStatus
 } from './types'
 
 // Export constants

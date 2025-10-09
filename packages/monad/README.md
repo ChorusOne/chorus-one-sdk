@@ -16,56 +16,57 @@ npm install @chorus-one/monad
 
 ## Usage
 
-Here is a basic example of how to use the Chorus One SDK to build, sign, and broadcast a staking transaction on Monad using viem.
+Here is a basic example of how to use the Chorus One SDK to build, sign, and broadcast a staking transaction using Fireblocks as the signer.
 
 ```javascript
 // Configuration
 // -------------
 
 import { MonadStaker } from '@chorus-one/monad'
-import { createWalletClient, http } from 'viem'
-import { privateKeyToAccount } from 'viem/accounts'
 
 const staker = new MonadStaker({
-  rpcUrl: 'https://your-monad-rpc.com'
-  // contractAddress: '0x0000000000000000000000000000000000001000' (optional, defaults to precompile address)
+  rpcUrl: 'https://testnet-rpc.monad.xyz'
 })
 
 await staker.init()
 
-// Building the delegation transaction
-// ------------------------------------
+// Building the staking transaction
+// ---------------------------------
 
+const delegatorAddress = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045'
 const validatorId = 1 // Unique identifier for the validator
 const amount = '1000' // Amount in MON
 
-const tx = await staker.buildDelegateTx({
+const { tx } = await staker.buildStakeTx({
   validatorId,
   amount
 })
 
-// Signing and broadcasting the transaction with viem
-// ---------------------------------------------------
+// Signing the transaction with Fireblocks
+// ----------------------------------------
 
-const account = privateKeyToAccount('0x...')
+import { FireblocksSigner } from '@chorus-one/signer-fireblocks'
 
-const walletClient = createWalletClient({
-  account,
-  chain: {
-    id: 41454, // Monad testnet chain ID
-    name: 'Monad',
-    nativeCurrency: { name: 'Monad', symbol: 'MON', decimals: 18 },
-    rpcUrls: {
-      default: { http: ['https://your-monad-rpc.com'] },
-      public: { http: ['https://your-monad-rpc.com'] }
-    }
-  },
-  transport: http('https://your-monad-rpc.com')
+const signer = new FireblocksSigner({...})
+await signer.init()
+
+const { signedTx } = await staker.sign({
+  signer,
+  signerAddress: delegatorAddress,
+  tx
 })
 
-const txHash = await walletClient.sendTransaction(tx)
+// Broadcasting the transaction
+// ----------------------------
 
-console.log('Transaction hash:', txHash)
+const { txHash } = await staker.broadcast({ signedTx })
+
+// Tracking the transaction
+// ------------------------
+
+const { status, receipt } = await staker.getTxStatus({ txHash })
+
+console.log(status) // 'success'
 ```
 
 ## License

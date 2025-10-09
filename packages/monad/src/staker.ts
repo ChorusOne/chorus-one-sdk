@@ -6,22 +6,29 @@ import {
   parseEther,
   formatEther,
   isAddress,
+  keccak256,
+  serializeTransaction,
+  createWalletClient,
   type PublicClient,
   type Address,
   type Hex,
   type Chain,
   type GetContractReturnType
 } from 'viem'
+import secp256k1 from 'secp256k1'
+import type { Signer } from '@chorus-one/signer'
 import type {
   MonadNetworkConfig,
-  DelegateOptions,
+  StakeOptions,
   CompoundOptions,
   WithdrawOptions,
   ClaimRewardsOptions,
-  UndelegateOptions,
+  UnstakeOptions,
   DelegatorInfo,
   WithdrawalRequestInfo,
-  EpochInfo
+  EpochInfo,
+  Transaction,
+  MonadTxStatus
 } from './types'
 import { isValidValidatorId, isValidWithdrawalId } from './utils'
 import { MONAD_STAKING_ABI, MONAD_STAKING_CONTRACT_ADDRESS } from './constants'
@@ -29,7 +36,7 @@ import { MONAD_STAKING_ABI, MONAD_STAKING_CONTRACT_ADDRESS } from './constants'
 /**
  * MonadStaker - TypeScript SDK for Monad blockchain staking operations
  *
- * This class provides the functionality to delegate, undelegate, compound rewards,
+ * This class provides the functionality to stake, unstake, compound rewards,
  * claim rewards, and withdraw for Monad blockchain.
  *
  * Built with viem for type-safety and modern patterns.
@@ -38,21 +45,36 @@ export class MonadStaker {
   private readonly rpcUrl: string
   private publicClient?: PublicClient
   private contract?: GetContractReturnType<typeof MONAD_STAKING_ABI, PublicClient>
-  private readonly contractAddress: Address
+  private readonly contractAddress: Address // Monad staking precompile - same across all networks
   private chain!: Chain
+
+  /**
+   * This **static** method is used to derive an address from a public key.
+   *
+   * It can be used for signer initialization, e.g. `FireblocksSigner` or `LocalSigner`.
+   *
+   * @returns Returns an array containing the derived address.
+   */
+  static getAddressDerivationFn =
+    () =>
+    async (publicKey: Uint8Array): Promise<Array<string>> => {
+      const pkUncompressed = secp256k1.publicKeyConvert(publicKey, false)
+      const hash = keccak256(pkUncompressed.subarray(1))
+      const ethAddress = hash.slice(-40)
+      return [ethAddress]
+    }
 
   /**
    * Creates a MonadStaker instance
    *
    * @param params - Initialization configuration
    * @param params.rpcUrl - The URL of the Monad network RPC endpoint
-   * @param params.contractAddress - Staking contract address (optional, defaults to 0x0000000000000000000000000000000000001000)
    *
    * @returns An instance of MonadStaker
    */
   constructor (params: MonadNetworkConfig) {
     this.rpcUrl = params.rpcUrl
-    this.contractAddress = params.contractAddress ?? MONAD_STAKING_CONTRACT_ADDRESS
+    this.contractAddress = MONAD_STAKING_CONTRACT_ADDRESS
   }
 
   /**
@@ -87,22 +109,20 @@ export class MonadStaker {
       abi: MONAD_STAKING_ABI,
       client: this.publicClient
     })
-
-    await this.publicClient.getBlockNumber()
   }
 
   /**
-   * Builds a delegation transaction
+   * Builds a staking transaction
    *
    * Stake becomes active in epoch n+1 (if before boundary block) or epoch n+2 (if after).
    *
    * @param params - Parameters for building the transaction
    * @param params.validatorId - Unique identifier (uint64) for the validator. Assigned when validator joined the network.
-   * @param params.amount - The amount to delegate in MON (will be converted to wei internally)
+   * @param params.amount - The amount to stake in MON (will be converted to wei internally)
    *
-   * @returns Returns a promise that resolves to a transaction object for viem's sendTransaction
+   * @returns Returns a promise that resolves to a Monad staking transaction
    */
-  async buildDelegateTx (params: DelegateOptions): Promise<{ to: Address; data: Hex; value: bigint }> {
+  async buildStakeTx (params: StakeOptions): Promise<{ tx: Transaction }> {
     if (!this.contract) {
       throw new Error('MonadStaker not initialized. Did you forget to call init()?')
     }
@@ -112,7 +132,7 @@ export class MonadStaker {
       throw new Error(`Invalid validator ID: ${validatorId}`)
     }
 
-    const amountWei = parseEther(amount)
+    const amountWei = this.parseMonad(amount)
 
     const data = encodeFunctionData({
       abi: MONAD_STAKING_ABI,
@@ -121,28 +141,30 @@ export class MonadStaker {
     })
 
     return {
-      to: this.contractAddress,
-      data,
-      value: amountWei
+      tx: {
+        to: this.contractAddress,
+        data,
+        value: amountWei
+      }
     }
   }
 
   /**
-   * Builds an undelegation transaction
+   * Builds an unstaking transaction
    *
-   * Creates a withdrawal request to undelegate tokens from a validator.
+   * Creates a withdrawal request to unstake tokens from a validator.
    * Stake becomes inactive in epoch n+1 or n+2, then moves to pending state for WITHDRAWAL_DELAY epochs (1 epoch).
-   * After delay, call withdraw() to claim funds back to your wallet.
+   * After delay, call buildWithdrawTx() to claim funds back to your wallet.
    *
    * @param params - Parameters for building the transaction
    * @param params.delegatorAddress - The delegator's address that will receive funds after withdrawal
-   * @param params.validatorId - Unique identifier for the validator to undelegate from
-   * @param params.amount - The amount to undelegate in MON (will be converted to wei internally)
+   * @param params.validatorId - Unique identifier for the validator to unstake from
+   * @param params.amount - The amount to unstake in MON (will be converted to wei internally)
    * @param params.withdrawalId - User-chosen ID (0-255) to track this withdrawal request. Allows up to 256 concurrent withdrawals per (validator,delegator) tuple. Can be reused after calling withdraw().
    *
-   * @returns Returns a promise that resolves to a transaction object for viem's sendTransaction
+   * @returns Returns a promise that resolves to a Monad unstaking transaction
    */
-  async buildUndelegateTx (params: UndelegateOptions): Promise<{ to: Address; data: Hex; value: bigint }> {
+  async buildUnstakeTx (params: UnstakeOptions): Promise<{ tx: Transaction }> {
     if (!this.contract) {
       throw new Error('MonadStaker not initialized. Did you forget to call init()?')
     }
@@ -169,7 +191,7 @@ export class MonadStaker {
     }
 
     const delegatorInfo = await this.getDelegator({ validatorId, delegatorAddress })
-    const amountWei = parseEther(amount)
+    const amountWei = this.parseMonad(amount)
 
     if (delegatorInfo.stake < amountWei) {
       throw new Error(`Insufficient stake. Current: ${formatEther(delegatorInfo.stake)} MON, Requested: ${amount} MON`)
@@ -182,26 +204,28 @@ export class MonadStaker {
     })
 
     return {
-      to: this.contractAddress,
-      data,
-      value: 0n
+      tx: {
+        to: this.contractAddress,
+        data,
+        value: 0n
+      }
     }
   }
 
   /**
    * Builds a withdraw transaction
    *
-   * Completes an undelegation by claiming the tokens back to your wallet.
+   * Completes an unstaking by claiming the tokens back to your wallet.
    * Can only be executed once current epoch >= withdrawEpoch (check via getWithdrawalRequest).
    *
    * @param params - Parameters for building the transaction
    * @param params.delegatorAddress - The delegator's address that will receive the funds
-   * @param params.validatorId - Unique identifier for the validator you undelegated from
-   * @param params.withdrawalId - The same ID (0-255) you used when calling undelegate. After successful withdrawal, this ID becomes available for reuse.
+   * @param params.validatorId - Unique identifier for the validator you unstaked from
+   * @param params.withdrawalId - The same ID (0-255) you used when calling buildUnstakeTx. After successful withdrawal, this ID becomes available for reuse.
    *
-   * @returns Returns a promise that resolves to a transaction object for viem's sendTransaction
+   * @returns Returns a promise that resolves to a Monad withdrawal transaction
    */
-  async buildWithdrawTx (params: WithdrawOptions): Promise<{ to: Address; data: Hex; value: bigint }> {
+  async buildWithdrawTx (params: WithdrawOptions): Promise<{ tx: Transaction }> {
     if (!this.contract) {
       throw new Error('MonadStaker not initialized. Did you forget to call init()?')
     }
@@ -241,9 +265,11 @@ export class MonadStaker {
     })
 
     return {
-      to: this.contractAddress,
-      data,
-      value: 0n
+      tx: {
+        to: this.contractAddress,
+        data,
+        value: 0n
+      }
     }
   }
 
@@ -251,15 +277,15 @@ export class MonadStaker {
    * Builds a compound rewards transaction
    *
    * Converts accumulated unclaimedRewards into additional stake (auto-restaking).
-   * The compounded amount becomes active in epoch n+1 or n+2 (same timing as delegate).
+   * The compounded amount becomes active in epoch n+1 or n+2 (same timing as staking).
    *
    * @param params - Parameters for building the transaction
    * @param params.delegatorAddress - The delegator's address
    * @param params.validatorId - Unique identifier for the validator to compound rewards for
    *
-   * @returns Returns a promise that resolves to a transaction object for viem's sendTransaction
+   * @returns Returns a promise that resolves to a Monad compound transaction
    */
-  async buildCompoundTx (params: CompoundOptions): Promise<{ to: Address; data: Hex; value: bigint }> {
+  async buildCompoundTx (params: CompoundOptions): Promise<{ tx: Transaction }> {
     if (!this.contract) {
       throw new Error('MonadStaker not initialized. Did you forget to call init()?')
     }
@@ -284,9 +310,11 @@ export class MonadStaker {
     })
 
     return {
-      to: this.contractAddress,
-      data,
-      value: 0n
+      tx: {
+        to: this.contractAddress,
+        data,
+        value: 0n
+      }
     }
   }
 
@@ -300,9 +328,9 @@ export class MonadStaker {
    * @param params.delegatorAddress - The delegator's address that will receive the rewards
    * @param params.validatorId - Unique identifier for the validator to claim rewards from
    *
-   * @returns Returns a promise that resolves to a transaction object for viem's sendTransaction
+   * @returns Returns a promise that resolves to a Monad claim rewards transaction
    */
-  async buildClaimRewardsTx (params: ClaimRewardsOptions): Promise<{ to: Address; data: Hex; value: bigint }> {
+  async buildClaimRewardsTx (params: ClaimRewardsOptions): Promise<{ tx: Transaction }> {
     if (!this.contract) {
       throw new Error('MonadStaker not initialized. Did you forget to call init()?')
     }
@@ -327,9 +355,11 @@ export class MonadStaker {
     })
 
     return {
-      to: this.contractAddress,
-      data,
-      value: 0n
+      tx: {
+        to: this.contractAddress,
+        data,
+        value: 0n
+      }
     }
   }
 
@@ -377,16 +407,16 @@ export class MonadStaker {
   /**
    * Retrieves withdrawal request information
    *
-   * Use this to check if your undelegated tokens are ready to withdraw.
+   * Use this to check if your unstaked tokens are ready to withdraw.
    *
    * @param params - Parameters for the query
-   * @param params.validatorId - Unique identifier for the validator you undelegated from
-   * @param params.delegatorAddress - Address that initiated the undelegation
-   * @param params.withdrawalId - The ID (0-255) you assigned when calling undelegate
+   * @param params.validatorId - Unique identifier for the validator you unstaked from
+   * @param params.delegatorAddress - Address that initiated the unstaking
+   * @param params.withdrawalId - The ID (0-255) you assigned when calling buildUnstakeTx
    *
    * @returns Promise resolving to withdrawal information:
    *   - withdrawalAmount: Amount in wei that will be returned when you call withdraw (0 if no request exists)
-   *   - accRewardPerToken: Validator's accumulator value when undelegate was called (used for reward calculations)
+   *   - accRewardPerToken: Validator's accumulator value when unstaking was initiated (used for reward calculations)
    *   - withdrawEpoch: Epoch number when funds become withdrawable. Compare with current epoch from getEpoch() to check if ready.
    *
    * To check if withdrawable: currentEpoch >= withdrawEpoch (get currentEpoch via getEpoch())
@@ -432,5 +462,156 @@ export class MonadStaker {
       epoch: result[0],
       inEpochDelayPeriod: result[1]
     }
+  }
+
+  /**
+   * Signs a transaction using the provided signer.
+   *
+   * @param params - Parameters for the signing process
+   * @param params.signer - A signer instance
+   * @param params.signerAddress - The address of the signer
+   * @param params.tx - The transaction to sign
+   * @param params.baseFeeMultiplier - (Optional) The multiplier for fees, which is used to manage fee fluctuations, is applied to the base fee per gas from the latest block to determine the final `maxFeePerGas`. The default value is 1.2
+   * @param params.defaultPriorityFee - (Optional) This overrides the `maxPriorityFeePerGas` estimated by the RPC
+   *
+   * @returns A promise that resolves to an object containing the signed transaction
+   */
+  async sign (params: {
+    signer: Signer
+    signerAddress: Address
+    tx: Transaction
+    baseFeeMultiplier?: number
+    defaultPriorityFee?: string
+  }): Promise<{ signedTx: Hex }> {
+    if (!this.publicClient) {
+      throw new Error('MonadStaker not initialized. Did you forget to call init()?')
+    }
+
+    const { signer, signerAddress, tx, baseFeeMultiplier, defaultPriorityFee } = params
+
+    const baseChain = this.chain
+    const baseFees = baseChain.fees ?? {}
+    const fees = {
+      ...baseFees,
+      baseFeeMultiplier: baseFeeMultiplier ?? baseFees.baseFeeMultiplier,
+      defaultPriorityFee:
+        defaultPriorityFee === undefined ? baseFees.maxPriorityFeePerGas : parseEther(defaultPriorityFee)
+    }
+
+    const chain: Chain = {
+      ...baseChain,
+      fees
+    }
+
+    const client = createWalletClient({
+      chain,
+      transport: http(),
+      account: signerAddress
+    })
+
+    const request = await client.prepareTransactionRequest({
+      chain: undefined,
+      account: signerAddress,
+      to: tx.to,
+      value: tx.value,
+      data: tx.data,
+      type: 'eip1559'
+    })
+
+    const message = keccak256(serializeTransaction(request)).slice(2)
+    const data = { tx }
+
+    const { sig } = await signer.sign(signerAddress.toLowerCase().slice(2), { message, data }, {})
+
+    const signature = {
+      r: `0x${sig.r}` as const,
+      s: `0x${sig.s}` as const,
+      v: sig.v ? 28n : 27n,
+      yParity: sig.v
+    }
+
+    const signedTx = serializeTransaction(request, signature)
+
+    return { signedTx }
+  }
+
+  /**
+   * Broadcasts a signed transaction to the network.
+   *
+   * @param params - Parameters for the broadcast process
+   * @param params.signedTx - The signed transaction to broadcast
+   *
+   * @returns A promise that resolves to the transaction hash
+   */
+  async broadcast (params: { signedTx: Hex }): Promise<{ txHash: Hex }> {
+    if (!this.publicClient) {
+      throw new Error('MonadStaker not initialized. Did you forget to call init()?')
+    }
+
+    const { signedTx } = params
+    const hash = await this.publicClient.sendRawTransaction({ serializedTransaction: signedTx })
+    return { txHash: hash }
+  }
+
+  /**
+   * Retrieves the status of a transaction using the transaction hash.
+   *
+   * @param params - Parameters for the transaction status request
+   * @param params.txHash - The transaction hash to query
+   *
+   * @returns A promise that resolves to an object containing the transaction status
+   */
+  async getTxStatus (params: { txHash: Hex }): Promise<MonadTxStatus> {
+    if (!this.publicClient) {
+      throw new Error('MonadStaker not initialized. Did you forget to call init()?')
+    }
+
+    const { txHash } = params
+
+    try {
+      const tx = await this.publicClient.getTransactionReceipt({
+        hash: txHash
+      })
+
+      if (tx.status === 'reverted') {
+        return { status: 'failure', receipt: tx }
+      }
+
+      return { status: 'success', receipt: tx }
+    } catch (e) {
+      return {
+        status: 'unknown',
+        receipt: null
+      }
+    }
+  }
+
+  /**
+   * Internal method to parse and validate MON amount strings
+   *
+   * @param amount - Amount in MON (e.g., "1.5" for 1.5 MON)
+   * @returns Amount in wei as bigint
+   * @throws Error if amount is invalid
+   */
+  private parseMonad (amount: string): bigint {
+    if (typeof amount === 'bigint') {
+      throw new Error(
+        'Amount must be a string, denominated in MON. e.g. "1.5" - 1.5 MON. You can use `formatEther` to convert a `bigint` to a string'
+      )
+    }
+    if (typeof amount !== 'string') {
+      throw new Error('Amount must be a string, denominated in MON. e.g. "1.5" - 1.5 MON.')
+    }
+    if (amount === '') throw new Error('Amount cannot be empty')
+
+    let result: bigint
+    try {
+      result = parseEther(amount)
+    } catch (e) {
+      throw new Error('Amount must be a valid number denominated in MON. e.g. "1.5" - 1.5 MON')
+    }
+
+    if (result <= 0n) throw new Error('Amount must be greater than 0')
+    return result
   }
 }
