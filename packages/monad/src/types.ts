@@ -1,4 +1,4 @@
-import type { Address } from 'viem'
+import type { Address, Hex, TransactionReceipt } from 'viem'
 
 /**
  * Network configuration for connecting to Monad blockchain
@@ -6,8 +6,28 @@ import type { Address } from 'viem'
 export interface MonadNetworkConfig {
   /** RPC endpoint URL */
   rpcUrl: string
-  /** Staking contract address (defaults to 0x0000000000000000000000000000000000001000 if not provided) */
-  contractAddress?: Address
+}
+
+/**
+ * Represents a Monad transaction
+ */
+export interface Transaction {
+  /** The recipient (contract) address in hexadecimal format */
+  to: Address
+  /** The data to be included in the transaction in hexadecimal format */
+  data: Hex
+  /** The amount of MON (in wei) to be sent with the transaction */
+  value: bigint
+}
+
+/**
+ * Transaction status information
+ */
+export interface MonadTxStatus {
+  /** Status of the transaction */
+  status: 'success' | 'failure' | 'unknown'
+  /** Transaction receipt (null if unknown) */
+  receipt: TransactionReceipt | null
 }
 
 /**
@@ -36,7 +56,7 @@ export interface DelegatorInfo {
 export interface WithdrawalRequestInfo {
   /** Amount in wei that will be returned when you call withdraw (0 if no request exists) */
   withdrawalAmount: bigint
-  /** Validator's accumulator value when undelegate was called (used for reward calculations) */
+  /** Validator's accumulator value when unstake was called (used for reward calculations) */
   accRewardPerToken: bigint
   /** Epoch number when funds become withdrawable. Compare with current epoch to check if ready. */
   withdrawEpoch: bigint
@@ -53,12 +73,12 @@ export interface EpochInfo {
 }
 
 /**
- * Options for building delegate transaction
+ * Options for building stake transaction
  */
-export interface DelegateOptions {
-  /** Unique identifier (uint64) for the validator to delegate to */
+export interface StakeOptions {
+  /** Unique identifier (uint64) for the validator to stake with */
   validatorId: number
-  /** Amount to delegate in MON (not wei) */
+  /** Amount to stake in MON (not wei) */
   amount: string
 }
 
@@ -78,9 +98,9 @@ export interface CompoundOptions {
 export interface WithdrawOptions {
   /** Address that will receive the withdrawn funds */
   delegatorAddress: Address
-  /** Unique identifier for the validator you undelegated from */
+  /** Unique identifier for the validator you unstaked from */
   validatorId: number
-  /** ID (0-255) assigned when calling undelegate */
+  /** ID (0-255) assigned when calling buildUnstakeTx */
   withdrawalId: number
 }
 
@@ -95,14 +115,14 @@ export interface ClaimRewardsOptions {
 }
 
 /**
- * Options for building undelegate transaction
+ * Options for building unstake transaction
  */
-export interface UndelegateOptions {
+export interface UnstakeOptions {
   /** Address that will receive funds after withdrawal delay */
   delegatorAddress: Address
-  /** Unique identifier for the validator to undelegate from */
+  /** Unique identifier for the validator to unstake from */
   validatorId: number
-  /** Amount to undelegate in MON (not wei) */
+  /** Amount to unstake in MON (not wei) */
   amount: string
   /** User-chosen ID (0-255) to track this withdrawal request. Can be reused after calling withdraw(). */
   withdrawalId: number
