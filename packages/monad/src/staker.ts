@@ -124,7 +124,7 @@ export class MonadStaker {
    */
   async buildStakeTx (params: StakeOptions): Promise<{ tx: Transaction }> {
     if (!this.contract) {
-      throw new Error('MonadStaker not initialized. Did you forget to call init()?')
+      throw new Error('MonadStaker not initialized, call init() to initialize')
     }
     const { validatorId, amount } = params
 
@@ -166,7 +166,7 @@ export class MonadStaker {
    */
   async buildUnstakeTx (params: UnstakeOptions): Promise<{ tx: Transaction }> {
     if (!this.contract) {
-      throw new Error('MonadStaker not initialized. Did you forget to call init()?')
+      throw new Error('MonadStaker not initialized, call init() to initialize')
     }
     const { delegatorAddress, validatorId, amount, withdrawalId } = params
 
@@ -227,7 +227,7 @@ export class MonadStaker {
    */
   async buildWithdrawTx (params: WithdrawOptions): Promise<{ tx: Transaction }> {
     if (!this.contract) {
-      throw new Error('MonadStaker not initialized. Did you forget to call init()?')
+      throw new Error('MonadStaker not initialized, call init() to initialize')
     }
     const { delegatorAddress, validatorId, withdrawalId } = params
 
@@ -287,7 +287,7 @@ export class MonadStaker {
    */
   async buildCompoundTx (params: CompoundOptions): Promise<{ tx: Transaction }> {
     if (!this.contract) {
-      throw new Error('MonadStaker not initialized. Did you forget to call init()?')
+      throw new Error('MonadStaker not initialized, call init() to initialize')
     }
     const { delegatorAddress, validatorId } = params
 
@@ -332,7 +332,7 @@ export class MonadStaker {
    */
   async buildClaimRewardsTx (params: ClaimRewardsOptions): Promise<{ tx: Transaction }> {
     if (!this.contract) {
-      throw new Error('MonadStaker not initialized. Did you forget to call init()?')
+      throw new Error('MonadStaker not initialized, call init() to initialize')
     }
     const { delegatorAddress, validatorId } = params
 
@@ -386,7 +386,7 @@ export class MonadStaker {
    */
   async getDelegator (params: { validatorId: number; delegatorAddress: Address }): Promise<DelegatorInfo> {
     if (!this.contract) {
-      throw new Error('MonadStaker not initialized. Did you forget to call init()?')
+      throw new Error('MonadStaker not initialized, call init() to initialize')
     }
     const { validatorId, delegatorAddress } = params
 
@@ -427,7 +427,7 @@ export class MonadStaker {
     withdrawalId: number
   }): Promise<WithdrawalRequestInfo> {
     if (!this.contract) {
-      throw new Error('MonadStaker not initialized. Did you forget to call init()?')
+      throw new Error('MonadStaker not initialized, call init() to initialize')
     }
     const { validatorId, delegatorAddress, withdrawalId } = params
 
@@ -452,7 +452,7 @@ export class MonadStaker {
    */
   async getEpoch (): Promise<EpochInfo> {
     if (!this.contract) {
-      throw new Error('MonadStaker not initialized. Did you forget to call init()?')
+      throw new Error('MonadStaker not initialized, call init() to initialize')
     }
 
     // @ts-expect-error - getEpoch is marked as nonpayable in precompile ABI but is actually a read function
@@ -484,7 +484,7 @@ export class MonadStaker {
     defaultPriorityFee?: string
   }): Promise<{ signedTx: Hex }> {
     if (!this.publicClient) {
-      throw new Error('MonadStaker not initialized. Did you forget to call init()?')
+      throw new Error('MonadStaker not initialized, call init() to initialize')
     }
 
     const { signer, signerAddress, tx, baseFeeMultiplier, defaultPriorityFee } = params
@@ -545,7 +545,7 @@ export class MonadStaker {
    */
   async broadcast (params: { signedTx: Hex }): Promise<{ txHash: Hex }> {
     if (!this.publicClient) {
-      throw new Error('MonadStaker not initialized. Did you forget to call init()?')
+      throw new Error('MonadStaker not initialized, call init() to initialize')
     }
 
     const { signedTx } = params
@@ -563,7 +563,7 @@ export class MonadStaker {
    */
   async getTxStatus (params: { txHash: Hex }): Promise<MonadTxStatus> {
     if (!this.publicClient) {
-      throw new Error('MonadStaker not initialized. Did you forget to call init()?')
+      throw new Error('MonadStaker not initialized, call init() to initialize')
     }
 
     const { txHash } = params
