@@ -1,16 +1,12 @@
 import type { Address, Hex, TransactionReceipt } from 'viem'
 
-/**
- * Network configuration for connecting to Monad blockchain
- */
+/** @ignore */
 export interface MonadNetworkConfig {
   /** RPC endpoint URL */
   rpcUrl: string
 }
 
-/**
- * Represents a Monad transaction
- */
+/** @ignore */
 export interface Transaction {
   /** The recipient (contract) address in hexadecimal format */
   to: Address
@@ -20,9 +16,7 @@ export interface Transaction {
   value: bigint
 }
 
-/**
- * Transaction status information
- */
+/** @ignore */
 export interface MonadTxStatus {
   /** Status of the transaction */
   status: 'success' | 'failure' | 'unknown'
@@ -30,9 +24,7 @@ export interface MonadTxStatus {
   receipt: TransactionReceipt | null
 }
 
-/**
- * Delegator information for a specific validator
- */
+/** @ignore */
 export interface DelegatorInfo {
   /** Current active stake earning rewards right now (in wei). Does NOT include pending activations. */
   stake: bigint
@@ -50,9 +42,7 @@ export interface DelegatorInfo {
   nextDeltaEpoch: bigint
 }
 
-/**
- * Withdrawal request information
- */
+/** @ignore */
 export interface WithdrawalRequestInfo {
   /** Amount in wei that will be returned when you call withdraw (0 if no request exists) */
   withdrawalAmount: bigint
@@ -62,68 +52,10 @@ export interface WithdrawalRequestInfo {
   withdrawEpoch: bigint
 }
 
-/**
- * Current epoch information
- */
+/** @ignore */
 export interface EpochInfo {
   /** Current consensus epoch number. An epoch is ~5.5 hours on mainnet during which validator set remains unchanged. */
   epoch: bigint
   /** Whether past the boundary block (last 10% of epoch). false = changes activate epoch n+1, true = epoch n+2 */
   inEpochDelayPeriod: boolean
-}
-
-/**
- * Options for building stake transaction
- */
-export interface StakeOptions {
-  /** Unique identifier (uint64) for the validator to stake with */
-  validatorId: number
-  /** Amount to stake in MON (not wei) */
-  amount: string
-}
-
-/**
- * Options for building compound transaction
- */
-export interface CompoundOptions {
-  /** Address of the delegator compounding rewards */
-  delegatorAddress: Address
-  /** Unique identifier for the validator to compound rewards for */
-  validatorId: number
-}
-
-/**
- * Options for building withdraw transaction
- */
-export interface WithdrawOptions {
-  /** Address that will receive the withdrawn funds */
-  delegatorAddress: Address
-  /** Unique identifier for the validator you unstaked from */
-  validatorId: number
-  /** ID (0-255) assigned when calling buildUnstakeTx */
-  withdrawalId: number
-}
-
-/**
- * Options for building claim rewards transaction
- */
-export interface ClaimRewardsOptions {
-  /** Address that will receive the claimed rewards */
-  delegatorAddress: Address
-  /** Unique identifier for the validator to claim rewards from */
-  validatorId: number
-}
-
-/**
- * Options for building unstake transaction
- */
-export interface UnstakeOptions {
-  /** Address that will receive funds after withdrawal delay */
-  delegatorAddress: Address
-  /** Unique identifier for the validator to unstake from */
-  validatorId: number
-  /** Amount to unstake in MON (not wei) */
-  amount: string
-  /** User-chosen ID (0-255) to track this withdrawal request. Can be reused after calling withdraw(). */
-  withdrawalId: number
 }

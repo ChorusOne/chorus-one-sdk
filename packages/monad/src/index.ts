@@ -1,19 +1,14 @@
 export { MonadStaker } from './staker'
 
 // Export types
-export type {
+export {
   MonadNetworkConfig,
   DelegatorInfo,
   WithdrawalRequestInfo,
   EpochInfo,
-  StakeOptions,
-  CompoundOptions,
-  WithdrawOptions,
-  ClaimRewardsOptions,
-  UnstakeOptions,
   Transaction,
   MonadTxStatus
-} from './types'
+} from './types.d'
 
 // Export constants
 export { MONAD_STAKING_CONTRACT_ADDRESS } from './constants'

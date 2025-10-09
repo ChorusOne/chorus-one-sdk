@@ -17,19 +17,7 @@ import {
 } from 'viem'
 import secp256k1 from 'secp256k1'
 import type { Signer } from '@chorus-one/signer'
-import type {
-  MonadNetworkConfig,
-  StakeOptions,
-  CompoundOptions,
-  WithdrawOptions,
-  ClaimRewardsOptions,
-  UnstakeOptions,
-  DelegatorInfo,
-  WithdrawalRequestInfo,
-  EpochInfo,
-  Transaction,
-  MonadTxStatus
-} from './types'
+import type { DelegatorInfo, WithdrawalRequestInfo, EpochInfo, Transaction, MonadTxStatus } from './types.d'
 import { isValidValidatorId, isValidWithdrawalId } from './utils'
 import { MONAD_STAKING_ABI, MONAD_STAKING_CONTRACT_ADDRESS } from './constants'
 
@@ -72,7 +60,7 @@ export class MonadStaker {
    *
    * @returns An instance of MonadStaker
    */
-  constructor (params: MonadNetworkConfig) {
+  constructor (params: { rpcUrl: string }) {
     this.rpcUrl = params.rpcUrl
     this.contractAddress = MONAD_STAKING_CONTRACT_ADDRESS
   }
@@ -122,7 +110,7 @@ export class MonadStaker {
    *
    * @returns Returns a promise that resolves to a Monad staking transaction
    */
-  async buildStakeTx (params: StakeOptions): Promise<{ tx: Transaction }> {
+  async buildStakeTx (params: { validatorId: number; amount: string }): Promise<{ tx: Transaction }> {
     if (!this.contract) {
       throw new Error('MonadStaker not initialized, call init() to initialize')
     }
@@ -164,7 +152,12 @@ export class MonadStaker {
    *
    * @returns Returns a promise that resolves to a Monad unstaking transaction
    */
-  async buildUnstakeTx (params: UnstakeOptions): Promise<{ tx: Transaction }> {
+  async buildUnstakeTx (params: {
+    delegatorAddress: Address
+    validatorId: number
+    amount: string
+    withdrawalId: number
+  }): Promise<{ tx: Transaction }> {
     if (!this.contract) {
       throw new Error('MonadStaker not initialized, call init() to initialize')
     }
@@ -225,7 +218,11 @@ export class MonadStaker {
    *
    * @returns Returns a promise that resolves to a Monad withdrawal transaction
    */
-  async buildWithdrawTx (params: WithdrawOptions): Promise<{ tx: Transaction }> {
+  async buildWithdrawTx (params: {
+    delegatorAddress: Address
+    validatorId: number
+    withdrawalId: number
+  }): Promise<{ tx: Transaction }> {
     if (!this.contract) {
       throw new Error('MonadStaker not initialized, call init() to initialize')
     }
@@ -285,7 +282,7 @@ export class MonadStaker {
    *
    * @returns Returns a promise that resolves to a Monad compound transaction
    */
-  async buildCompoundTx (params: CompoundOptions): Promise<{ tx: Transaction }> {
+  async buildCompoundTx (params: { delegatorAddress: Address; validatorId: number }): Promise<{ tx: Transaction }> {
     if (!this.contract) {
       throw new Error('MonadStaker not initialized, call init() to initialize')
     }
@@ -330,7 +327,7 @@ export class MonadStaker {
    *
    * @returns Returns a promise that resolves to a Monad claim rewards transaction
    */
-  async buildClaimRewardsTx (params: ClaimRewardsOptions): Promise<{ tx: Transaction }> {
+  async buildClaimRewardsTx (params: { delegatorAddress: Address; validatorId: number }): Promise<{ tx: Transaction }> {
     if (!this.contract) {
       throw new Error('MonadStaker not initialized, call init() to initialize')
     }
