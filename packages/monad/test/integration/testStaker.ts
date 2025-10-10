@@ -13,7 +13,7 @@ export class MonadTestStaker {
   public staker: MonadStaker
   public localSigner: LocalSigner
 
-  constructor(params: { mnemonic: string; rpcUrl: string; validatorId?: number }) {
+  constructor (params: { mnemonic: string; rpcUrl: string; validatorId?: number }) {
     if (!params.mnemonic) {
       throw new Error('Mnemonic is required')
     }
@@ -32,7 +32,7 @@ export class MonadTestStaker {
    * Waits for transaction confirmation with retry logic
    * Retries up to 5 times with 5-second intervals
    */
-  private async waitForTxConfirmation(txHash: string): Promise<void> {
+  private async waitForTxConfirmation (txHash: string): Promise<void> {
     const maxRetries = 5
     const retryDelay = 5000 // 5 seconds
 
@@ -57,7 +57,7 @@ export class MonadTestStaker {
     throw new Error(`Transaction confirmation timeout after ${maxRetries} attempts: ${txHash}`)
   }
 
-  async init(): Promise<void> {
+  async init (): Promise<void> {
     const seed = bip39.mnemonicToSeedSync(this.mnemonic)
     const hdKey = HDKey.fromMasterSeed(seed)
     const derived = hdKey.derive(this.hdPath)
@@ -82,7 +82,7 @@ export class MonadTestStaker {
     await this.localSigner.init()
   }
 
-  async createAndDelegateStake(amount: string): Promise<string> {
+  async createAndDelegateStake (amount: string): Promise<string> {
     const { tx } = await this.staker.buildStakeTx({
       validatorId: this.validatorId,
       amount
@@ -101,7 +101,7 @@ export class MonadTestStaker {
     return txHash
   }
 
-  async unstake(amount: string, withdrawalId: number): Promise<string> {
+  async unstake (amount: string, withdrawalId: number): Promise<string> {
     const { tx } = await this.staker.buildUnstakeTx({
       delegatorAddress: this.ownerAddress,
       validatorId: this.validatorId,
@@ -122,7 +122,7 @@ export class MonadTestStaker {
     return txHash
   }
 
-  async withdraw(withdrawalId: number): Promise<string> {
+  async withdraw (withdrawalId: number): Promise<string> {
     const { tx } = await this.staker.buildWithdrawTx({
       delegatorAddress: this.ownerAddress,
       validatorId: this.validatorId,
@@ -142,7 +142,7 @@ export class MonadTestStaker {
     return txHash
   }
 
-  async compound(): Promise<string> {
+  async compound (): Promise<string> {
     const { tx } = await this.staker.buildCompoundTx({
       delegatorAddress: this.ownerAddress,
       validatorId: this.validatorId
@@ -161,7 +161,7 @@ export class MonadTestStaker {
     return txHash
   }
 
-  async claimRewards(): Promise<string> {
+  async claimRewards (): Promise<string> {
     const { tx } = await this.staker.buildClaimRewardsTx({
       delegatorAddress: this.ownerAddress,
       validatorId: this.validatorId
