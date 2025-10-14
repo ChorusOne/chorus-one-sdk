@@ -10,6 +10,15 @@ fireblocks_api_key
 fireblocks_secret_key
 dist
 .turbo
+*.tsbuildinfo
+
+# Editor and system files
+.DS_Store
+*.swp
+*.swo
+
+# Test coverage
+coverage
 
 packages/ethereum/cache
 packages/ethereum/hardhat.log
