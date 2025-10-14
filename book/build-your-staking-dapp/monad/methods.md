@@ -6,11 +6,11 @@ The Chorus One SDK supports a range of staking operations including delegating, 
 
 ---
 
-## buildDelegateTx
+## buildStakeTx
 
 ### Description
 
-The `buildDelegateTx` method helps you create a transaction for delegating MON tokens to a validator. Delegating tokens involves locking them up to support the validator's operations, and in return you earn staking rewards.
+The `buildStakeTx` method helps you create a transaction for delegating MON tokens to a validator. Delegating tokens involves locking them up to support the validator's operations, and in return you earn staking rewards.
 
 The delegated stake becomes active:
 
@@ -29,7 +29,7 @@ To build a delegation transaction, you need to specify the validator ID and the 
 ### Example
 
 ```javascript
-const tx = await staker.buildDelegateTx({
+const tx = await staker.buildStakeTx({
   validatorId: 1,
   amount: '1000' // 1000 MON
 })
@@ -45,11 +45,11 @@ In this example, we are delegating 1000 MON to validator ID 1. The MON tokens ar
 
 ---
 
-## buildUndelegateTx
+## buildUnstakeTx
 
 ### Description
 
-The `buildUndelegateTx` method allows you to create a transaction for undelegating tokens from a validator. This creates a **withdrawal request** that you can complete later using `buildWithdrawTx`.
+The `buildUnstakeTx` method allows you to create a transaction for undelegating tokens from a validator. This creates a **withdrawal request** that you can complete later using `buildWithdrawTx`.
 
 Undelegating involves deactivating your staked tokens:
 
@@ -76,7 +76,7 @@ To build an undelegation transaction, you need to provide:
 ### Example
 
 ```javascript
-const tx = await staker.buildUndelegateTx({
+const tx = await staker.buildUnstakeTx({
   delegatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
   validatorId: 1,
   amount: '500', // 500 MON

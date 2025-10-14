@@ -80,6 +80,26 @@ it.only('should stake and increase pending stake', async function () { ... })
 
 Change `describe.skip` to `describe` in the test file, then add `.only` to individual tests to run them separately.
 
+### Important: Withdrawal ID Management
+
+**The `withdrawalId` must be unique across all withdrawal requests for a given delegator-validator pair.**
+
+If an unstake or withdraw test fails due to `Error: Withdrawal request ID 1 already exists for this validator`, you must update the `withdrawalId` before rerunning the test.
+
+Example:
+
+```javascript
+// If this fails after creating a withdrawal request
+const withdrawalId = 1
+const txHash = await testStaker.unstake(amount, withdrawalId)
+
+// Update the withdrawalId before retrying
+const withdrawalId = 2 // Use a different ID
+const txHash = await testStaker.unstake(amount, withdrawalId)
+```
+
+This applies to both the unstake and withdraw operations in the integration tests.
+
 ## License
 
 The Chorus One SDK is licensed under the Apache 2.0 License. For more detailed information, please refer to the [LICENSE](./LICENSE) file in the repository.
