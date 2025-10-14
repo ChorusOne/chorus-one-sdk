@@ -69,6 +69,17 @@ const { status, receipt } = await staker.getTxStatus({ txHash })
 console.log(status) // 'success'
 ```
 
+## Running Integration Tests
+
+Integration tests make multiple RPC calls and may hit rate limits (HTTP 429 errors). To avoid this:
+
+```bash
+# Run tests one by one using .only
+it.only('should stake and increase pending stake', async function () { ... })
+```
+
+Change `describe.skip` to `describe` in the test file, then add `.only` to individual tests to run them separately.
+
 ## License
 
 The Chorus One SDK is licensed under the Apache 2.0 License. For more detailed information, please refer to the [LICENSE](./LICENSE) file in the repository.
