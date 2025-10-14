@@ -41,7 +41,7 @@ console.log('Delegation transaction sent:', hash)
 
 In this example, we are delegating 1000 MON to validator ID 1. The MON tokens are sent with the transaction and will become active stake in the next epoch or the one after, depending on the current block position in the epoch.
 
-- [Read more in the API Reference](../../docs/classes/monad_src.MonadStaker.md#builddelegatetx)
+- [Read more in the API Reference](../../docs/classes/monad_src.MonadStaker.md#buildstaketx)
 
 ---
 
@@ -95,7 +95,7 @@ Here, we're undelegating 500 MON from validator 1 and tracking it with withdrawa
 
 {% endhint %}
 
-- [Read more in the API Reference](../../docs/classes/monad_src.MonadStaker.md#buildundelegatetx)
+- [Read more in the API Reference](../../docs/classes/monad_src.MonadStaker.md#buildunstaketx)
 
 ---
 
