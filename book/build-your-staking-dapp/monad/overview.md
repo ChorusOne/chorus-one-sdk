@@ -102,7 +102,7 @@ The `MonadStaker` class provides methods to build transactions for delegating, u
 **Example of building a delegation transaction:**
 
 ```javascript
-const tx = await staker.buildDelegateTx({
+const tx = await staker.buildStakeTx({
   validatorId: 1,
   amount: '1000' // 1000 MON
 })
