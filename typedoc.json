@@ -7,15 +7,28 @@
     "packages/solana/src/index.ts",
     "packages/substrate/src/index.ts",
     "packages/ton/src/index.ts",
+    "packages/hyperliquid/src/index.ts",
     "packages/signer-fireblocks/src/index.ts",
     "packages/signer-local/src/index.ts",
     "packages/signer/src/index.ts"
   ],
   "readme": "none",
   "excludePrivate": true,
-  "sort": ["kind"],
-  "plugin": ["typedoc-plugin-markdown"],
-  "groupOrder": ["Classes", "Functions", "Enumerations", "Interfaces", "Properties", "Constructors", "Methods"],
+  "sort": [
+    "kind"
+  ],
+  "plugin": [
+    "typedoc-plugin-markdown"
+  ],
+  "groupOrder": [
+    "Classes",
+    "Functions",
+    "Enumerations",
+    "Interfaces",
+    "Properties",
+    "Constructors",
+    "Methods"
+  ],
   // "hideInPageTOC": true,
   "hideBreadcrumbs": true,
   "hidePageTitle": true,

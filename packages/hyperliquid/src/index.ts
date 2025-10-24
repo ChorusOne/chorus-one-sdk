@@ -2,7 +2,6 @@ export { HyperliquidStaker as MonadStaker } from './staker'
 
 export {
   HyperliquidChain,
-  HyperliquidNetworkConfig,
   SignatureData,
   DepositToStakingAction,
   WithdrawFromStakingAction,
