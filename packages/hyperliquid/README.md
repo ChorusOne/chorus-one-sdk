@@ -37,14 +37,21 @@ const delegatorAddress = '0xYourAddress'
 
 // Get spot balances (HYPE and USDC)
 const spotBalances = await staker.getSpotBalances({ delegatorAddress })
-console.log('Spot HYPE Balance:', spotBalances.hype)
-console.log('Spot USDC Balance:', spotBalances.usdc)
+console.log(
+  'Spot HYPE Balance:',
+  spotBalances.balances.find((b) => b.coin === 'HYPE')
+)
+console.log(
+  'Spot USDC Balance:',
+  spotBalances.balances.find((b) => b.coin === 'USDC')
+)
 
 // Get staking summary
 const summary = await staker.getStakingSummary({ delegatorAddress })
-console.log('Spot Balance:', summary.spotBalance)
-console.log('Staking Balance:', summary.stakingBalance)
-console.log('Delegations:', summary.delegations)
+console.log('Delegated (staked to validators):', summary.delegated)
+console.log('Undelegated (available in staking account):', summary.undelegated)
+console.log('Total Pending Withdrawals:', summary.totalPendingWithdrawal)
+console.log('Number of Pending Withdrawals:', summary.nPendingWithdrawals)
 
 // Get staking rewards
 const rewards = await staker.getDelegatorRewards({ delegatorAddress })
@@ -81,7 +88,7 @@ const { txHash } = await staker.broadcast({
 
 ### Stake to Validator
 
-Delegate tokens from your staking balance to a validator (1-day lockup):
+Delegate tokens from your staking balance to a validator. Once delegated, there is a 1-day lockup period before you can undelegate those tokens:
 
 ```javascript
 const validatorAddress = '0xValidatorAddress'
@@ -105,7 +112,7 @@ const { txHash } = await staker.broadcast({
 
 ### Unstake from Validator
 
-Undelegate tokens from a validator (1-day lockup):
+Undelegate tokens from a validator (instant, returns tokens to staking account). Note: You must wait 24 hours after delegation before you can undelegate:
 
 ```javascript
 const { tx } = await staker.buildUnstakeTx({
@@ -154,21 +161,22 @@ const { txHash } = await staker.broadcast({
 - **Query Methods**: Read spot balances, staking data, delegations, rewards, and history
 - **Write Operations**: Transfer between spot/staking, stake to validators, and unstake
 - **Lockup Periods**:
-  - Delegations: 1-day lockup per validator
-  - Withdrawals: 7-day unstaking queue (max 5 pending withdrawals per address)
+  - Delegations: 1-day lockup period before undelegation is allowed
+  - Undelegation: Instant (tokens return to staking account)
+  - Withdrawals: 7-day unstaking queue from staking to spot (max 5 pending withdrawals per address)
 - **Staking Rewards**: Auto-compounded daily, ~2.37% APY (at 400M HYPE staked), distributed based on validator performance
 - **Validator Economics**: Validators charge commissions (max 1% change per update), can be jailed for poor performance
 
 ## Important Notes
 
 - **Token Amounts**: Pass amounts as human-readable strings (e.g., '1.5' for 1.5 HYPE). The SDK automatically converts to Hyperliquid's 8-decimal wei format internally.
-- **Delegation Lockup**: Each delegation to a validator has a 1-day lockup period
-- **Withdrawal Limits**:
-  - Withdrawals from staking to spot go through a 7-day unstaking queue
-  - Maximum of 5 pending withdrawals per address
+- **Delegation Lockup**: After delegating tokens to a validator, you must wait 24 hours before you can undelegate those specific tokens. After the lockup expires, undelegation is instant and returns tokens to your staking account.
+- **Transfer Characteristics**:
+  - Spot → Staking: Instant transfers (no waiting period)
+  - Staking → Spot: 7-day unstaking queue (maximum 5 pending withdrawals per address)
 - **Transaction Confirmation**: Hyperliquid API doesn't provide transaction status queries. Use `getDelegatorHistory()` to verify transaction success.
-- **Staking Epochs**: Staking epochs are 100,000 rounds (~90 minutes)
-- **Reward Distribution**: Rewards accrue every minute based on validator performance and are distributed daily with auto-compounding
+- **Staking Epochs**: Staking epochs are 100,000 rounds (~90 minutes). Rewards are based on minimum balance held during each epoch.
+- **Reward Distribution**: Rewards accrue every minute based on validator performance, are distributed daily with auto-compounding, and require no manual claiming
 
 ## License
 
