@@ -58,7 +58,7 @@ export class HyperliquidStaker {
    *
    * @returns An instance of HyperliquidStaker.
    */
-  constructor({ chain }: { chain: HyperliquidChain }) {
+  constructor ({ chain }: { chain: HyperliquidChain }) {
     this.apiUrl = chain === 'Mainnet' ? MAINNET_API_URL : TESTNET_API_URL
     this.hyperliquidChain = chain
     this.signatureChainId = chain === 'Mainnet' ? MAINNET_CHAIN_ID : TESTNET_CHAIN_ID
@@ -69,7 +69,7 @@ export class HyperliquidStaker {
    *
    * @returns A promise which resolves once the HyperliquidStaker instance has been initialized.
    */
-  async init(): Promise<void> {
+  async init (): Promise<void> {
     // No initialization needed for REST API client
     // This method exists for API consistency with other staker implementations
   }
@@ -109,7 +109,7 @@ export class HyperliquidStaker {
    * @param request - The exchange request object
    * @returns The response data
    */
-  private async makeExchangeRequest(request: ExchangeRequest): Promise<StakingResponse> {
+  private async makeExchangeRequest (request: ExchangeRequest): Promise<StakingResponse> {
     const response = await fetch(`${this.apiUrl}/exchange`, {
       method: 'POST',
       headers: {
@@ -139,7 +139,7 @@ export class HyperliquidStaker {
    * @returns A promise that resolves to the delegator's staking summary,
    * including delegated and undelegated amounts
    */
-  async getStakingSummary(params: { delegatorAddress: string }): Promise<DelegatorSummary> {
+  async getStakingSummary (params: { delegatorAddress: string }): Promise<DelegatorSummary> {
     const request: DelegatorSummaryRequest = {
       type: 'delegatorSummary',
       user: params.delegatorAddress
@@ -156,7 +156,7 @@ export class HyperliquidStaker {
    *
    * @returns A promise that resolves to an array of active delegations
    */
-  async getDelegations(params: { delegatorAddress: string }): Promise<Delegation[]> {
+  async getDelegations (params: { delegatorAddress: string }): Promise<Delegation[]> {
     const request: DelegationsRequest = {
       type: 'delegations',
       user: params.delegatorAddress
@@ -173,7 +173,7 @@ export class HyperliquidStaker {
    *
    * @returns A promise that resolves to an array of staking rewards
    */
-  async getDelegatorRewards(params: { delegatorAddress: string }): Promise<StakingReward[]> {
+  async getDelegatorRewards (params: { delegatorAddress: string }): Promise<StakingReward[]> {
     const request: DelegatorRewardsRequest = {
       type: 'delegatorRewards',
       user: params.delegatorAddress
@@ -190,7 +190,7 @@ export class HyperliquidStaker {
    *
    * @returns A promise that resolves to an array of delegation history events
    */
-  async getDelegatorHistory(params: { delegatorAddress: string }): Promise<DelegationHistoryEvent[]> {
+  async getDelegatorHistory (params: { delegatorAddress: string }): Promise<DelegationHistoryEvent[]> {
     const request: DelegatorHistoryRequest = {
       type: 'delegatorHistory',
       user: params.delegatorAddress
@@ -207,10 +207,10 @@ export class HyperliquidStaker {
    *
    * @returns A promise that resolves to an array of spot balances for different assets(e.g. HYPE, USDC)
    */
-  async getSpotBalances(params: { userAddress: string }): Promise<{ balances: SpotBalance[] }> {
+  async getSpotBalances (params: { delegatorAddress: string }): Promise<{ balances: SpotBalance[] }> {
     const request: SpotBalancesRequest = {
       type: 'spotClearinghouseState',
-      user: params.userAddress
+      user: params.delegatorAddress
     }
 
     return await this.makeInfoRequest<{ balances: SpotBalance[] }>(request)
@@ -228,7 +228,7 @@ export class HyperliquidStaker {
    *
    * @returns Returns a promise that resolves to a DepositToStakingAction
    */
-  async buildSpotToStakingTx(params: { amount: string }): Promise<{ tx: UnsignedTx }> {
+  async buildSpotToStakingTx (params: { amount: string }): Promise<{ tx: UnsignedTx }> {
     const wei = tokensToWei(params.amount)
 
     const action: DepositToStakingAction = {
@@ -256,7 +256,7 @@ export class HyperliquidStaker {
    *
    * @returns Returns a promise that resolves to a WithdrawFromStakingAction
    */
-  async buildWithdrawFromStakingTx(params: { amount: string }): Promise<{ tx: UnsignedTx }> {
+  async buildWithdrawFromStakingTx (params: { amount: string }): Promise<{ tx: UnsignedTx }> {
     const wei = tokensToWei(params.amount)
 
     const action: WithdrawFromStakingAction = {
@@ -285,7 +285,7 @@ export class HyperliquidStaker {
    *
    * @returns Returns a promise that resolves to a DelegateAction
    */
-  async buildStakeTx(params: { validatorAddress: string; amount: string }): Promise<{ tx: UnsignedTx }> {
+  async buildStakeTx (params: { validatorAddress: string; amount: string }): Promise<{ tx: UnsignedTx }> {
     const wei = tokensToWei(params.amount)
 
     const action: DelegateAction = {
@@ -316,7 +316,7 @@ export class HyperliquidStaker {
    *
    * @returns Returns a promise that resolves to a DelegateAction
    */
-  async buildUnstakeTx(params: { validatorAddress: string; amount: string }): Promise<{ tx: UnsignedTx }> {
+  async buildUnstakeTx (params: { validatorAddress: string; amount: string }): Promise<{ tx: UnsignedTx }> {
     const wei = tokensToWei(params.amount)
 
     const action: DelegateAction = {
@@ -351,7 +351,7 @@ export class HyperliquidStaker {
    *
    * @returns A promise that resolves to the signed transaction
    */
-  async sign(params: { signer: Signer; signerAddress: string; tx: UnsignedTx }): Promise<{ signedTx: string }> {
+  async sign (params: { signer: Signer; signerAddress: string; tx: UnsignedTx }): Promise<{ signedTx: string }> {
     const { signer, signerAddress, tx } = params
 
     // Build EIP-712 typed data
@@ -386,7 +386,7 @@ export class HyperliquidStaker {
    * @param action - The action to sign
    * @returns The EIP-712 typed data object
    */
-  private buildEIP712TypedData(action: DepositToStakingAction | WithdrawFromStakingAction | DelegateAction): object {
+  private buildEIP712TypedData (action: DepositToStakingAction | WithdrawFromStakingAction | DelegateAction): object {
     // EIP-712 domain
     const domain = {
       name: 'HyperliquidSignTransaction',
@@ -476,7 +476,7 @@ export class HyperliquidStaker {
    *
    * @returns A promise that resolves to the transaction hash
    */
-  async broadcast(params: { signedTx: string; delegatorAddress: `0x${string}` }): Promise<{ txHash: string }> {
+  async broadcast (params: { signedTx: string; delegatorAddress: `0x${string}` }): Promise<{ txHash: string }> {
     const exchangeRequest: ExchangeRequest = JSON.parse(params.signedTx)
     console.log('Broadcasting transaction of type: ', exchangeRequest.action)
 
