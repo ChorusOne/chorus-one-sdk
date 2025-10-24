@@ -203,7 +203,7 @@ export class HyperliquidStaker {
    * Gets the spot account balances for a user.
    *
    * @param params - Query parameters
-   * @param params.userAddress - The user's address
+   * @param params.delegatorAddress - The user's address
    *
    * @returns A promise that resolves to an array of spot balances for different assets(e.g. HYPE, USDC)
    */
