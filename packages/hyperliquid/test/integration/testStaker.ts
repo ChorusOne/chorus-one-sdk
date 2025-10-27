@@ -38,12 +38,8 @@ export class HyperliquidTestStaker {
 
     const addressDerivationFn = HyperliquidStaker.getAddressDerivationFn()
     const addresses = await addressDerivationFn(publicKey)
-    console.log('>>>>> All addresses', addresses)
 
     this.ownerAddress = addresses[0] as Address
-    console.log('✅ Address', this.ownerAddress)
-
-    await this.staker.init()
 
     this.localSigner = new LocalSigner({
       mnemonic: this.mnemonic,

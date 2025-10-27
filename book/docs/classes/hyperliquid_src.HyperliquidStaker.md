@@ -12,7 +12,6 @@ It uses the Hyperliquid REST API for both read and write operations, with EIP-71
 ## Methods
 
 - [getAddressDerivationFn](hyperliquid_src.HyperliquidStaker.md#getaddressderivationfn)
-- [init](hyperliquid_src.HyperliquidStaker.md#init)
 - [getStakingSummary](hyperliquid_src.HyperliquidStaker.md#getstakingsummary)
 - [getDelegations](hyperliquid_src.HyperliquidStaker.md#getdelegations)
 - [getDelegatorRewards](hyperliquid_src.HyperliquidStaker.md#getdelegatorrewards)
@@ -75,20 +74,6 @@ Returns an array containing the derived address with '0x' prefix.
 #### Returns
 
 `Promise`\<`string`[]\>
-
-___
-
-## init
-
-▸ **init**(): `Promise`\<`void`\>
-
-Initializes the HyperliquidStaker instance.
-
-### Returns
-
-`Promise`\<`void`\>
-
-A promise which resolves once the HyperliquidStaker instance has been initialized.
 
 ___
 
@@ -210,6 +195,7 @@ Builds a transaction to move tokens from spot account to staking balance.
 | :------ | :------ | :------ |
 | `params` | `Object` | Transaction parameters |
 | `params.amount` | `string` | Amount to deposit in HYPE (e.g., "1.5") |
+| `params.nonce?` | `number` | Optional nonce for the transaction |
 
 ### Returns
 
@@ -232,6 +218,7 @@ Note: Withdrawals go through a 7-day unstaking queue.
 | :------ | :------ | :------ |
 | `params` | `Object` | Transaction parameters |
 | `params.amount` | `string` | Amount to withdraw in tokens (e.g., "1.5") |
+| `params.nonce?` | `number` | Optional nonce for the transaction |
 
 ### Returns
 
@@ -255,6 +242,7 @@ Note: Delegations have a 1-day lockup period per validator.
 | `params` | `Object` | Transaction parameters |
 | `params.validatorAddress` | `string` | The validator's address |
 | `params.amount` | `string` | Amount to delegate in HYPE (e.g., "1.5") |
+| `params.nonce?` | `number` | Optional nonce for the transaction |
 
 ### Returns
 
@@ -278,6 +266,7 @@ Note: Undelegations have a 1-day lockup period.
 | `params` | `Object` | Transaction parameters |
 | `params.validatorAddress` | `string` | The validator's address |
 | `params.amount` | `string` | Amount to undelegate in HYPE (e.g., "1.5") |
+| `params.nonce?` | `number` | Optional nonce for the transaction |
 
 ### Returns
 

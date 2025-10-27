@@ -1,6 +1,6 @@
 import type { Signer } from '@chorus-one/signer'
 import secp256k1 from 'secp256k1'
-import { keccak256, hashTypedData, type Hex } from 'viem'
+import { keccak256, hashTypedData, type Hex, type Address, TypedDataDefinition, parseUnits } from 'viem'
 import {
   HyperliquidChain,
   SignatureData,
@@ -21,8 +21,7 @@ import {
   UnsignedTx,
   SpotBalance
 } from './types'
-import { TESTNET_CHAIN_ID, MAINNET_API_URL, TESTNET_API_URL, MAINNET_CHAIN_ID } from './constants'
-import { tokensToWei } from './utils'
+import { TESTNET_CHAIN_ID, MAINNET_API_URL, TESTNET_API_URL, MAINNET_CHAIN_ID, DECIMALS } from './constants'
 
 /**
  * HyperliquidStaker - TypeScript SDK for Hyperliquid staking operations
@@ -62,16 +61,6 @@ export class HyperliquidStaker {
     this.apiUrl = chain === 'Mainnet' ? MAINNET_API_URL : TESTNET_API_URL
     this.hyperliquidChain = chain
     this.signatureChainId = chain === 'Mainnet' ? MAINNET_CHAIN_ID : TESTNET_CHAIN_ID
-  }
-
-  /**
-   * Initializes the HyperliquidStaker instance.
-   *
-   * @returns A promise which resolves once the HyperliquidStaker instance has been initialized.
-   */
-  async init (): Promise<void> {
-    // No initialization needed for REST API client
-    // This method exists for API consistency with other staker implementations
   }
 
   // ============================================================================
@@ -228,8 +217,8 @@ export class HyperliquidStaker {
    *
    * @returns Returns a promise that resolves to a DepositToStakingAction
    */
-  async buildSpotToStakingTx (params: { amount: string }): Promise<{ tx: UnsignedTx }> {
-    const wei = tokensToWei(params.amount)
+  async buildSpotToStakingTx (params: { amount: string; nonce?: number }): Promise<{ tx: UnsignedTx }> {
+    const wei = Number(parseUnits(params.amount, DECIMALS))
 
     const action: DepositToStakingAction = {
       type: 'cDeposit',
@@ -256,8 +245,8 @@ export class HyperliquidStaker {
    *
    * @returns Returns a promise that resolves to a WithdrawFromStakingAction
    */
-  async buildWithdrawFromStakingTx (params: { amount: string }): Promise<{ tx: UnsignedTx }> {
-    const wei = tokensToWei(params.amount)
+  async buildWithdrawFromStakingTx (params: { amount: string; nonce?: number }): Promise<{ tx: UnsignedTx }> {
+    const wei = Number(parseUnits(params.amount, DECIMALS))
 
     const action: WithdrawFromStakingAction = {
       type: 'cWithdraw',
@@ -285,8 +274,12 @@ export class HyperliquidStaker {
    *
    * @returns Returns a promise that resolves to a DelegateAction
    */
-  async buildStakeTx (params: { validatorAddress: string; amount: string }): Promise<{ tx: UnsignedTx }> {
-    const wei = tokensToWei(params.amount)
+  async buildStakeTx (params: {
+    validatorAddress: string
+    amount: string
+    nonce?: number
+  }): Promise<{ tx: UnsignedTx }> {
+    const wei = Number(parseUnits(params.amount, DECIMALS))
 
     const action: DelegateAction = {
       type: 'tokenDelegate',
@@ -316,8 +309,12 @@ export class HyperliquidStaker {
    *
    * @returns Returns a promise that resolves to a DelegateAction
    */
-  async buildUnstakeTx (params: { validatorAddress: string; amount: string }): Promise<{ tx: UnsignedTx }> {
-    const wei = tokensToWei(params.amount)
+  async buildUnstakeTx (params: {
+    validatorAddress: string
+    amount: string
+    nonce?: number
+  }): Promise<{ tx: UnsignedTx }> {
+    const wei = Number(parseUnits(params.amount, DECIMALS))
 
     const action: DelegateAction = {
       type: 'tokenDelegate',
@@ -354,13 +351,10 @@ export class HyperliquidStaker {
   async sign (params: { signer: Signer; signerAddress: string; tx: UnsignedTx }): Promise<{ signedTx: string }> {
     const { signer, signerAddress, tx } = params
 
-    // Build EIP-712 typed data
-    const typedData = this.buildEIP712TypedData(tx.action) as any
+    const typedData = this.buildEIP712TypedData(tx.action)
 
-    // Hash the typed data according to EIP-712
     const hash = hashTypedData(typedData)
 
-    // Sign the hash (signer message expects hex string without '0x' prefix)
     const { sig } = await signer.sign(signerAddress.toLowerCase(), { message: hash.slice(2) }, {})
 
     const signatureData: SignatureData = {
@@ -386,62 +380,64 @@ export class HyperliquidStaker {
    * @param action - The action to sign
    * @returns The EIP-712 typed data object
    */
-  private buildEIP712TypedData (action: DepositToStakingAction | WithdrawFromStakingAction | DelegateAction): object {
-    // EIP-712 domain
+  private buildEIP712TypedData (
+    action: DepositToStakingAction | WithdrawFromStakingAction | DelegateAction
+  ): TypedDataDefinition {
     const domain = {
       name: 'HyperliquidSignTransaction',
       version: '1',
       chainId: parseInt(this.signatureChainId, 16),
-      verifyingContract: '0x0000000000000000000000000000000000000000'
-    }
+      verifyingContract: '0x0000000000000000000000000000000000000000' as Address
+    } as const
 
-    // Determine types and message based on action type
-    let types: Record<string, Array<{ name: string; type: string }>>
-    let message: object
-    let primaryType: string
-
-    // EIP712Domain type definition (required by Hyperliquid)
     const eip712Domain = [
       { name: 'name', type: 'string' },
       { name: 'version', type: 'string' },
       { name: 'chainId', type: 'uint256' },
       { name: 'verifyingContract', type: 'address' }
-    ]
+    ] as const
+
+    const baseStakingFields = [
+      { name: 'hyperliquidChain', type: 'string' },
+      { name: 'wei', type: 'uint64' },
+      { name: 'nonce', type: 'uint64' }
+    ] as const
 
     if (action.type === 'cDeposit') {
-      primaryType = 'HyperliquidTransaction:CDeposit'
-      types = {
-        EIP712Domain: eip712Domain,
-        'HyperliquidTransaction:CDeposit': [
-          { name: 'hyperliquidChain', type: 'string' },
-          { name: 'wei', type: 'uint64' },
-          { name: 'nonce', type: 'uint64' }
-        ]
-      }
-      message = {
-        hyperliquidChain: action.hyperliquidChain,
-        wei: action.wei,
-        nonce: action.nonce
-      }
-    } else if (action.type === 'cWithdraw') {
-      primaryType = 'HyperliquidTransaction:CWithdraw'
-      types = {
-        EIP712Domain: eip712Domain,
-        'HyperliquidTransaction:CWithdraw': [
-          { name: 'hyperliquidChain', type: 'string' },
-          { name: 'wei', type: 'uint64' },
-          { name: 'nonce', type: 'uint64' }
-        ]
-      }
-      message = {
-        hyperliquidChain: action.hyperliquidChain,
-        wei: action.wei,
-        nonce: action.nonce
-      }
-    } else {
-      // tokenDelegate
-      primaryType = 'HyperliquidTransaction:TokenDelegate'
-      types = {
+      return {
+        domain,
+        types: {
+          EIP712Domain: eip712Domain,
+          'HyperliquidTransaction:CDeposit': baseStakingFields
+        },
+        primaryType: 'HyperliquidTransaction:CDeposit',
+        message: {
+          hyperliquidChain: action.hyperliquidChain,
+          wei: action.wei,
+          nonce: action.nonce
+        }
+      } as const
+    }
+
+    if (action.type === 'cWithdraw') {
+      return {
+        domain,
+        types: {
+          EIP712Domain: eip712Domain,
+          'HyperliquidTransaction:CWithdraw': baseStakingFields
+        },
+        primaryType: 'HyperliquidTransaction:CWithdraw',
+        message: {
+          hyperliquidChain: action.hyperliquidChain,
+          wei: action.wei,
+          nonce: action.nonce
+        }
+      } as const
+    }
+
+    return {
+      domain,
+      types: {
         EIP712Domain: eip712Domain,
         'HyperliquidTransaction:TokenDelegate': [
           { name: 'hyperliquidChain', type: 'string' },
@@ -450,22 +446,16 @@ export class HyperliquidStaker {
           { name: 'isUndelegate', type: 'bool' },
           { name: 'nonce', type: 'uint64' }
         ]
-      }
-      message = {
+      },
+      primaryType: 'HyperliquidTransaction:TokenDelegate',
+      message: {
         hyperliquidChain: action.hyperliquidChain,
         validator: action.validator,
         wei: action.wei,
         isUndelegate: action.isUndelegate,
         nonce: action.nonce
       }
-    }
-
-    return {
-      domain,
-      types,
-      primaryType,
-      message
-    }
+    } as const
   }
 
   /**
@@ -478,7 +468,6 @@ export class HyperliquidStaker {
    */
   async broadcast (params: { signedTx: string; delegatorAddress: `0x${string}` }): Promise<{ txHash: string }> {
     const exchangeRequest: ExchangeRequest = JSON.parse(params.signedTx)
-    console.log('Broadcasting transaction of type: ', exchangeRequest.action)
 
     const response = await this.makeExchangeRequest(exchangeRequest)
 
@@ -488,7 +477,6 @@ export class HyperliquidStaker {
 
     const history = await this.getDelegatorHistory({ delegatorAddress: params.delegatorAddress })
     const latestTx = history[0]
-    console.log('🔥 Found the latest tx: ', latestTx)
 
     if (!latestTx) {
       throw new Error('Unable to retrieve transaction hash from delegator history')
