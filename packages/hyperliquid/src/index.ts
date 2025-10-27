@@ -1,4 +1,4 @@
-export { HyperliquidStaker as MonadStaker } from './staker'
+export { HyperliquidStaker } from './staker'
 
 export {
   HyperliquidChain,

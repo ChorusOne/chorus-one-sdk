@@ -71,7 +71,7 @@ const signer = new FireblocksSigner({...})
 await signer.init()
 
 const { tx } = await staker.buildSpotToStakingTx({
-  amount: '100' // Amount in human-readable tokens (e.g., '1.5' for 1.5 HYPE)
+  amount: '100' // Amount in HYPE
 })
 
 const { signedTx } = await staker.sign({
@@ -95,7 +95,7 @@ const validatorAddress = '0xValidatorAddress'
 
 const { tx } = await staker.buildStakeTx({
   validatorAddress,
-  amount: '50' // Amount in human-readable tokens
+  amount: '50' // Amount in HYPE
 })
 
 const { signedTx } = await staker.sign({
@@ -117,7 +117,7 @@ Undelegate tokens from a validator (instant, returns tokens to staking account).
 ```javascript
 const { tx } = await staker.buildUnstakeTx({
   validatorAddress,
-  amount: '25' // Amount in human-readable tokens
+  amount: '25' // Amount in HYPE
 })
 
 const { signedTx } = await staker.sign({
@@ -138,7 +138,7 @@ Move tokens from staking balance back to spot account (7-day queue, max 5 pendin
 
 ```javascript
 const { tx } = await staker.buildWithdrawFromStakingTx({
-  amount: '10' // Amount in human-readable tokens
+  amount: '10' // Amount in HYPE
 })
 
 const { signedTx } = await staker.sign({
