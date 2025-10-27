@@ -11,10 +11,10 @@ describe.skip('HyperliquidStaker - integration', () => {
   before(async function () {
     this.timeout(30000)
 
-    const mnemonic = process.env.TEST_HYPE_MNEMONIC
+    const mnemonic = process.env.TEST_HYPELIQUID_MNEMONIC
 
     if (!mnemonic) {
-      throw new Error('TEST_HYPE_MNEMONIC environment variable is not set')
+      throw new Error('TEST_HYPELIQUID_MNEMONIC environment variable is not set')
     }
 
     testStaker = new HyperliquidTestStaker({
@@ -25,7 +25,6 @@ describe.skip('HyperliquidStaker - integration', () => {
 
     await testStaker.init()
     delegatorAddress = testStaker.ownerAddress
-    console.log('Delegator address:', delegatorAddress)
   })
 
   it('should successfully move HYPE from spot to staking', async () => {

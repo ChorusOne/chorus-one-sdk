@@ -26,8 +26,6 @@ import { HyperliquidStaker } from '@chorus-one/hyperliquid'
 const staker = new HyperliquidStaker({
   chain: 'Testnet' // or 'Mainnet'
 })
-
-await staker.init()
 ```
 
 ### Querying Staking Information
