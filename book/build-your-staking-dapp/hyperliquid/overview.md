@@ -92,7 +92,7 @@ Hyperliquid transactions use **EIP-712 typed data signing**, which differs from 
 
 ```javascript
 const { tx } = await staker.buildSpotToStakingTx({
-  amount: '100' // Amount in human-readable tokens (e.g., '100' = 100 HYPE)
+  amount: '100' // Amount in HYPE
 })
 ```
 

@@ -7,29 +7,29 @@ It uses the Hyperliquid REST API for both read and write operations, with EIP-71
 
 ## Constructors
 
-- [constructor](hyperliquid_src.MonadStaker.md#constructor)
+- [constructor](hyperliquid_src.HyperliquidStaker.md#constructor)
 
 ## Methods
 
-- [getAddressDerivationFn](hyperliquid_src.MonadStaker.md#getaddressderivationfn)
-- [init](hyperliquid_src.MonadStaker.md#init)
-- [getStakingSummary](hyperliquid_src.MonadStaker.md#getstakingsummary)
-- [getDelegations](hyperliquid_src.MonadStaker.md#getdelegations)
-- [getDelegatorRewards](hyperliquid_src.MonadStaker.md#getdelegatorrewards)
-- [getDelegatorHistory](hyperliquid_src.MonadStaker.md#getdelegatorhistory)
-- [getSpotBalances](hyperliquid_src.MonadStaker.md#getspotbalances)
-- [buildSpotToStakingTx](hyperliquid_src.MonadStaker.md#buildspottostakingtx)
-- [buildWithdrawFromStakingTx](hyperliquid_src.MonadStaker.md#buildwithdrawfromstakingtx)
-- [buildStakeTx](hyperliquid_src.MonadStaker.md#buildstaketx)
-- [buildUnstakeTx](hyperliquid_src.MonadStaker.md#buildunstaketx)
-- [sign](hyperliquid_src.MonadStaker.md#sign)
-- [broadcast](hyperliquid_src.MonadStaker.md#broadcast)
+- [getAddressDerivationFn](hyperliquid_src.HyperliquidStaker.md#getaddressderivationfn)
+- [init](hyperliquid_src.HyperliquidStaker.md#init)
+- [getStakingSummary](hyperliquid_src.HyperliquidStaker.md#getstakingsummary)
+- [getDelegations](hyperliquid_src.HyperliquidStaker.md#getdelegations)
+- [getDelegatorRewards](hyperliquid_src.HyperliquidStaker.md#getdelegatorrewards)
+- [getDelegatorHistory](hyperliquid_src.HyperliquidStaker.md#getdelegatorhistory)
+- [getSpotBalances](hyperliquid_src.HyperliquidStaker.md#getspotbalances)
+- [buildSpotToStakingTx](hyperliquid_src.HyperliquidStaker.md#buildspottostakingtx)
+- [buildWithdrawFromStakingTx](hyperliquid_src.HyperliquidStaker.md#buildwithdrawfromstakingtx)
+- [buildStakeTx](hyperliquid_src.HyperliquidStaker.md#buildstaketx)
+- [buildUnstakeTx](hyperliquid_src.HyperliquidStaker.md#buildunstaketx)
+- [sign](hyperliquid_src.HyperliquidStaker.md#sign)
+- [broadcast](hyperliquid_src.HyperliquidStaker.md#broadcast)
 
 # Constructors
 
 ## constructor
 
-• **new MonadStaker**(`«destructured»`): [`MonadStaker`](hyperliquid_src.MonadStaker.md)
+• **new HyperliquidStaker**(`«destructured»`): [`HyperliquidStaker`](hyperliquid_src.HyperliquidStaker.md)
 
 Creates a HyperliquidStaker instance.
 
@@ -44,7 +44,7 @@ chain - The Hyperliquid chain to use ('Mainnet' or 'Testnet')
 
 ### Returns
 
-[`MonadStaker`](hyperliquid_src.MonadStaker.md)
+[`HyperliquidStaker`](hyperliquid_src.HyperliquidStaker.md)
 
 An instance of HyperliquidStaker.
 
