@@ -24,6 +24,7 @@ import {
   StakingRewardsResponseSchema,
   DelegationHistoryResponseSchema,
   SpotBalancesResponseSchema,
+  ValidatorAddressSchema,
   type DelegatorSummary,
   type Delegation,
   type StakingReward,
@@ -339,19 +340,20 @@ export class HyperliquidStaker {
    * Note: Delegations have a 1-day lockup period per validator.
    *
    * @param params - Transaction parameters
-   * @param params.validatorAddress - The validator's address
+   * @param params.validatorAddress - Address in 42-character hexadecimal format; e.g. 0x0000000000000000000000000000000000000000
    * @param params.amount - Amount to delegate in HYPE (e.g., "1.5")
    *
    * @returns Returns a promise that resolves to a DelegateAction
    */
-  async buildStakeTx (params: { validatorAddress: string; amount: string }): Promise<{ tx: UnsignedTx }> {
+  async buildStakeTx (params: { validatorAddress: `0x${string}`; amount: string }): Promise<{ tx: UnsignedTx }> {
+    const validatedAddress = ValidatorAddressSchema.parse(params.validatorAddress)
     const wei = Number(parseUnits(params.amount, DECIMALS))
 
     const action: DelegateAction = {
       type: ActionType.TOKEN_DELEGATE,
       hyperliquidChain: this.hyperliquidChain,
       signatureChainId: this.signatureChainId,
-      validator: params.validatorAddress as Hex,
+      validator: validatedAddress as Hex,
       isUndelegate: false,
       wei,
       nonce: this.nonceManager.getNonce()
@@ -370,19 +372,20 @@ export class HyperliquidStaker {
    * Note: Undelegations have a 1-day lockup period.
    *
    * @param params - Transaction parameters
-   * @param params.validatorAddress - The validator's address
+   * @param params.validatorAddress - Address in 42-character hexadecimal format; e.g. 0x0000000000000000000000000000000000000000
    * @param params.amount - Amount to undelegate in HYPE (e.g., "1.5")
    *
    * @returns Returns a promise that resolves to a DelegateAction
    */
-  async buildUnstakeTx (params: { validatorAddress: string; amount: string }): Promise<{ tx: UnsignedTx }> {
+  async buildUnstakeTx (params: { validatorAddress: `0x${string}`; amount: string }): Promise<{ tx: UnsignedTx }> {
+    const validatedAddress = ValidatorAddressSchema.parse(params.validatorAddress)
     const wei = Number(parseUnits(params.amount, DECIMALS))
 
     const action: DelegateAction = {
       type: ActionType.TOKEN_DELEGATE,
       hyperliquidChain: this.hyperliquidChain,
       signatureChainId: this.signatureChainId,
-      validator: params.validatorAddress as Hex,
+      validator: validatedAddress as Hex,
       isUndelegate: true,
       wei,
       nonce: this.nonceManager.getNonce()

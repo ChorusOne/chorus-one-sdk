@@ -5,6 +5,19 @@ import { z } from 'zod'
  * Types are inferred from schemas to maintain a single source of truth
  */
 
+// ===== Common Validation Schemas =====
+
+/**
+ * Validator address schema - validates 42-character hexadecimal format
+ * e.g. 0x0000000000000000000000000000000000000000
+ */
+export const ValidatorAddressSchema = z
+  .string()
+  .regex(
+    /^0x[0-9a-fA-F]{40}$/,
+    'Invalid validator address format. Must be a 42-character hexadecimal string starting with 0x'
+  )
+
 // ===== Exchange API Response Schemas =====
 export const ExchangeApiSuccessResponseSchema = z.object({
   status: z.literal('ok'),
