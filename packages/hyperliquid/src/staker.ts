@@ -1,27 +1,78 @@
 import type { Signer } from '@chorus-one/signer'
 import secp256k1 from 'secp256k1'
 import { keccak256, hashTypedData, type Hex, type Address, TypedDataDefinition, parseUnits } from 'viem'
-import {
+import type {
   HyperliquidChain,
   SignatureData,
   DepositToStakingAction,
   WithdrawFromStakingAction,
   DelegateAction,
-  DelegatorSummary,
-  Delegation,
-  StakingReward,
-  DelegationHistoryEvent,
   DelegatorSummaryRequest,
   DelegationsRequest,
   DelegatorRewardsRequest,
   DelegatorHistoryRequest,
   SpotBalancesRequest,
   ExchangeRequest,
-  StakingResponse,
-  UnsignedTx,
-  SpotBalance
-} from './types'
+  UnsignedTx
+} from './types.d'
+import { ActionType } from './types.d'
 import { TESTNET_CHAIN_ID, MAINNET_API_URL, TESTNET_API_URL, MAINNET_CHAIN_ID, DECIMALS } from './constants'
+import {
+  ExchangeApiResponseSchema,
+  DelegatorSummarySchema,
+  DelegationsResponseSchema,
+  StakingRewardsResponseSchema,
+  DelegationHistoryResponseSchema,
+  SpotBalancesResponseSchema,
+  type DelegatorSummary,
+  type Delegation,
+  type StakingReward,
+  type DelegationHistoryEvent,
+  type SpotBalance,
+  type ExchangeApiSuccessResponse
+} from './schemas'
+
+/**
+ * Nonce manager for generating unique nonces for signing transactions.
+ * Uses the current timestamp, and increments if the timestamp is not greater than the last nonce.
+ * This prevents nonce collisions when multiple transactions are built in quick succession.
+ */
+class NonceManager {
+  private lastNonce = 0
+
+  getNonce (): number {
+    let nonce = Date.now()
+    if (nonce <= this.lastNonce) {
+      nonce = ++this.lastNonce
+    } else {
+      this.lastNonce = nonce
+    }
+    return nonce
+  }
+}
+
+/**
+ * Request queue that ensures sequential execution of async functions.
+ * Prevents network-level race conditions by forcing requests to execute in order.
+ * This is critical for Hyperliquid's nonce-based transaction ordering, as concurrent
+ * requests may arrive at the server out of order due to network timing variations.
+ */
+export class RequestQueue {
+  private queue: Promise<unknown> = Promise.resolve()
+
+  /**
+   * Enqueues an async function to execute after all previous functions complete.
+   * @param fn - The async function to execute
+   * @returns Promise that resolves with fn's result
+   */
+  enqueue<T>(fn: () => Promise<T>): Promise<T> {
+    const current = this.queue.then(() => fn())
+
+    this.queue = current.catch(() => {})
+
+    return current
+  }
+}
 
 /**
  * HyperliquidStaker - TypeScript SDK for Hyperliquid staking operations
@@ -33,6 +84,8 @@ export class HyperliquidStaker {
   private readonly hyperliquidChain: HyperliquidChain
   private readonly signatureChainId: Hex
   private readonly apiUrl: string
+  private readonly nonceManager = new NonceManager()
+  private readonly requestQueue = new RequestQueue()
 
   /**
    * This **static** method is used to derive an address from a public key.
@@ -72,9 +125,10 @@ export class HyperliquidStaker {
    * https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint
    *
    * @param request - The request object
+   * @param schema - Zod schema for runtime validation
    * @returns The response data
    */
-  private async makeInfoRequest<T>(request: object): Promise<T> {
+  private async makeInfoRequest<T>(request: object, schema: { parse: (data: unknown) => T }): Promise<T> {
     const response = await fetch(`${this.apiUrl}/info`, {
       method: 'POST',
       headers: {
@@ -88,7 +142,12 @@ export class HyperliquidStaker {
     }
 
     const data = await response.json()
-    return data as T
+
+    try {
+      return schema.parse(data)
+    } catch (error) {
+      throw new Error(`Info request validation failed: ${error instanceof Error ? error.message : String(error)}`)
+    }
   }
 
   /**
@@ -98,7 +157,7 @@ export class HyperliquidStaker {
    * @param request - The exchange request object
    * @returns The response data
    */
-  private async makeExchangeRequest (request: ExchangeRequest): Promise<StakingResponse> {
+  private async makeExchangeRequest (request: ExchangeRequest): Promise<ExchangeApiSuccessResponse> {
     const response = await fetch(`${this.apiUrl}/exchange`, {
       method: 'POST',
       headers: {
@@ -111,8 +170,19 @@ export class HyperliquidStaker {
       throw new Error(`Exchange request failed: ${response.status} ${response.statusText}`)
     }
 
-    const data = await response.json()
-    return data as StakingResponse
+    const rawData = await response.json()
+
+    const validationResult = ExchangeApiResponseSchema.safeParse(rawData)
+    if (!validationResult.success) {
+      throw new Error(`Exchange response validation failed: ${validationResult.error.message}`)
+    }
+
+    const data = validationResult.data
+
+    if (data.status === 'err') {
+      throw new Error(`Exchange request error: ${data.response}`)
+    }
+    return data
   }
 
   // ============================================================================
@@ -134,7 +204,7 @@ export class HyperliquidStaker {
       user: params.delegatorAddress
     }
 
-    return await this.makeInfoRequest<DelegatorSummary>(request)
+    return await this.makeInfoRequest<DelegatorSummary>(request, DelegatorSummarySchema)
   }
 
   /**
@@ -151,7 +221,7 @@ export class HyperliquidStaker {
       user: params.delegatorAddress
     }
 
-    return await this.makeInfoRequest<Delegation[]>(request)
+    return await this.makeInfoRequest<Delegation[]>(request, DelegationsResponseSchema)
   }
 
   /**
@@ -168,7 +238,7 @@ export class HyperliquidStaker {
       user: params.delegatorAddress
     }
 
-    return await this.makeInfoRequest<StakingReward[]>(request)
+    return await this.makeInfoRequest<StakingReward[]>(request, StakingRewardsResponseSchema)
   }
 
   /**
@@ -185,7 +255,7 @@ export class HyperliquidStaker {
       user: params.delegatorAddress
     }
 
-    return await this.makeInfoRequest<DelegationHistoryEvent[]>(request)
+    return await this.makeInfoRequest<DelegationHistoryEvent[]>(request, DelegationHistoryResponseSchema)
   }
 
   /**
@@ -202,7 +272,7 @@ export class HyperliquidStaker {
       user: params.delegatorAddress
     }
 
-    return await this.makeInfoRequest<{ balances: SpotBalance[] }>(request)
+    return await this.makeInfoRequest<{ balances: SpotBalance[] }>(request, SpotBalancesResponseSchema)
   }
 
   // ============================================================================
@@ -217,15 +287,15 @@ export class HyperliquidStaker {
    *
    * @returns Returns a promise that resolves to a DepositToStakingAction
    */
-  async buildSpotToStakingTx (params: { amount: string; nonce?: number }): Promise<{ tx: UnsignedTx }> {
+  async buildSpotToStakingTx (params: { amount: string }): Promise<{ tx: UnsignedTx }> {
     const wei = Number(parseUnits(params.amount, DECIMALS))
 
     const action: DepositToStakingAction = {
-      type: 'cDeposit',
+      type: ActionType.C_DEPOSIT,
       hyperliquidChain: this.hyperliquidChain,
       signatureChainId: this.signatureChainId,
       wei,
-      nonce: Date.now()
+      nonce: this.nonceManager.getNonce()
     }
 
     return {
@@ -245,15 +315,15 @@ export class HyperliquidStaker {
    *
    * @returns Returns a promise that resolves to a WithdrawFromStakingAction
    */
-  async buildWithdrawFromStakingTx (params: { amount: string; nonce?: number }): Promise<{ tx: UnsignedTx }> {
+  async buildWithdrawFromStakingTx (params: { amount: string }): Promise<{ tx: UnsignedTx }> {
     const wei = Number(parseUnits(params.amount, DECIMALS))
 
     const action: WithdrawFromStakingAction = {
-      type: 'cWithdraw',
+      type: ActionType.C_WITHDRAW,
       hyperliquidChain: this.hyperliquidChain,
       signatureChainId: this.signatureChainId,
       wei,
-      nonce: Date.now()
+      nonce: this.nonceManager.getNonce()
     }
 
     return {
@@ -274,21 +344,17 @@ export class HyperliquidStaker {
    *
    * @returns Returns a promise that resolves to a DelegateAction
    */
-  async buildStakeTx (params: {
-    validatorAddress: string
-    amount: string
-    nonce?: number
-  }): Promise<{ tx: UnsignedTx }> {
+  async buildStakeTx (params: { validatorAddress: string; amount: string }): Promise<{ tx: UnsignedTx }> {
     const wei = Number(parseUnits(params.amount, DECIMALS))
 
     const action: DelegateAction = {
-      type: 'tokenDelegate',
+      type: ActionType.TOKEN_DELEGATE,
       hyperliquidChain: this.hyperliquidChain,
       signatureChainId: this.signatureChainId,
       validator: params.validatorAddress as Hex,
       isUndelegate: false,
       wei,
-      nonce: Date.now()
+      nonce: this.nonceManager.getNonce()
     }
 
     return {
@@ -309,21 +375,17 @@ export class HyperliquidStaker {
    *
    * @returns Returns a promise that resolves to a DelegateAction
    */
-  async buildUnstakeTx (params: {
-    validatorAddress: string
-    amount: string
-    nonce?: number
-  }): Promise<{ tx: UnsignedTx }> {
+  async buildUnstakeTx (params: { validatorAddress: string; amount: string }): Promise<{ tx: UnsignedTx }> {
     const wei = Number(parseUnits(params.amount, DECIMALS))
 
     const action: DelegateAction = {
-      type: 'tokenDelegate',
+      type: ActionType.TOKEN_DELEGATE,
       hyperliquidChain: this.hyperliquidChain,
       signatureChainId: this.signatureChainId,
       validator: params.validatorAddress as Hex,
       isUndelegate: true,
       wei,
-      nonce: Date.now()
+      nonce: this.nonceManager.getNonce()
     }
 
     return {
@@ -403,7 +465,7 @@ export class HyperliquidStaker {
       { name: 'nonce', type: 'uint64' }
     ] as const
 
-    if (action.type === 'cDeposit') {
+    if (action.type === ActionType.C_DEPOSIT) {
       return {
         domain,
         types: {
@@ -419,7 +481,7 @@ export class HyperliquidStaker {
       } as const
     }
 
-    if (action.type === 'cWithdraw') {
+    if (action.type === ActionType.C_WITHDRAW) {
       return {
         domain,
         types: {
@@ -461,43 +523,46 @@ export class HyperliquidStaker {
   /**
    * Broadcasts a signed transaction to the Hyperliquid network.
    *
+   * Uses a request queue to ensure transactions are sent sequentially, preventing
+   * network-level race conditions that could cause out-of-order nonce errors.
+   *
    * @param params - Broadcasting parameters
    * @param params.signedTx - The signed transaction (JSON string)
    *
    * @returns A promise that resolves to the transaction hash
    */
   async broadcast (params: { signedTx: string; delegatorAddress: `0x${string}` }): Promise<{ txHash: string }> {
-    const exchangeRequest: ExchangeRequest = JSON.parse(params.signedTx)
+    return this.requestQueue.enqueue(async () => {
+      const exchangeRequest: ExchangeRequest = JSON.parse(params.signedTx)
 
-    const response = await this.makeExchangeRequest(exchangeRequest)
+      await this.makeExchangeRequest(exchangeRequest)
 
-    if (response.status === 'error') {
-      throw new Error(`Transaction broadcast failed: ${JSON.stringify(response)}`)
-    }
+      const history = await this.getDelegatorHistory({ delegatorAddress: params.delegatorAddress })
+      const latestTx = history[0]
 
-    const history = await this.getDelegatorHistory({ delegatorAddress: params.delegatorAddress })
-    const latestTx = history[0]
+      if (!latestTx) {
+        throw new Error('Unable to retrieve transaction hash from delegator history')
+      }
 
-    if (!latestTx) {
-      throw new Error('Unable to retrieve transaction hash from delegator history')
-    }
+      const deltaKey = Object.keys(latestTx.delta)[0]
 
-    const deltaKey = Object.keys(latestTx.delta)[0]
-    const expectedDeltaKey =
-      exchangeRequest.action.type === 'tokenDelegate'
-        ? 'delegate'
-        : exchangeRequest.action.type === 'cWithdraw'
-          ? 'withdrawal'
-          : exchangeRequest.action.type
+      const actionToDeltaKeyMap: Record<string, string> = {
+        [ActionType.TOKEN_DELEGATE]: 'delegate',
+        [ActionType.C_WITHDRAW]: 'withdrawal',
+        [ActionType.C_DEPOSIT]: 'cDeposit'
+      }
 
-    if (deltaKey !== expectedDeltaKey) {
-      throw new Error(
-        `Transaction type mismatch: expected ${expectedDeltaKey} but found ${deltaKey} in delegator history`
-      )
-    }
+      const expectedDeltaKey = actionToDeltaKeyMap[exchangeRequest.action.type] ?? exchangeRequest.action.type
 
-    const txHash = latestTx.hash
+      if (deltaKey !== expectedDeltaKey) {
+        throw new Error(
+          `Transaction type mismatch: expected ${expectedDeltaKey} but found ${deltaKey} in delegator history`
+        )
+      }
 
-    return { txHash }
+      const txHash = latestTx.hash
+
+      return { txHash }
+    })
   }
 }
