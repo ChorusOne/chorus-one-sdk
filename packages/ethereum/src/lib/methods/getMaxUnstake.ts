@@ -35,7 +35,11 @@ export const getMaxUnstake = async (params: {
   const secondsInHour = 60n * 60n
   const gap = (avgRewardPerSecond * secondsInHour * minted.assets) / 1000000000000000000n
   const lockedAssets = ((minted.assets + gap) * 1000000000000000000n) / ltvPercent
-  const maxWithdrawAssets = assets - lockedAssets
+
+  // Adjust for 0.01% margin, due to rounding errors blocking withdrawals
+  const adjustedLockedAssets = (lockedAssets * 10001n) / 10000n
+
+  const maxWithdrawAssets = assets - adjustedLockedAssets
 
   return maxWithdrawAssets > min ? maxWithdrawAssets : 0n
 }
