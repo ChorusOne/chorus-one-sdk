@@ -4,6 +4,13 @@ import type { Address, Hex } from 'viem'
 export type HyperliquidChain = 'Mainnet' | 'Testnet'
 
 /** @ignore */
+export const ActionType = {
+  C_DEPOSIT: 'cDeposit',
+  C_WITHDRAW: 'cWithdraw',
+  TOKEN_DELEGATE: 'tokenDelegate'
+} as const
+
+/** @ignore */
 export interface SignatureData {
   /** EIP-712 signature r component */
   r: Hex
@@ -16,7 +23,7 @@ export interface SignatureData {
 /** @ignore */
 export interface DepositToStakingAction {
   /** Action type identifier */
-  type: 'cDeposit'
+  type: typeof ActionType.C_DEPOSIT
   /** Hyperliquid chain environment */
   hyperliquidChain: HyperliquidChain
   /** Chain identifier in hexadecimal format */
@@ -30,7 +37,7 @@ export interface DepositToStakingAction {
 /** @ignore */
 export interface WithdrawFromStakingAction {
   /** Action type identifier */
-  type: 'cWithdraw'
+  type: typeof ActionType.C_WITHDRAW
   /** Hyperliquid chain environment */
   hyperliquidChain: HyperliquidChain
   /** Chain identifier in hexadecimal format */
@@ -44,7 +51,7 @@ export interface WithdrawFromStakingAction {
 /** @ignore */
 export interface DelegateAction {
   /** Action type identifier */
-  type: 'tokenDelegate'
+  type: typeof ActionType.TOKEN_DELEGATE
   /** Hyperliquid chain environment */
   hyperliquidChain: HyperliquidChain
   /** Chain identifier in hexadecimal format */
@@ -70,17 +77,6 @@ export interface StakingRequest {
   nonce: number
   /** EIP-712 signature data */
   signature: SignatureData
-}
-
-/** @ignore */
-export interface StakingResponse {
-  /** Response status */
-  status: 'ok' | 'error'
-  /** Response data */
-  response: {
-    /** Response type */
-    type: 'default'
-  }
 }
 
 /** @ignore */
@@ -134,75 +130,6 @@ export interface DelegatorHistoryRequest {
 export interface SpotBalancesRequest {
   type: 'spotClearinghouseState'
   user: string
-}
-
-// Info Endpoint Response Types
-/** @ignore */
-export interface DelegatorSummary {
-  /** Total amount delegated to validators (as string with 8 decimals) */
-  delegated: string
-  /** Amount available for delegation (as string with 8 decimals) */
-  undelegated: string
-  /** Total amount in pending withdrawals (as string with 8 decimals) */
-  totalPendingWithdrawal: string
-  /** Number of pending withdrawal requests */
-  nPendingWithdrawals: number
-}
-
-/** @ignore */
-export interface Delegation {
-  /** Validator address */
-  validator: string
-  /** Delegated amount (as string with 8 decimals) */
-  amount: string
-  /** Unix timestamp when delegation lock expires */
-  lockedUntilTimestamp: number
-}
-
-/** @ignore */
-export interface StakingReward {
-  /** Unix timestamp of reward */
-  time: number
-  /** Source of reward (delegation rewards or commission) */
-  source: 'delegation' | 'commission'
-  /** Total reward amount (as string with 8 decimals) */
-  totalAmount: string
-}
-
-/** @ignore */
-export type DelegatorHistoryDelta =
-  | {
-      delegate: {
-        validator: `0x${string}`
-        amount: string
-        isUndelegate: boolean
-      }
-    }
-  | { cDeposit: { amount: string } }
-  | { withdrawal: { amount: string; phase: string } }
-
-/** @ignore */
-export interface DelegationHistoryEvent {
-  /** Unix timestamp of event */
-  time: number
-  /** Transaction hash */
-  hash: string
-  /** Changes made by this event */
-  delta: DelegationHistoryDelta
-}
-
-/** @ignore */
-export interface SpotBalance {
-  /** Asset identifier (e.g., "USDC", "HYPE") */
-  coin: string
-  /** Token index */
-  token: number
-  /** Total balance available (as string with decimals) */
-  total: string
-  /** Amount reserved for open orders (as string with decimals) */
-  hold: string
-  /** Entry notional value (as string with decimals) */
-  entryNtl: string
 }
 
 // Unsigned Transaction Type
