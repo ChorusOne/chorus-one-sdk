@@ -20,10 +20,6 @@ Hyperliquid uses a dual-account structure similar to how USDC can be transferred
 - **Spot → Staking**: Instant transfers (no waiting period)
 - **Staking → Spot**: 7-day unstaking queue (maximum 5 pending withdrawals per address)
 
-{% hint style="warning" %}
-Each address can have at most **5 pending withdrawals** in the unstaking queue. Plan your withdrawals accordingly to avoid hitting this limit.
-{% endhint %}
-
 ### Delegation System
 
 Hyperliquid implements delegated proof-of-stake with the following characteristics:
@@ -42,7 +38,6 @@ Hyperliquid's staking rewards follow an Ethereum-inspired model:
 **Reward Formula:**
 
 - Reward rate is inversely proportional to the square root of total HYPE staked
-- At **400M total HYPE staked**: approximately **2.37% APY**
 - Rewards come from the future emissions reserve
 
 **Distribution Schedule:**
@@ -70,18 +65,6 @@ const staker = new HyperliquidStaker({
 
 The staker uses Hyperliquid's REST API endpoints (`/info` and `/exchange`) and doesn't require RPC connections or additional configuration.
 
-## Initializing the Staker
-
-After creating the staker instance, initialize it before use:
-
-```javascript
-await staker.init()
-```
-
-{% hint style="info" %}
-For Hyperliquid, `init()` is a no-op method included for API consistency with other SDK implementations. The REST API client requires no initialization.
-{% endhint %}
-
 ## Building Transactions
 
 Hyperliquid transactions use **EIP-712 typed data signing**, which differs from standard Ethereum transactions. The SDK provides a three-step workflow:
@@ -96,7 +79,7 @@ const { tx } = await staker.buildSpotToStakingTx({
 })
 ```
 
-The SDK automatically converts human-readable amounts to Hyperliquid's 8-decimal wei format internally.
+The SDK automatically converts the amounts in HYPE to Hyperliquid's 8-decimal wei format internally.
 
 **2. Sign the transaction:**
 
@@ -136,7 +119,7 @@ Since Hyperliquid doesn't support transaction status queries, verify using deleg
 
 ```javascript
 // Wait a few seconds for transaction processing
-await new Promise((resolve) => setTimeout(resolve, 3000))
+await new Promise((resolve) => setTimeout(resolve, 1000))
 
 // Check recent history
 const history = await staker.getDelegatorHistory({
@@ -157,7 +140,6 @@ import { FireblocksSigner } from '@chorus-one/signer-fireblocks'
 
 // 1. Setup
 const staker = new HyperliquidStaker({ chain: 'Mainnet' })
-await staker.init()
 
 const signer = new FireblocksSigner({...})
 await signer.init()
@@ -214,7 +196,7 @@ const { txHash: stakeHash } = await staker.broadcast({
 console.log('Stake hash:', stakeHash)
 
 // 5. Verify delegation
-await new Promise(resolve => setTimeout(resolve, 3000))
+await new Promise(resolve => setTimeout(resolve, 1000))
 
 const updatedSummary = await staker.getStakingSummary({ delegatorAddress })
 console.log('Delegated amount:', updatedSummary.delegated)

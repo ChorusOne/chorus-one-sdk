@@ -10,9 +10,9 @@ Builds a transaction to transfer HYPE tokens from your spot account to your stak
 
 ### Parameters
 
-| Parameter | Type   | Required | Description                                        |
-| --------- | ------ | -------- | -------------------------------------------------- |
-| `amount`  | string | Yes      | Amount in human-readable HYPE tokens (e.g., '100') |
+| Parameter | Type   | Required | Description                  |
+| --------- | ------ | -------- | ---------------------------- |
+| `amount`  | string | Yes      | Amount in HYPE (e.g., '100') |
 
 ### Response
 
@@ -59,9 +59,9 @@ Builds a transaction to transfer HYPE tokens from your staking account back to y
 
 ### Parameters
 
-| Parameter | Type   | Required | Description                                       |
-| --------- | ------ | -------- | ------------------------------------------------- |
-| `amount`  | string | Yes      | Amount in human-readable HYPE tokens (e.g., '50') |
+| Parameter | Type   | Required | Description                 |
+| --------- | ------ | -------- | --------------------------- |
+| `amount`  | string | Yes      | Amount in HYPE (e.g., '50') |
 
 ### Response
 
@@ -112,10 +112,10 @@ Builds a transaction to delegate (stake) HYPE tokens from your staking account t
 
 ### Parameters
 
-| Parameter          | Type   | Required | Description                                        |
-| ------------------ | ------ | -------- | -------------------------------------------------- |
-| `validatorAddress` | string | Yes      | Validator's Ethereum address (0x...)               |
-| `amount`           | string | Yes      | Amount in human-readable HYPE tokens (e.g., '100') |
+| Parameter          | Type   | Required | Description                                                    |
+| ------------------ | ------ | -------- | -------------------------------------------------------------- |
+| `validatorAddress` | string | Yes      | Validator's address in 42-character hexadecimal format (0x...) |
+| `amount`           | string | Yes      | Amount in HYPE (e.g., '100')                                   |
 
 ### Response
 
@@ -164,9 +164,6 @@ console.log('Staked amount:', delegation?.amount)
 
 - Each delegation has a **1-day lockup** per validator
 - You can delegate to **multiple validators** simultaneously
-- Choose validators carefully - rewards depend on **validator performance and uptime**
-- Jailed validators don't generate rewards for delegators
-- Validators charge **commissions** on rewards (capped at 1% increase per update)
   {% endhint %}
 
 **Further Reading**
@@ -181,10 +178,10 @@ Builds a transaction to undelegate (unstake) HYPE tokens from a validator. Undel
 
 ### Parameters
 
-| Parameter          | Type   | Required | Description                                       |
-| ------------------ | ------ | -------- | ------------------------------------------------- |
-| `validatorAddress` | string | Yes      | Validator's Ethereum address (0x...)              |
-| `amount`           | string | Yes      | Amount in human-readable HYPE tokens (e.g., '25') |
+| Parameter          | Type   | Required | Description                                                    |
+| ------------------ | ------ | -------- | -------------------------------------------------------------- |
+| `validatorAddress` | string | Yes      | Validator's address in 42-character hexadecimal format (0x...) |
+| `amount`           | string | Yes      | Amount in HYPE (e.g., '25')                                    |
 
 ### Response
 
@@ -485,7 +482,6 @@ console.log(`\nTotal Rewards: ${totalRewards.toFixed(8)} HYPE`)
 - **Distributed daily** to all delegators
 - **Auto-compounded** to your delegated stake (no manual claiming required)
 - Based on **minimum balance** held during each staking epoch (100k rounds ~90 minutes)
-- Reward rate: ~2.37% APY at 400M total HYPE staked (inversely proportional to √total_staked)
   {% endhint %}
 
 **Further Reading**
@@ -720,14 +716,6 @@ async function executeStakingTransaction(staker, signer, delegatorAddress) {
 }
 ```
 
-{% hint style="warning" %}
-**Important Limitations:**
-
-- Transaction hash **cannot be used** to query transaction status
-- Hyperliquid API doesn't provide tx status endpoints
-- Use `getDelegatorHistory()` to verify transaction success
-  {% endhint %}
-
 **Error Handling:**
 
 ```javascript
@@ -743,6 +731,7 @@ try {
 
   // Common errors:
   // - Insufficient balance
+  // - Stake in lockup period
   // - Invalid signature
   // - Network connectivity issues
   // - API rate limiting

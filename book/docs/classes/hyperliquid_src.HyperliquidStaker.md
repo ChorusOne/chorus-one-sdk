@@ -79,7 +79,7 @@ ___
 
 ## getStakingSummary
 
-▸ **getStakingSummary**(`params`): `Promise`\<`DelegatorSummary`\>
+▸ **getStakingSummary**(`params`): `Promise`\<\{ `delegated?`: `string` ; `undelegated?`: `string` ; `totalPendingWithdrawal?`: `string` ; `nPendingWithdrawals?`: `number`  }\>
 
 Gets the staking summary for a delegator.
 
@@ -92,7 +92,7 @@ Gets the staking summary for a delegator.
 
 ### Returns
 
-`Promise`\<`DelegatorSummary`\>
+`Promise`\<\{ `delegated?`: `string` ; `undelegated?`: `string` ; `totalPendingWithdrawal?`: `string` ; `nPendingWithdrawals?`: `number`  }\>
 
 A promise that resolves to the delegator's staking summary,
 including delegated and undelegated amounts
@@ -101,7 +101,7 @@ ___
 
 ## getDelegations
 
-▸ **getDelegations**(`params`): `Promise`\<`Delegation`[]\>
+▸ **getDelegations**(`params`): `Promise`\<\{ `amount?`: `string` ; `validator?`: `string` ; `lockedUntilTimestamp?`: `number`  }[]\>
 
 Gets all active delegations for a delegator.
 
@@ -114,7 +114,7 @@ Gets all active delegations for a delegator.
 
 ### Returns
 
-`Promise`\<`Delegation`[]\>
+`Promise`\<\{ `amount?`: `string` ; `validator?`: `string` ; `lockedUntilTimestamp?`: `number`  }[]\>
 
 A promise that resolves to an array of active delegations
 
@@ -122,7 +122,7 @@ ___
 
 ## getDelegatorRewards
 
-▸ **getDelegatorRewards**(`params`): `Promise`\<`StakingReward`[]\>
+▸ **getDelegatorRewards**(`params`): `Promise`\<\{ `totalAmount?`: `string` ; `source?`: ``"delegation"`` \| ``"commission"`` ; `time?`: `number`  }[]\>
 
 Gets the staking rewards history for a delegator.
 
@@ -135,7 +135,7 @@ Gets the staking rewards history for a delegator.
 
 ### Returns
 
-`Promise`\<`StakingReward`[]\>
+`Promise`\<\{ `totalAmount?`: `string` ; `source?`: ``"delegation"`` \| ``"commission"`` ; `time?`: `number`  }[]\>
 
 A promise that resolves to an array of staking rewards
 
@@ -143,7 +143,7 @@ ___
 
 ## getDelegatorHistory
 
-▸ **getDelegatorHistory**(`params`): `Promise`\<`DelegationHistoryEvent`[]\>
+▸ **getDelegatorHistory**(`params`): `Promise`\<\{ `hash?`: `string` ; `time?`: `number` ; `delta?`: \{ `delegate?`: \{ `amount?`: `string` ; `validator?`: `string` ; `isUndelegate?`: `boolean`  }  } \| \{ `cDeposit?`: \{ `amount?`: `string`  }  } \| \{ `withdrawal?`: \{ `amount?`: `string` ; `phase?`: `string`  }  }  }[]\>
 
 Gets the delegation history for a delegator.
 
@@ -156,7 +156,7 @@ Gets the delegation history for a delegator.
 
 ### Returns
 
-`Promise`\<`DelegationHistoryEvent`[]\>
+`Promise`\<\{ `hash?`: `string` ; `time?`: `number` ; `delta?`: \{ `delegate?`: \{ `amount?`: `string` ; `validator?`: `string` ; `isUndelegate?`: `boolean`  }  } \| \{ `cDeposit?`: \{ `amount?`: `string`  }  } \| \{ `withdrawal?`: \{ `amount?`: `string` ; `phase?`: `string`  }  }  }[]\>
 
 A promise that resolves to an array of delegation history events
 
@@ -164,7 +164,7 @@ ___
 
 ## getSpotBalances
 
-▸ **getSpotBalances**(`params`): `Promise`\<\{ `balances`: `SpotBalance`[]  }\>
+▸ **getSpotBalances**(`params`): `Promise`\<\{ `balances`: \{ `total?`: `string` ; `coin?`: `string` ; `token?`: `number` ; `hold?`: `string` ; `entryNtl?`: `string`  }[]  }\>
 
 Gets the spot account balances for a user.
 
@@ -177,7 +177,7 @@ Gets the spot account balances for a user.
 
 ### Returns
 
-`Promise`\<\{ `balances`: `SpotBalance`[]  }\>
+`Promise`\<\{ `balances`: \{ `total?`: `string` ; `coin?`: `string` ; `token?`: `number` ; `hold?`: `string` ; `entryNtl?`: `string`  }[]  }\>
 
 A promise that resolves to an array of spot balances for different assets(e.g. HYPE, USDC)
 
@@ -195,7 +195,6 @@ Builds a transaction to move tokens from spot account to staking balance.
 | :------ | :------ | :------ |
 | `params` | `Object` | Transaction parameters |
 | `params.amount` | `string` | Amount to deposit in HYPE (e.g., "1.5") |
-| `params.nonce?` | `number` | Optional nonce for the transaction |
 
 ### Returns
 
@@ -218,7 +217,6 @@ Note: Withdrawals go through a 7-day unstaking queue.
 | :------ | :------ | :------ |
 | `params` | `Object` | Transaction parameters |
 | `params.amount` | `string` | Amount to withdraw in tokens (e.g., "1.5") |
-| `params.nonce?` | `number` | Optional nonce for the transaction |
 
 ### Returns
 
@@ -240,9 +238,8 @@ Note: Delegations have a 1-day lockup period per validator.
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `params` | `Object` | Transaction parameters |
-| `params.validatorAddress` | `string` | The validator's address |
+| `params.validatorAddress` | \`0x$\{string}\` | Address in 42-character hexadecimal format; e.g. 0x0000000000000000000000000000000000000000 |
 | `params.amount` | `string` | Amount to delegate in HYPE (e.g., "1.5") |
-| `params.nonce?` | `number` | Optional nonce for the transaction |
 
 ### Returns
 
@@ -264,9 +261,8 @@ Note: Undelegations have a 1-day lockup period.
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `params` | `Object` | Transaction parameters |
-| `params.validatorAddress` | `string` | The validator's address |
+| `params.validatorAddress` | \`0x$\{string}\` | Address in 42-character hexadecimal format; e.g. 0x0000000000000000000000000000000000000000 |
 | `params.amount` | `string` | Amount to undelegate in HYPE (e.g., "1.5") |
-| `params.nonce?` | `number` | Optional nonce for the transaction |
 
 ### Returns
 
@@ -304,6 +300,9 @@ ___
 ▸ **broadcast**(`params`): `Promise`\<\{ `txHash`: `string`  }\>
 
 Broadcasts a signed transaction to the Hyperliquid network.
+
+Uses a request queue to ensure transactions are sent sequentially, preventing
+network-level race conditions that could cause out-of-order nonce errors.
 
 ### Parameters
 
