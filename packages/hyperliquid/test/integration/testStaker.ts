@@ -4,17 +4,18 @@ import * as bip39 from 'bip39'
 import { HDKey } from '@scure/bip32'
 import type { Address } from 'viem'
 import { HyperliquidStaker } from '../../src/staker'
-import { DelegatorSummary, HyperliquidChain, SpotBalance } from '../../src/types'
+import { HyperliquidChain } from '../../src/types'
+import { DelegatorSummary, SpotBalance } from '../../src/schemas'
 
 export class HyperliquidTestStaker {
   private mnemonic: string
   public hdPath: string
   public ownerAddress: Address
-  public validatorAddress: `0x${number}`
+  public validatorAddress: `0x${string}`
   public staker: HyperliquidStaker
   public localSigner: LocalSigner
 
-  constructor (params: { mnemonic: string; chain: HyperliquidChain; validatorAddress: `0x${number}` }) {
+  constructor(params: { mnemonic: string; chain: HyperliquidChain; validatorAddress: `0x${string}` }) {
     if (!params.mnemonic) {
       throw new Error('Mnemonic is required')
     }
@@ -26,7 +27,7 @@ export class HyperliquidTestStaker {
     this.staker = new HyperliquidStaker({ chain: params.chain })
   }
 
-  async init (): Promise<void> {
+  async init(): Promise<void> {
     const seed = bip39.mnemonicToSeedSync(this.mnemonic)
     const hdKey = HDKey.fromMasterSeed(seed)
     const derived = hdKey.derive(this.hdPath)
@@ -50,7 +51,7 @@ export class HyperliquidTestStaker {
     await this.localSigner.init()
   }
 
-  async moveFromSpotToStaking (amount: string): Promise<string> {
+  async moveFromSpotToStaking(amount: string): Promise<string> {
     const { tx } = await this.staker.buildSpotToStakingTx({ amount })
     const { signedTx } = await this.staker.sign({
       signer: this.localSigner,
@@ -63,7 +64,7 @@ export class HyperliquidTestStaker {
     return txHash
   }
 
-  async withdrawFromStakingToSpot (amount: string): Promise<string> {
+  async withdrawFromStakingToSpot(amount: string): Promise<string> {
     const { tx } = await this.staker.buildWithdrawFromStakingTx({
       amount
     })
@@ -78,7 +79,7 @@ export class HyperliquidTestStaker {
     return txHash
   }
 
-  async stake (amount: string): Promise<string> {
+  async stake(amount: string): Promise<string> {
     const { tx } = await this.staker.buildStakeTx({
       validatorAddress: this.validatorAddress,
       amount
@@ -95,7 +96,7 @@ export class HyperliquidTestStaker {
     return txHash
   }
 
-  async unstake (amount: string): Promise<string> {
+  async unstake(amount: string): Promise<string> {
     const { tx } = await this.staker.buildUnstakeTx({
       validatorAddress: this.validatorAddress,
       amount
@@ -112,11 +113,11 @@ export class HyperliquidTestStaker {
     return txHash
   }
 
-  async spotBalances (delegatorAddress: Address): Promise<SpotBalance[]> {
+  async spotBalances(delegatorAddress: Address): Promise<SpotBalance[]> {
     const { balances } = await this.staker.getSpotBalances({ delegatorAddress })
     return balances
   }
-  async stakingInfo (delegatorAddress: Address): Promise<DelegatorSummary> {
+  async stakingInfo(delegatorAddress: Address): Promise<DelegatorSummary> {
     const info = await this.staker.getStakingSummary({ delegatorAddress })
     return info
   }

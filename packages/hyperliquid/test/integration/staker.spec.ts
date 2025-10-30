@@ -10,7 +10,7 @@ import { DECIMALS } from '../../src/constants'
 // export TEST_HYPE_MNEMONIC="your testnet mnemonic here"
 // `npm run test:integration` in packages/hyperliquid
 
-describe.only('HyperliquidStaker - integration', () => {
+describe.skip('HyperliquidStaker - integration', () => {
   let testStaker: HyperliquidTestStaker
   let delegatorAddress: `0x${string}`
   const validatorAddress = '0x172054cfc01b32effe0bf6af7a15b36e1ad730b3' as `0x${number}`

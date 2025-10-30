@@ -7,6 +7,7 @@ import type {
   DepositToStakingAction,
   WithdrawFromStakingAction,
   DelegateAction,
+  SpotSendAction,
   DelegatorSummaryRequest,
   DelegationsRequest,
   DelegatorRewardsRequest,
@@ -15,7 +16,7 @@ import type {
   ExchangeRequest,
   UnsignedTx
 } from './types.d'
-import { ActionType } from './types.d'
+import { ActionType, BridgeActionType } from './types.d'
 import { TESTNET_CHAIN_ID, MAINNET_API_URL, TESTNET_API_URL, MAINNET_CHAIN_ID, DECIMALS } from './constants'
 import {
   ExchangeApiResponseSchema,
@@ -446,7 +447,7 @@ export class HyperliquidStaker {
    * @returns The EIP-712 typed data object
    */
   private buildEIP712TypedData (
-    action: DepositToStakingAction | WithdrawFromStakingAction | DelegateAction
+    action: DepositToStakingAction | WithdrawFromStakingAction | DelegateAction | SpotSendAction
   ): TypedDataDefinition {
     const domain = {
       name: 'HyperliquidSignTransaction',
@@ -496,6 +497,30 @@ export class HyperliquidStaker {
           hyperliquidChain: action.hyperliquidChain,
           wei: action.wei,
           nonce: action.nonce
+        }
+      } as const
+    }
+
+    if (action.type === BridgeActionType.SPOT_SEND) {
+      return {
+        domain,
+        types: {
+          EIP712Domain: eip712Domain,
+          'HyperliquidTransaction:SpotSend': [
+            { name: 'hyperliquidChain', type: 'string' },
+            { name: 'destination', type: 'string' },
+            { name: 'token', type: 'string' },
+            { name: 'amount', type: 'string' },
+            { name: 'time', type: 'uint64' }
+          ]
+        },
+        primaryType: 'HyperliquidTransaction:SpotSend',
+        message: {
+          hyperliquidChain: action.hyperliquidChain,
+          destination: action.destination,
+          token: action.token.toString(),
+          amount: action.amount,
+          time: action.nonce
         }
       } as const
     }

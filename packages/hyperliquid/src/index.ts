@@ -1,11 +1,16 @@
 export { HyperliquidStaker } from './staker'
+export { HyperliquidEvmStaker } from './evmStaker'
 
 export {
   HyperliquidChain,
   SignatureData,
   DepositToStakingAction,
   WithdrawFromStakingAction,
-  DelegateAction
+  DelegateAction,
+  SpotSendAction,
+  BridgeResult,
+  BridgeActionType,
+  CoreWriterActionId
 } from './types.d'
 
 export {
@@ -14,7 +19,12 @@ export {
   DECIMALS,
   TESTNET_CHAIN_ID,
   MAINNET_CHAIN_ID,
-  CHORUS_ONE_HYPERLIQUID_VALIDATOR
+  CHORUS_ONE_HYPERLIQUID_VALIDATOR,
+  CORE_WRITER_ADDRESS,
+  CORE_WRITER_ABI,
+  HYPE_SYSTEM_CONTRACT_ADDRESS,
+  MAINNET_HYPERLIQUID_EVM_RPC_URL,
+  TESTNET_HYPERLIQUID_EVM_RPC_URL
 } from './constants'
 
 export {
@@ -29,7 +39,10 @@ export {
   DelegationSchema,
   StakingRewardSchema,
   DelegationHistoryEventSchema,
-  SpotBalanceSchema
+  SpotBalanceSchema,
+  SpotMetaResponseSchema,
+  SpotTokenSchema,
+  EvmContractSchema
 } from './schemas'
 
 export type {
@@ -41,5 +54,8 @@ export type {
   StakingReward,
   DelegationHistoryEvent,
   DelegatorHistoryDelta,
-  SpotBalance
+  SpotBalance,
+  SpotMetaResponse,
+  SpotToken,
+  EvmContract
 } from './schemas'

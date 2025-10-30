@@ -108,3 +108,41 @@ export type DelegationHistoryEvent = z.infer<typeof DelegationHistoryEventSchema
 export type SpotBalance = z.infer<typeof SpotBalanceSchema>
 
 export type DelegatorHistoryDelta = DelegationHistoryEvent['delta']
+
+// ===== Bridge / Token Registry Schemas =====
+
+/**
+ * EVM contract information for a token that can be bridged
+ * null if the token is not bridgeable to EVM
+ */
+export const EvmContractSchema = z.object({
+  address: z.string().startsWith('0x'),
+  evm_extra_wei_decimals: z.number()
+}).nullable()
+
+/**
+ * Spot token metadata from spotMeta Info endpoint
+ */
+export const SpotTokenSchema = z.object({
+  name: z.string(),
+  szDecimals: z.number(),
+  weiDecimals: z.number(),
+  index: z.number(),
+  tokenId: z.string().startsWith('0x'),
+  isCanonical: z.boolean(),
+  evmContract: EvmContractSchema,
+  fullName: z.string().nullable(),
+  deployerTradingFeeShare: z.string()
+})
+
+/**
+ * Response from spotMeta Info endpoint
+ */
+export const SpotMetaResponseSchema = z.object({
+  tokens: z.array(SpotTokenSchema),
+  universe: z.array(z.any()) // Universe structure varies, we don't need it for bridging
+})
+
+export type EvmContract = z.infer<typeof EvmContractSchema>
+export type SpotToken = z.infer<typeof SpotTokenSchema>
+export type SpotMetaResponse = z.infer<typeof SpotMetaResponseSchema>

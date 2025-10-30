@@ -136,7 +136,7 @@ export interface SpotBalancesRequest {
 /** @ignore */
 export interface UnsignedTx {
   /** The action to be signed */
-  action: DepositToStakingAction | WithdrawFromStakingAction | DelegateAction
+  action: DepositToStakingAction | WithdrawFromStakingAction | DelegateAction | SpotSendAction
   /** Chain ID for EIP-712 domain */
   chainId: string
 }
@@ -145,11 +145,98 @@ export interface UnsignedTx {
 /** @ignore */
 export interface ExchangeRequest {
   /** The staking action to perform */
-  action: DepositToStakingAction | WithdrawFromStakingAction | DelegateAction
+  action: DepositToStakingAction | WithdrawFromStakingAction | DelegateAction | SpotSendAction
   /** Timestamp in milliseconds (used as nonce) */
   nonce: number
   /** EIP-712 signature */
   signature: SignatureData
   /** Optional vault address for vault operations */
   vaultAddress?: string
+}
+
+// ===== Bridge Types =====
+
+/** @ignore */
+export const BridgeActionType = {
+  SPOT_SEND: 'spotSend'
+} as const
+
+/**
+ * SpotSend action for sending tokens on HyperCore
+ * Used for bridging Core → EVM by sending to system addresses
+ */
+export interface SpotSendAction {
+  /** Action type identifier */
+  type: typeof BridgeActionType.SPOT_SEND
+  /** Hyperliquid chain environment */
+  hyperliquidChain: HyperliquidChain
+  /** Chain identifier in hexadecimal format */
+  signatureChainId: Hex
+  /** Token index (-1 for HYPE, 1 for PURR, etc.) */
+  token: number
+  /** Amount in token's wei decimals (not always 18) */
+  amount: string
+  /** Destination address */
+  destination: Address
+  /** Current timestamp in milliseconds */
+  nonce: number
+}
+
+/**
+ * Result from a successful bridge operation
+ */
+export interface BridgeResult {
+  /** Transaction hash from the source chain */
+  txHash: string
+  /** Amount bridged (in human-readable format) */
+  amount: string
+  /** Token name (e.g., "HYPE", "PURR") */
+  token: string
+  /** Direction of the bridge */
+  direction: 'Core→EVM' | 'EVM→Core'
+  /** Expected amount on destination (may differ due to decimal rounding) */
+  expectedDestinationAmount?: string
+}
+
+// ===== EVM Staking Types =====
+
+/**
+ * CoreWriter action IDs as defined in HyperEVM documentation
+ * https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/hyperevm/interacting-with-hypercore
+ */
+export const CoreWriterActionId = {
+  TOKEN_DELEGATE: 3,
+  STAKING_DEPOSIT: 4,
+  STAKING_WITHDRAW: 5,
+  SPOT_SEND: 6
+} as const
+
+// ===== EVM Precompile Return Types =====
+
+/**
+ * Raw return type from spotBalance precompile (0x801)
+ * Values are in uint64 wei format
+ */
+export interface EvmSpotBalance {
+  /** Total balance in wei (uint64) */
+  total: bigint
+  /** Amount on hold in wei (uint64) */
+  hold: bigint
+  /** Entry notional value in wei (uint64) */
+  entryNtl: bigint
+}
+
+/**
+ * Raw return type from delegatorSummary precompile (0x805)
+ * Values are in uint64 wei format
+ */
+export interface EvmDelegatorSummary {
+  /** Total amount delegated to validators in wei (uint64) */
+  delegated: bigint
+  /** Undelegated staking balance available for withdrawal in wei (uint64) */
+  undelegated: bigint
+  /** Total amount in pending withdrawal queue in wei (uint64) */
+  totalPendingWithdrawal: bigint
+  /** Number of pending withdrawals (uint64) */
+  nPendingWithdrawals: bigint
 }
