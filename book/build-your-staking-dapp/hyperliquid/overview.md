@@ -65,6 +65,16 @@ const staker = new HyperliquidStaker({
 
 The staker uses Hyperliquid's REST API endpoints (`/info` and `/exchange`) and doesn't require RPC connections or additional configuration.
 
+## Getting the Validator Address provided by Chorus One
+
+The `@chorus-one/hyperliquid` module includes the `CHORUS_ONE_HYPERLIQUID_VALIDATOR` constant, which contains the Chorus One mainnet validator address for building transactions.
+
+```javascript
+import { CHORUS_ONE_HYPERLIQUID_VALIDATOR } from '@chorus-one/hyperliquid'
+
+const validatorAddress = CHORUS_ONE_HYPERLIQUID_VALIDATOR
+```
+
 ## Building Transactions
 
 Hyperliquid transactions use **EIP-712 typed data signing**, which differs from standard Ethereum transactions. The SDK provides a three-step workflow:
@@ -137,6 +147,7 @@ Here's a complete workflow showing how to stake HYPE tokens to a validator:
 ```javascript
 import { HyperliquidStaker } from '@chorus-one/hyperliquid'
 import { FireblocksSigner } from '@chorus-one/signer-fireblocks'
+import { CHORUS_ONE_HYPERLIQUID_VALIDATOR } from '@chorus-one/hyperliquid'
 
 // 1. Setup
 const staker = new HyperliquidStaker({ chain: 'Mainnet' })
@@ -145,7 +156,7 @@ const signer = new FireblocksSigner({...})
 await signer.init()
 
 const delegatorAddress = '0xYourAddress'
-const validatorAddress = '0xValidatorAddress'
+const validatorAddress = CHORUS_ONE_HYPERLIQUID_VALIDATOR
 
 // 2. Check current balances
 const spotBalances = await staker.getSpotBalances({

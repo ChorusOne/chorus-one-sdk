@@ -1,3 +1,5 @@
+export const CHORUS_ONE_HYPERLIQUID_VALIDATOR = '0x30c66ebc7f5ef4f340b424a26e4d944f60129815' as `0x${string}`
+
 export const MAINNET_API_URL = 'https://api.hyperliquid.xyz'
 export const TESTNET_API_URL = 'https://api.hyperliquid-testnet.xyz'
 

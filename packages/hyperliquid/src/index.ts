@@ -8,7 +8,14 @@ export {
   DelegateAction
 } from './types.d'
 
-export { MAINNET_API_URL, TESTNET_API_URL, DECIMALS, TESTNET_CHAIN_ID, MAINNET_CHAIN_ID } from './constants'
+export {
+  MAINNET_API_URL,
+  TESTNET_API_URL,
+  DECIMALS,
+  TESTNET_CHAIN_ID,
+  MAINNET_CHAIN_ID,
+  CHORUS_ONE_HYPERLIQUID_VALIDATOR
+} from './constants'
 
 export {
   ExchangeApiResponseSchema,
