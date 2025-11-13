@@ -37,43 +37,43 @@ describe('EthereumStaker.getRewards', () => {
 
     assert.deepEqual(rewards, [
       {
-        timestamp: 1735689600000,
+        timestamp: 1735775975000,
         amount: '0.008782461427329766',
         totalRewards: '0.008782461427329766',
         dailyRewards: '0.000022505390841316'
       },
       {
-        timestamp: 1735776000000,
+        timestamp: 1735862375000,
         amount: '0.008803770251106602',
         totalRewards: '0.008803770251106602',
         dailyRewards: '0.000021308823776836'
       },
       {
-        timestamp: 1735862400000,
+        timestamp: 1735948775000,
         amount: '0.008822067114814422',
         totalRewards: '0.008822067114814422',
         dailyRewards: '0.00001829686370782'
       },
       {
-        timestamp: 1735948800000,
+        timestamp: 1736035175000,
         amount: '0.008838598634788673',
         totalRewards: '0.008838598634788673',
         dailyRewards: '0.000016531519974251'
       },
       {
-        timestamp: 1736035200000,
+        timestamp: 1736121575000,
         amount: '0.008855742609842669',
         totalRewards: '0.008855742609842669',
         dailyRewards: '0.000017143975053996'
       },
       {
-        timestamp: 1736121600000,
+        timestamp: 1736207975000,
         amount: '0.008877831302012103',
         totalRewards: '0.008877831302012103',
         dailyRewards: '0.000022088692169434'
       },
       {
-        timestamp: 1736208000000,
+        timestamp: 1736294375000,
         amount: '0.008896646668920832',
         totalRewards: '0.008896646668920832',
         dailyRewards: '0.000018815366908729'
