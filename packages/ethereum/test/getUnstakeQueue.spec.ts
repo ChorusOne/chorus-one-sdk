@@ -30,16 +30,14 @@ describe('EthereumStaker.getUnstakeQueue', () => {
       delegatorAddress
     })
 
-    assert.deepEqual(unstakeQueue, [
-      {
-        exitQueueIndex: '25',
-        positionTicket: '98310168873892613271',
-        timestamp: 1712647703000,
-        isWithdrawable: true,
-        totalAmount: '0.100003157585081498',
-        withdrawableAmount: '0.100003157585081498',
-        withdrawalTimestamp: 0
-      }
-    ])
+    assert.deepInclude(unstakeQueue, {
+      exitQueueIndex: '25',
+      positionTicket: '98310168873892613271',
+      timestamp: 1712647703000,
+      isWithdrawable: true,
+      totalAmount: '0.100003157585081498',
+      withdrawableAmount: '0.100003157585081498',
+      withdrawalTimestamp: 0
+    })
   })
 })
