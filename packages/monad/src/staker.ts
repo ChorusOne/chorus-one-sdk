@@ -19,6 +19,7 @@ import secp256k1 from 'secp256k1'
 import type { Signer } from '@chorus-one/signer'
 import type { DelegatorInfo, WithdrawalRequestInfo, EpochInfo, Transaction, MonadTxStatus } from './types.d'
 import { isValidValidatorId, isValidWithdrawalId } from './utils'
+import { buildReferrerTracking } from './referrer'
 import { MONAD_STAKING_ABI, MONAD_STAKING_CONTRACT_ADDRESS } from './constants'
 
 /**
@@ -28,6 +29,42 @@ import { MONAD_STAKING_ABI, MONAD_STAKING_CONTRACT_ADDRESS } from './constants'
  * claim rewards, and withdraw for Monad blockchain.
  *
  * Built with viem for type-safety and modern patterns.
+ *
+ * ---
+ *
+ * **⚠️ EIP-2930 Access List Compatibility Warning**
+ *
+ * All transaction builders include an EIP-2930 access list for referrer tracking by default.
+ * Some wallets (e.g., Phantom) do not support EIP-2930 access lists and will fail during
+ * gas estimation with `InvalidInputRpcError` or `InvalidParamsRpcError`.
+ *
+ * If you need to support these wallets, implement a fallback that retries without the access list:
+ *
+ * @example
+ * ```typescript
+ * import { BaseError, InvalidInputRpcError, InvalidParamsRpcError } from 'viem'
+ *
+ * const shouldRetryWithoutAccessList = (error: unknown): boolean => {
+ *   const matches = (err: unknown) =>
+ *     err instanceof InvalidInputRpcError || err instanceof InvalidParamsRpcError
+ *   if (error instanceof BaseError) {
+ *     return Boolean(error.walk(matches))
+ *   }
+ *   return false
+ * }
+ *
+ * const sendTransaction = async (tx: Transaction) => {
+ *   try {
+ *     return await walletClient.sendTransaction(tx)
+ *   } catch (err) {
+ *     if (tx.accessList && shouldRetryWithoutAccessList(err)) {
+ *       const { accessList: _omit, ...fallbackTx } = tx
+ *       return await walletClient.sendTransaction(fallbackTx)
+ *     }
+ *     throw err
+ *   }
+ * }
+ * ```
  */
 export class MonadStaker {
   private readonly rpcUrl: string
@@ -107,14 +144,19 @@ export class MonadStaker {
    * @param params - Parameters for building the transaction
    * @param params.validatorId - Unique identifier (uint64) for the validator. Assigned when validator joined the network.
    * @param params.amount - The amount to stake in MON (will be converted to wei internally)
+   * @param params.referrer - (Optional) Custom 32-byte hex string for tracking. If not provided, uses default Chorus One encoding.
    *
    * @returns Returns a promise that resolves to a Monad staking transaction
+   *
+   * @remarks
+   * The returned transaction includes an EIP-2930 access list for referrer tracking.
+   * Some wallets (e.g., Phantom) do not support this. See the class documentation for a fallback pattern.
    */
-  async buildStakeTx (params: { validatorId: number; amount: string }): Promise<{ tx: Transaction }> {
+  async buildStakeTx (params: { validatorId: number; amount: string; referrer?: Hex }): Promise<{ tx: Transaction }> {
     if (!this.contract) {
       throw new Error('MonadStaker not initialized, call init() to initialize')
     }
-    const { validatorId, amount } = params
+    const { validatorId, amount, referrer } = params
 
     if (!isValidValidatorId(validatorId)) {
       throw new Error(`Invalid validator ID: ${validatorId}`)
@@ -132,7 +174,8 @@ export class MonadStaker {
       tx: {
         to: this.contractAddress,
         data,
-        value: amountWei
+        value: amountWei,
+        accessList: buildReferrerTracking(referrer)
       }
     }
   }
@@ -149,6 +192,7 @@ export class MonadStaker {
    * @param params.validatorId - Unique identifier for the validator to unstake from
    * @param params.amount - The amount to unstake in MON (will be converted to wei internally)
    * @param params.withdrawalId - User-chosen ID (0-255) to track this withdrawal request. Allows up to 256 concurrent withdrawals per (validator,delegator) tuple. Can be reused after calling withdraw().
+   * @param params.referrer - (Optional) Custom 32-byte hex string for tracking. If not provided, uses default Chorus One encoding.
    *
    * @returns Returns a promise that resolves to a Monad unstaking transaction
    */
@@ -157,11 +201,12 @@ export class MonadStaker {
     validatorId: number
     amount: string
     withdrawalId: number
+    referrer?: Hex
   }): Promise<{ tx: Transaction }> {
     if (!this.contract) {
       throw new Error('MonadStaker not initialized, call init() to initialize')
     }
-    const { delegatorAddress, validatorId, amount, withdrawalId } = params
+    const { delegatorAddress, validatorId, amount, withdrawalId, referrer } = params
 
     if (!isAddress(delegatorAddress)) {
       throw new Error(`Invalid delegator address: ${delegatorAddress}`)
@@ -200,7 +245,8 @@ export class MonadStaker {
       tx: {
         to: this.contractAddress,
         data,
-        value: 0n
+        value: 0n,
+        accessList: buildReferrerTracking(referrer)
       }
     }
   }
@@ -215,6 +261,7 @@ export class MonadStaker {
    * @param params.delegatorAddress - The delegator's address that will receive the funds
    * @param params.validatorId - Unique identifier for the validator you unstaked from
    * @param params.withdrawalId - The same ID (0-255) you used when calling buildUnstakeTx. After successful withdrawal, this ID becomes available for reuse.
+   * @param params.referrer - (Optional) Custom 32-byte hex string for tracking. If not provided, uses default Chorus One encoding.
    *
    * @returns Returns a promise that resolves to a Monad withdrawal transaction
    */
@@ -222,11 +269,12 @@ export class MonadStaker {
     delegatorAddress: Address
     validatorId: number
     withdrawalId: number
+    referrer?: Hex
   }): Promise<{ tx: Transaction }> {
     if (!this.contract) {
       throw new Error('MonadStaker not initialized, call init() to initialize')
     }
-    const { delegatorAddress, validatorId, withdrawalId } = params
+    const { delegatorAddress, validatorId, withdrawalId, referrer } = params
 
     if (!isAddress(delegatorAddress)) {
       throw new Error(`Invalid delegator address: ${delegatorAddress}`)
@@ -265,7 +313,8 @@ export class MonadStaker {
       tx: {
         to: this.contractAddress,
         data,
-        value: 0n
+        value: 0n,
+        accessList: buildReferrerTracking(referrer)
       }
     }
   }
@@ -279,14 +328,19 @@ export class MonadStaker {
    * @param params - Parameters for building the transaction
    * @param params.delegatorAddress - The delegator's address
    * @param params.validatorId - Unique identifier for the validator to compound rewards for
+   * @param params.referrer - (Optional) Custom 32-byte hex string for tracking. If not provided, uses default Chorus One encoding.
    *
    * @returns Returns a promise that resolves to a Monad compound transaction
    */
-  async buildCompoundTx (params: { delegatorAddress: Address; validatorId: number }): Promise<{ tx: Transaction }> {
+  async buildCompoundTx (params: {
+    delegatorAddress: Address
+    validatorId: number
+    referrer?: Hex
+  }): Promise<{ tx: Transaction }> {
     if (!this.contract) {
       throw new Error('MonadStaker not initialized, call init() to initialize')
     }
-    const { delegatorAddress, validatorId } = params
+    const { delegatorAddress, validatorId, referrer } = params
 
     if (!isAddress(delegatorAddress)) {
       throw new Error(`Invalid delegator address: ${delegatorAddress}`)
@@ -310,7 +364,8 @@ export class MonadStaker {
       tx: {
         to: this.contractAddress,
         data,
-        value: 0n
+        value: 0n,
+        accessList: buildReferrerTracking(referrer)
       }
     }
   }
@@ -324,14 +379,19 @@ export class MonadStaker {
    * @param params - Parameters for building the transaction
    * @param params.delegatorAddress - The delegator's address that will receive the rewards
    * @param params.validatorId - Unique identifier for the validator to claim rewards from
+   * @param params.referrer - (Optional) Custom 32-byte hex string for tracking. If not provided, uses default Chorus One encoding.
    *
    * @returns Returns a promise that resolves to a Monad claim rewards transaction
    */
-  async buildClaimRewardsTx (params: { delegatorAddress: Address; validatorId: number }): Promise<{ tx: Transaction }> {
+  async buildClaimRewardsTx (params: {
+    delegatorAddress: Address
+    validatorId: number
+    referrer?: Hex
+  }): Promise<{ tx: Transaction }> {
     if (!this.contract) {
       throw new Error('MonadStaker not initialized, call init() to initialize')
     }
-    const { delegatorAddress, validatorId } = params
+    const { delegatorAddress, validatorId, referrer } = params
 
     if (!isAddress(delegatorAddress)) {
       throw new Error(`Invalid delegator address: ${delegatorAddress}`)
@@ -355,7 +415,8 @@ export class MonadStaker {
       tx: {
         to: this.contractAddress,
         data,
-        value: 0n
+        value: 0n,
+        accessList: buildReferrerTracking(referrer)
       }
     }
   }
@@ -512,7 +573,8 @@ export class MonadStaker {
       to: tx.to,
       value: tx.value,
       data: tx.data,
-      type: 'eip1559'
+      type: 'eip1559',
+      ...(tx.accessList && { accessList: tx.accessList })
     })
 
     const message = keccak256(serializeTransaction(request)).slice(2)
