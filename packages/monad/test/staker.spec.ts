@@ -2,7 +2,7 @@ import { MonadStaker } from '../src/staker'
 import { describe, it, beforeEach } from 'mocha'
 import { use, expect, assert } from 'chai'
 import chaiAsPromised from 'chai-as-promised'
-import type { Address } from 'viem'
+import type { Address, Hex } from 'viem'
 import { EXPECTED_DELEGATE_TX, EXPECTED_DELEGATE_TX_LARGE, TEST_ADDRESS } from './fixtures/expected-data'
 
 use(chaiAsPromised)
@@ -85,6 +85,35 @@ describe('MonadStaker', () => {
       await expect(uninitializedStaker.buildStakeTx({ validatorId: 1, amount: '100' })).to.be.rejectedWith(
         'MonadStaker not initialized'
       )
+    })
+
+    it('should include default c1c1 referrer tracking in accessList', async () => {
+      const { tx } = await staker.buildStakeTx({ validatorId: 1, amount: '100' })
+
+      // c1c1 + first 3 bytes of keccak256(toHex('chorusone-staking')) padded to 32 bytes
+      const expectedStorageKey: Hex = '0xc1c110a1c4000000000000000000000000000000000000000000000000000000'
+      const expectedAccessList: Array<{ address: Address; storageKeys: Hex[] }> = [
+        {
+          address: '0x000000000000000000000000000000000000dEaD',
+          storageKeys: [expectedStorageKey]
+        }
+      ]
+
+      assert.deepEqual(tx.accessList, expectedAccessList)
+    })
+
+    it('should use custom referrer directly when provided', async () => {
+      const customReferrer: Hex = '0x0000000000000000000000001234567890123456789012345678901234567890'
+      const { tx } = await staker.buildStakeTx({ validatorId: 1, amount: '100', referrer: customReferrer })
+
+      const expectedAccessList: Array<{ address: Address; storageKeys: Hex[] }> = [
+        {
+          address: '0x000000000000000000000000000000000000dEaD',
+          storageKeys: [customReferrer]
+        }
+      ]
+
+      assert.deepEqual(tx.accessList, expectedAccessList)
     })
   })
 

@@ -15,6 +15,7 @@ export { MONAD_STAKING_CONTRACT_ADDRESS } from './constants'
 
 // Export utilities
 export { isValidValidatorId, isValidWithdrawalId } from './utils'
+export { buildReferrerTracking } from './referrer'
 
 // Export ABI (for advanced usage)
 export { MONAD_STAKING_ABI } from './constants'

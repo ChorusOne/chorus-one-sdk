@@ -1,4 +1,4 @@
-import type { Address, Hex, TransactionReceipt } from 'viem'
+import type { AccessList, Address, Hex, TransactionReceipt } from 'viem'
 
 /** @ignore */
 export interface MonadNetworkConfig {
@@ -14,6 +14,8 @@ export interface Transaction {
   data: Hex
   /** The amount of MON (in wei) to be sent with the transaction */
   value: bigint
+  /** Optional EIP-2930 access list for referrer tracking */
+  accessList?: AccessList
 }
 
 /** @ignore */
