@@ -36,6 +36,6 @@
     "@chorus-one/utils": "^1.0.2",
     "@ton/crypto": "^3.3.0",
     "@ton/ton": "^15.1.0",
-    "axios": "^1.8.2"
+    "axios": "^1.12.0"
   }
 }
