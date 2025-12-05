@@ -20,7 +20,7 @@ export async function getRewardsHistory (params: {
     type: 'graph',
     op: 'UserRewards',
     query:
-      'query UserRewards( $where: AllocatorStats_filter $limit: Int) { allocator: allocatorSnapshots(first: $limit where: $where orderBy: timestamp orderDirection: asc ) { apy timestamp earnedAssets totalAssets }}',
+      'query UserRewards( $where: AllocatorSnapshot_filter $limit: Int) { allocator: allocatorSnapshots(first: $limit where: $where orderBy: timestamp orderDirection: asc ) { apy timestamp earnedAssets totalAssets }}',
     variables: {
       limit: MAX_DAYS,
       where: {
