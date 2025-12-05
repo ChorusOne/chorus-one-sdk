@@ -90,8 +90,8 @@ describe('MonadStaker', () => {
     it('should include default c1c1 referrer tracking in accessList', async () => {
       const { tx } = await staker.buildStakeTx({ validatorId: 1, amount: '100' })
 
-      // c1c1 + first 3 bytes of keccak256(toHex('chorusone-staking')) padded to 32 bytes
-      const expectedStorageKey: Hex = '0xc1c110a1c4000000000000000000000000000000000000000000000000000000'
+      // c1c1 + first 3 bytes of keccak256(toHex('sdk-chorusone-staking')) padded to 32 bytes
+      const expectedStorageKey: Hex = '0xc1c17d208d000000000000000000000000000000000000000000000000000000'
       const expectedAccessList: Array<{ address: Address; storageKeys: Hex[] }> = [
         {
           address: '0x000000000000000000000000000000000000dEaD',

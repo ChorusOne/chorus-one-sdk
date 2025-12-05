@@ -1,7 +1,7 @@
 import type { AccessList, Address, Hex } from 'viem'
 import { keccak256, toHex } from 'viem'
 
-const DEFAULT_REFERRER = 'chorusone-staking'
+const DEFAULT_REFERRER = 'sdk-chorusone-staking'
 const ACCESS_LIST_SENTINEL: Address = '0x000000000000000000000000000000000000dEaD'
 
 /**
