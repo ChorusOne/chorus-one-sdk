@@ -12,8 +12,8 @@ describe('EthereumStaker.getUnstakeQueue', () => {
 
   beforeEach(async () => {
     const setup = await prepareTests()
-    // Use stale delegator address which never unstaked
-    delegatorAddress = '0x9685b00aa0db8eccc1684c1155b826169ce48d3d'
+    // Use stale delegator address which unstaked 10(!) ETH, but didn't withdraw in 1.5 years.
+    delegatorAddress = '0x4eaffedbf424cf2f9a23573300a2771d356b4115'
     validatorAddress = setup.validatorAddress
     staker = setup.staker
   })
@@ -31,12 +31,12 @@ describe('EthereumStaker.getUnstakeQueue', () => {
     })
 
     assert.deepInclude(unstakeQueue, {
-      exitQueueIndex: '25',
-      positionTicket: '98310168873892613271',
-      timestamp: 1712647703000,
+      positionTicket: '98633389235894282013',
+      exitQueueIndex: '28',
+      timestamp: 1716397043000,
       isWithdrawable: true,
-      totalAmount: '0.100003157585081498',
-      withdrawableAmount: '0.100003157585081498',
+      totalAmount: '10.028571579276028356',
+      withdrawableAmount: '10.028571579276028356',
       withdrawalTimestamp: 0
     })
   })
