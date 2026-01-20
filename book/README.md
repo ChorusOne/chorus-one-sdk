@@ -235,7 +235,7 @@ await staker.init()
 const delegatorAddress = '0xe6d8d8ac54461b1c5ed15740eee322043f696c08'
 
 // You can use the Chorus One validator address or specify your own
-const validatorAddress = CHORUS_ONE_ETHEREUM_VALIDATORS.ethereum.mevMaxVault
+const validatorAddress = CHORUS_ONE_ETHEREUM_VALIDATORS.ethereum.maxVault
 
 const { tx } = await staker.buildStakeTx({
   delegatorAddress,

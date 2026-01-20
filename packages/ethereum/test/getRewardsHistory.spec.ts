@@ -13,7 +13,7 @@ describe('EthereumStaker.getRewards', () => {
   beforeEach(async () => {
     const setup = await prepareTests()
     validatorAddress = setup.validatorAddress
-    // Use one of the first delegators to the MevMax Vault
+    // Use one of the first delegators to the Max Vault
     delegatorAddress = '0xA3FBae7A9834862A5853D39d850aBcBCE5a1AFdA'
     staker = setup.staker
   })

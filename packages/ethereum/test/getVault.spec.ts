@@ -26,7 +26,7 @@ describe('EthereumStaker.getVault', () => {
       validatorAddress
     })
 
-    assert.equal(vault.name, 'Chorus One - MEV Max')
+    assert.equal(vault.name, 'Chorus One Max Vault')
     assert.isTrue(Number(vault.tvl) > 1000 * 10 ** 18)
     assert.isTrue(
       vault.description ===
