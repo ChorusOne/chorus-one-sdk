@@ -51,7 +51,7 @@ export const prepareTests = async () => {
   await staker.init()
 
   return {
-    validatorAddress: CHORUS_ONE_ETHEREUM_VALIDATORS[config.networkConfig.name].mevMaxVault,
+    validatorAddress: CHORUS_ONE_ETHEREUM_VALIDATORS[config.networkConfig.name].maxVault,
     walletClient,
     publicClient,
     staker,

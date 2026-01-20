@@ -72,7 +72,7 @@ const stake = async ({
   const staker = new EthereumStaker({ network: 'hoodi' })
   await staker.init()
 
-  const validatorAddress = CHORUS_ONE_ETHEREUM_VALIDATORS.ethereum.mevMaxVault
+  const validatorAddress = CHORUS_ONE_ETHEREUM_VALIDATORS.ethereum.maxVault
 
   const { tx: stakeTx } = await staker.buildStakeTx({
     delegatorAddress: userAddress,

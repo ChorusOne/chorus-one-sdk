@@ -154,14 +154,15 @@ The `@chorus-one/ethereum` module includes a list of Chorus One validators for t
 
 ### Vault Types
 
-- **MEV Max Vault (mevMaxVault)**: This vault employs Chorus One’s proprietary [MEV Research](https://chorus.one/categories/mev) to maximize staking returns by optimizing transaction ordering.
+
+- **Max Vault (maxVault)**: This vault leverages Chorus One’s proprietary strategies to maximize staking rewards through innovative and evolving approaches. Historically, it has benefited from early adoption of Restaking and Looped Staking in collaboration with Stakewise. Chorus One continues to leverage in-house research to capture reward-enhancing opportunities as they arise, delivering maximum rewards to delegators.
 
 - **Obol Distributed Validator Technology (obolDvVault)**: This vault uses [Obol's DVT](https://docs.obol.org/docs/int/Overview) to enhance resilience and decentralization of Ethereum staking by distributing validator duties across multiple nodes.
 
 ```javascript
 import { CHORUS_ONE_ETHEREUM_VALIDATORS } from '@chorus-one/ethereum'
 
-const validatorAddress = CHORUS_ONE_ETHEREUM_VALIDATORS.hoodi.mevMaxVault
+const validatorAddress = CHORUS_ONE_ETHEREUM_VALIDATORS.hoodi.maxVault
 console.log(vaultAddress) // '0x95d0db03d59658e1af0d977ecfe142f178930ac5'
 ```
 

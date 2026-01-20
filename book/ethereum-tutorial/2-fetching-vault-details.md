@@ -16,7 +16,7 @@ import { EthereumStaker, CHORUS_ONE_ETHEREUM_VALIDATORS } from '@chorus-one/ethe
 const staker = new EthereumStaker({ network: 'hoodi' })
 await staker.init()
 
-const validatorAddress = CHORUS_ONE_ETHEREUM_VALIDATORS.ethereum.mevMaxVault
+const validatorAddress = CHORUS_ONE_ETHEREUM_VALIDATORS.ethereum.maxVault
 // Alternatively, you can define vaults yourself:
 // const vault = '0x...';
 
