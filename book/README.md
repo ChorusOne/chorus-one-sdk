@@ -1,6 +1,6 @@
 ## Chorus One SDK
 
-The **Chorus One SDK** is a all-in-one toolkit for building staking dApps. It supports non-custodial staking on networks validated by Chorus One, including **Ethereum**, **Solana**, **TON**, **Avalanche**, **Cosmos**, **NEAR**, and **Polkadot**. With this SDK, you can build, sign, and broadcast transactions as well as retrieve staking information and rewards for user accounts.
+The **Chorus One SDK** is an all-in-one toolkit for building staking dApps. It supports non-custodial staking on networks validated by Chorus One, including **Ethereum**, **Solana**, **TON**, **Avalanche**, **Cosmos**, **NEAR**, and **Polkadot**. With this SDK, you can build, sign, and broadcast transactions as well as retrieve staking information and rewards for user accounts.
 
 ## Why Choose the Chorus One SDK?
 

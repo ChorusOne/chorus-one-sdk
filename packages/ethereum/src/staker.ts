@@ -74,7 +74,7 @@ export class EthereumStaker {
     }
 
   /**
-   * Creates a EthereumStaker instance.
+   * Creates an EthereumStaker instance.
    *
    * @param params - Initialization configuration
    * @param params.network - The network to connect to
