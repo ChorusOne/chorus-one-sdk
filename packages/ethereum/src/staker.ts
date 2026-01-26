@@ -67,7 +67,6 @@ export class EthereumStaker {
   static getAddressDerivationFn =
     () =>
     async (publicKey: Uint8Array): Promise<Array<string>> => {
-      // Convert public key to uncompressed format using @noble/curves
       const point = secp256k1.Point.fromHex(publicKey)
       const pkUncompressed = point.toBytes(false)
       const hash = keccak256(pkUncompressed.subarray(1))
