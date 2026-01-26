@@ -30,7 +30,7 @@ import type { Signature, Signer } from '@chorus-one/signer'
 import type { CosmosNetworkConfig, CosmosSigningData } from './types'
 import { Sha256, keccak256, Secp256k1 } from '@cosmjs/crypto'
 
-import secp256k1 from 'secp256k1'
+import { secp256k1 } from '@noble/curves/secp256k1'
 import { SafeJSONStringify, checkMaxDecimalPlaces } from '@chorus-one/utils'
 import { CosmosClient } from './client'
 import BigNumber from 'bignumber.js'
@@ -380,14 +380,18 @@ export async function getEthermintAccount (lcdUrl: string, address: string): Pro
 
 /** @ignore */
 export function publicKeyToAddress (pk: Uint8Array, bechPrefix: string): string {
-  const pkCompressed = secp256k1.publicKeyConvert(pk, true)
+  // Convert public key to compressed format using @noble/curves
+  const point = secp256k1.Point.fromHex(pk)
+  const pkCompressed = point.toBytes(true)
 
   return toBech32(bechPrefix, rawSecp256k1PubkeyToRawAddress(pkCompressed))
 }
 
 /** @ignore */
 export function publicKeyToEthBasedAddress (pk: Uint8Array, bechPrefix: string): string {
-  const pkUncompressed = secp256k1.publicKeyConvert(pk, false)
+  // Convert public key to uncompressed format using @noble/curves
+  const point = secp256k1.Point.fromHex(pk)
+  const pkUncompressed = point.toBytes(false)
 
   const hash = keccak256(pkUncompressed.subarray(1))
   const ethAddress = hash.slice(-20)

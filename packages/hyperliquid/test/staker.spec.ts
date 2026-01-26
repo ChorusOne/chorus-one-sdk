@@ -7,7 +7,7 @@ use(chaiAsPromised)
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-describe.only('HyperliquidStaker', () => {
+describe('HyperliquidStaker', () => {
   let staker: HyperliquidStaker
   const delegatorAddress = '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266'
 

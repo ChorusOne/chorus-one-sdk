@@ -15,7 +15,7 @@ import {
   type Chain,
   type GetContractReturnType
 } from 'viem'
-import secp256k1 from 'secp256k1'
+import { secp256k1 } from '@noble/curves/secp256k1'
 import type { Signer } from '@chorus-one/signer'
 import type { DelegatorInfo, WithdrawalRequestInfo, EpochInfo, Transaction, MonadTxStatus } from './types.d'
 import { isValidValidatorId, isValidWithdrawalId } from './utils'
@@ -83,7 +83,9 @@ export class MonadStaker {
   static getAddressDerivationFn =
     () =>
     async (publicKey: Uint8Array): Promise<Array<string>> => {
-      const pkUncompressed = secp256k1.publicKeyConvert(publicKey, false)
+      // Convert public key to uncompressed format using @noble/curves
+      const point = secp256k1.Point.fromHex(publicKey)
+      const pkUncompressed = point.toBytes(false)
       const hash = keccak256(pkUncompressed.subarray(1))
       const ethAddress = hash.slice(-40)
       return [ethAddress]

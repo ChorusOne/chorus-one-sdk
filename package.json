@@ -22,7 +22,7 @@
     "chai-as-promised": "^8.0.2",
     "chai-spies": "^1.1.0",
     "globals": "^15.4.0",
-    "mocha": "11.7.2",
+    "mocha": "11.7.5",
     "prettier": "^3.3.2",
     "tsx": "^4.16.2",
     "turbo": "^2.0.6",
@@ -37,7 +37,8 @@
     "wrap-ansi": "9.0.2",
     "ansi-styles": "6.2.3",
     "supports-color": "10.2.2",
-    "log-symbols": "7.0.1"
+    "log-symbols": "7.0.1",
+    "diff": "8.0.3"
   },
   "workspaces": [
     "packages/*"
