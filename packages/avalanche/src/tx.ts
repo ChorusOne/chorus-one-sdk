@@ -1,16 +1,18 @@
 import { secp256k1 as avalancheSecp256k1, utils } from '@avalabs/avalanchejs'
 import { checkMaxDecimalPlaces } from '@chorus-one/utils'
 import { Context } from '@avalabs/avalanchejs'
-import secp256k1 from 'secp256k1'
+import { secp256k1 } from '@noble/curves/secp256k1'
 import { AvalancheAddressSet } from './types.d'
 import { BigNumber } from 'bignumber.js'
 
 /** @ignore */
 export function publicKeyToAddress (pk: Uint8Array, hrp: string): AvalancheAddressSet {
-  const pkUncompressed = secp256k1.publicKeyConvert(pk, false)
+  // Convert public key using @noble/curves
+  const point = secp256k1.Point.fromHex(pk)
+  const pkUncompressed = point.toBytes(false)
 
   // NOTE: avalanchejs publicKeyBytesToAddress expects compressed public key!!! (otherwise you get wrong address)
-  const pkCompressed = secp256k1.publicKeyConvert(pkUncompressed, true)
+  const pkCompressed = point.toBytes(true)
 
   // generate C-Chain and P-Chain addresses
   const addrBytes = avalancheSecp256k1.publicKeyBytesToAddress(pkCompressed)

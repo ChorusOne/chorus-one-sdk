@@ -19,7 +19,7 @@ import { connectComet, CometClient } from '@cosmjs/tendermint-rpc'
 
 /** @ignore */
 export class CosmosClient extends StargateClient {
-  static async create (tmClient: CometClient, options: StargateClientOptions): Promise<CosmosClient> {
+  static create (tmClient: CometClient, options: StargateClientOptions): CosmosClient {
     return new CosmosClient(tmClient, options)
   }
 

@@ -36,9 +36,9 @@
     "@avalabs/avalanchejs": "^4.0.5",
     "@chorus-one/signer": "^1.0.0",
     "@chorus-one/utils": "^1.0.0",
+    "@noble/curves": "^1.9.2",
     "@noble/hashes": "^1.4.0",
     "ethers": "^6.13.0",
-    "secp256k1": "^5.0.0",
     "bignumber.js": "^9.1.2"
   }
 }

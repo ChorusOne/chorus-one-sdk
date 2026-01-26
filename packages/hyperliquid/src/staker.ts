@@ -1,5 +1,5 @@
 import type { Signer } from '@chorus-one/signer'
-import secp256k1 from 'secp256k1'
+import { secp256k1 } from '@noble/curves/secp256k1'
 import { keccak256, hashTypedData, type Hex, type Address, TypedDataDefinition, parseUnits } from 'viem'
 import type {
   HyperliquidChain,
@@ -98,7 +98,9 @@ export class HyperliquidStaker {
   static getAddressDerivationFn =
     () =>
     async (publicKey: Uint8Array): Promise<Array<string>> => {
-      const pkUncompressed = secp256k1.publicKeyConvert(publicKey, false)
+      // Convert public key to uncompressed format using @noble/curves
+      const point = secp256k1.Point.fromHex(publicKey)
+      const pkUncompressed = point.toBytes(false)
       const hash = keccak256(pkUncompressed.subarray(1))
       const ethAddress = '0x' + hash.slice(-40)
       return [ethAddress]
