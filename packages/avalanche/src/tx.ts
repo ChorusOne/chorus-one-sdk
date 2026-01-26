@@ -7,7 +7,6 @@ import { BigNumber } from 'bignumber.js'
 
 /** @ignore */
 export function publicKeyToAddress (pk: Uint8Array, hrp: string): AvalancheAddressSet {
-  // Convert public key using @noble/curves
   const point = secp256k1.Point.fromHex(pk)
 
   // NOTE: avalanchejs publicKeyBytesToAddress expects compressed public key!!! (otherwise you get wrong address)

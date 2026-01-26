@@ -380,7 +380,6 @@ export async function getEthermintAccount (lcdUrl: string, address: string): Pro
 
 /** @ignore */
 export function publicKeyToAddress (pk: Uint8Array, bechPrefix: string): string {
-  // Convert public key to compressed format using @noble/curves
   const point = secp256k1.Point.fromHex(pk)
   const pkCompressed = point.toBytes(true)
 
@@ -389,7 +388,6 @@ export function publicKeyToAddress (pk: Uint8Array, bechPrefix: string): string 
 
 /** @ignore */
 export function publicKeyToEthBasedAddress (pk: Uint8Array, bechPrefix: string): string {
-  // Convert public key to uncompressed format using @noble/curves
   const point = secp256k1.Point.fromHex(pk)
   const pkUncompressed = point.toBytes(false)
 
