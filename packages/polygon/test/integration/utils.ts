@@ -44,7 +44,6 @@ export const prepareTests = async (): Promise<TestSetup> => {
     network: 'mainnet',
     rpcUrl: hardhat.rpcUrls.default.http[0]
   })
-  await staker.init()
 
   return {
     validatorShareAddress: CHORUS_ONE_POLYGON_VALIDATORS.mainnet,

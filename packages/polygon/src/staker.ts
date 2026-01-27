@@ -82,8 +82,8 @@ export class PolygonStaker {
   private readonly rpcUrl?: string
   private readonly network: PolygonNetworks
   private readonly contracts: NetworkContracts
-  private publicClient?: PublicClient
-  private chain!: Chain
+  private readonly publicClient: PublicClient
+  private readonly chain: Chain
 
   /**
    * This **static** method is used to derive an address from a public key.
@@ -114,21 +114,15 @@ export class PolygonStaker {
     this.network = params.network
     this.rpcUrl = params.rpcUrl
     this.contracts = NETWORK_CONTRACTS[params.network]
-  }
-
-  /**
-   * Initializes the PolygonStaker instance and connects to the blockchain
-   *
-   * @returns A promise which resolves once the PolygonStaker instance has been initialized
-   */
-  async init (): Promise<void> {
-    this.chain = NETWORK_CHAINS[this.network]
-
+    this.chain = NETWORK_CHAINS[params.network]
     this.publicClient = createPublicClient({
       chain: this.chain,
       transport: http(this.rpcUrl)
     })
   }
+
+  /** @deprecated No longer required. Kept for backward compatibility. */
+  async init (): Promise<void> {}
 
   /**
    * Builds a token approval transaction
@@ -143,9 +137,6 @@ export class PolygonStaker {
    * @returns Returns a promise that resolves to an approval transaction
    */
   async buildApproveTx (params: { amount: string; referrer?: Hex }): Promise<{ tx: Transaction }> {
-    if (!this.publicClient) {
-      throw new Error('PolygonStaker not initialized, call init() to initialize')
-    }
     const { amount, referrer } = params
 
     const amountWei = amount === 'max' ? maxUint256 : this.parseAmount(amount)
@@ -186,9 +177,6 @@ export class PolygonStaker {
     amount: string
     referrer?: Hex
   }): Promise<{ tx: Transaction }> {
-    if (!this.publicClient) {
-      throw new Error('PolygonStaker not initialized, call init() to initialize')
-    }
     const { delegatorAddress, validatorShareAddress, amount, referrer } = params
 
     if (!isAddress(delegatorAddress)) {
@@ -243,9 +231,6 @@ export class PolygonStaker {
     amount: string
     referrer?: Hex
   }): Promise<{ tx: Transaction }> {
-    if (!this.publicClient) {
-      throw new Error('PolygonStaker not initialized, call init() to initialize')
-    }
     const { delegatorAddress, validatorShareAddress, amount, referrer } = params
 
     if (!isAddress(delegatorAddress)) {
@@ -300,9 +285,6 @@ export class PolygonStaker {
     unbondNonce: bigint
     referrer?: Hex
   }): Promise<{ tx: Transaction }> {
-    if (!this.publicClient) {
-      throw new Error('PolygonStaker not initialized, call init() to initialize')
-    }
     const { delegatorAddress, validatorShareAddress, unbondNonce, referrer } = params
 
     if (!isAddress(delegatorAddress)) {
@@ -357,9 +339,6 @@ export class PolygonStaker {
     validatorShareAddress: Address
     referrer?: Hex
   }): Promise<{ tx: Transaction }> {
-    if (!this.publicClient) {
-      throw new Error('PolygonStaker not initialized, call init() to initialize')
-    }
     const { delegatorAddress, validatorShareAddress, referrer } = params
 
     if (!isAddress(delegatorAddress)) {
@@ -406,9 +385,6 @@ export class PolygonStaker {
     validatorShareAddress: Address
     referrer?: Hex
   }): Promise<{ tx: Transaction }> {
-    if (!this.publicClient) {
-      throw new Error('PolygonStaker not initialized, call init() to initialize')
-    }
     const { delegatorAddress, validatorShareAddress, referrer } = params
 
     if (!isAddress(delegatorAddress)) {
@@ -452,9 +428,6 @@ export class PolygonStaker {
    *   - shares: Total shares held by the delegator
    */
   async getStake (params: { delegatorAddress: Address; validatorShareAddress: Address }): Promise<StakeInfo> {
-    if (!this.publicClient) {
-      throw new Error('PolygonStaker not initialized, call init() to initialize')
-    }
     const { delegatorAddress, validatorShareAddress } = params
 
     const result = await this.publicClient.readContract({
@@ -483,9 +456,6 @@ export class PolygonStaker {
    * @returns Promise resolving to the current unbond nonce
    */
   async getUnbondNonce (params: { delegatorAddress: Address; validatorShareAddress: Address }): Promise<bigint> {
-    if (!this.publicClient) {
-      throw new Error('PolygonStaker not initialized, call init() to initialize')
-    }
 
     return this.publicClient.readContract({
       address: params.validatorShareAddress,
@@ -512,9 +482,6 @@ export class PolygonStaker {
     validatorShareAddress: Address
     unbondNonce: bigint
   }): Promise<UnbondInfo> {
-    if (!this.publicClient) {
-      throw new Error('PolygonStaker not initialized, call init() to initialize')
-    }
     const { delegatorAddress, validatorShareAddress, unbondNonce } = params
 
     const result = await this.publicClient.readContract({
@@ -540,9 +507,6 @@ export class PolygonStaker {
    * @returns Promise resolving to the pending rewards in wei
    */
   async getLiquidRewards (params: { delegatorAddress: Address; validatorShareAddress: Address }): Promise<bigint> {
-    if (!this.publicClient) {
-      throw new Error('PolygonStaker not initialized, call init() to initialize')
-    }
 
     return this.publicClient.readContract({
       address: params.validatorShareAddress,
@@ -560,9 +524,6 @@ export class PolygonStaker {
    * @returns Promise resolving to the current allowance in wei
    */
   async getAllowance (ownerAddress: Address): Promise<bigint> {
-    if (!this.publicClient) {
-      throw new Error('PolygonStaker not initialized, call init() to initialize')
-    }
 
     return this.publicClient.readContract({
       address: this.contracts.stakingTokenAddress,
@@ -578,9 +539,6 @@ export class PolygonStaker {
    * @returns Promise resolving to the current epoch number
    */
   async getEpoch (): Promise<bigint> {
-    if (!this.publicClient) {
-      throw new Error('PolygonStaker not initialized, call init() to initialize')
-    }
 
     return this.publicClient.readContract({
       address: this.contracts.stakeManagerAddress,
@@ -608,9 +566,6 @@ export class PolygonStaker {
     baseFeeMultiplier?: number
     defaultPriorityFee?: string
   }): Promise<{ signedTx: Hex }> {
-    if (!this.publicClient) {
-      throw new Error('PolygonStaker not initialized, call init() to initialize')
-    }
 
     const { signer, signerAddress, tx, baseFeeMultiplier, defaultPriorityFee } = params
 
@@ -670,9 +625,6 @@ export class PolygonStaker {
    * @returns A promise that resolves to the transaction hash
    */
   async broadcast (params: { signedTx: Hex }): Promise<{ txHash: Hex }> {
-    if (!this.publicClient) {
-      throw new Error('PolygonStaker not initialized, call init() to initialize')
-    }
 
     const { signedTx } = params
     const hash = await this.publicClient.sendRawTransaction({ serializedTransaction: signedTx })
@@ -688,9 +640,6 @@ export class PolygonStaker {
    * @returns A promise that resolves to an object containing the transaction status
    */
   async getTxStatus (params: { txHash: Hex }): Promise<PolygonTxStatus> {
-    if (!this.publicClient) {
-      throw new Error('PolygonStaker not initialized, call init() to initialize')
-    }
 
     const { txHash } = params
 
