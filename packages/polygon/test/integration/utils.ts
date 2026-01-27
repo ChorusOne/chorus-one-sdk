@@ -1,16 +1,11 @@
-import {
-  PolygonStaker,
-  CHORUS_ONE_POLYGON_VALIDATORS,
-  POLYGON_STAKING_TOKEN_ADDRESS,
-  POLYGON_STAKE_MANAGER_ADDRESS
-} from '@chorus-one/polygon'
+import { PolygonStaker, CHORUS_ONE_POLYGON_VALIDATORS, NETWORK_CONTRACTS } from '@chorus-one/polygon'
 import {
   createWalletClient,
   createPublicClient,
   http,
+  erc20Abi,
   encodeFunctionData,
   parseEther,
-  formatEther,
   toHex,
   type PublicClient,
   type WalletClient,
@@ -21,19 +16,6 @@ import { privateKeyToAccount } from 'viem/accounts'
 import { hardhat } from 'viem/chains'
 import { assert } from 'chai'
 import networkConfig from '../lib/networks.json'
-
-const ERC20_TRANSFER_ABI = [
-  {
-    type: 'function' as const,
-    name: 'transfer',
-    inputs: [
-      { name: 'to', type: 'address' },
-      { name: 'amount', type: 'uint256' }
-    ],
-    outputs: [{ name: '', type: 'bool' }],
-    stateMutability: 'nonpayable' as const
-  }
-] as const
 
 export interface TestSetup {
   validatorShareAddress: Address
@@ -59,6 +41,7 @@ export const prepareTests = async (): Promise<TestSetup> => {
   })
 
   const staker = new PolygonStaker({
+    network: 'mainnet',
     rpcUrl: hardhat.rpcUrls.default.http[0]
   })
   await staker.init()
@@ -83,28 +66,28 @@ export const fundWithStakingToken = async ({
 }): Promise<void> => {
   await publicClient.request({
     method: 'hardhat_impersonateAccount',
-    params: [POLYGON_STAKE_MANAGER_ADDRESS]
+    params: [NETWORK_CONTRACTS.mainnet.stakeManagerAddress]
   } as any)
 
   await publicClient.request({
     method: 'hardhat_setBalance',
-    params: [POLYGON_STAKE_MANAGER_ADDRESS, toHex(parseEther('1'))]
+    params: [NETWORK_CONTRACTS.mainnet.stakeManagerAddress, toHex(parseEther('1'))]
   } as any)
 
   const impersonatedClient = createWalletClient({
-    account: POLYGON_STAKE_MANAGER_ADDRESS,
+    account: NETWORK_CONTRACTS.mainnet.stakeManagerAddress,
     chain: hardhat,
     transport: http()
   })
 
   const data = encodeFunctionData({
-    abi: ERC20_TRANSFER_ABI,
+    abi: erc20Abi,
     functionName: 'transfer',
     args: [recipientAddress, amount]
   })
 
   const hash = await impersonatedClient.sendTransaction({
-    to: POLYGON_STAKING_TOKEN_ADDRESS,
+    to: NETWORK_CONTRACTS.mainnet.stakingTokenAddress,
     data,
     chain: null
   })
@@ -116,7 +99,7 @@ export const fundWithStakingToken = async ({
 
   await publicClient.request({
     method: 'hardhat_stopImpersonatingAccount',
-    params: [POLYGON_STAKE_MANAGER_ADDRESS]
+    params: [NETWORK_CONTRACTS.mainnet.stakeManagerAddress]
   } as any)
 }
 

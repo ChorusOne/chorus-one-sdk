@@ -1,8 +1,11 @@
 import type { AccessList, Address, Hex, TransactionReceipt } from 'viem'
+import type { PolygonNetworks } from './constants'
 
 export interface PolygonNetworkConfig {
-  /** Ethereum RPC endpoint URL (Polygon staking contracts live on Ethereum L1) */
-  rpcUrl: string
+  /** Network to use: 'mainnet' (Ethereum L1) or 'testnet' (Sepolia L1) */
+  network: PolygonNetworks
+  /** Optional RPC endpoint URL override. If not provided, uses viem's default for the network. */
+  rpcUrl?: string
 }
 
 export interface Transaction {
