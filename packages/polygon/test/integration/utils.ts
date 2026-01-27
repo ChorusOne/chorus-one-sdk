@@ -1,0 +1,185 @@
+import {
+  PolygonStaker,
+  CHORUS_ONE_POLYGON_VALIDATORS,
+  POLYGON_STAKING_TOKEN_ADDRESS,
+  POLYGON_STAKE_MANAGER_ADDRESS
+} from '@chorus-one/polygon'
+import {
+  createWalletClient,
+  createPublicClient,
+  http,
+  encodeFunctionData,
+  parseEther,
+  formatEther,
+  toHex,
+  type PublicClient,
+  type WalletClient,
+  type Hex,
+  type Address
+} from 'viem'
+import { privateKeyToAccount } from 'viem/accounts'
+import { hardhat } from 'viem/chains'
+import { assert } from 'chai'
+import networkConfig from '../lib/networks.json'
+
+const ERC20_TRANSFER_ABI = [
+  {
+    type: 'function' as const,
+    name: 'transfer',
+    inputs: [
+      { name: 'to', type: 'address' },
+      { name: 'amount', type: 'uint256' }
+    ],
+    outputs: [{ name: '', type: 'bool' }],
+    stateMutability: 'nonpayable' as const
+  }
+] as const
+
+export interface TestSetup {
+  validatorShareAddress: Address
+  walletClient: WalletClient
+  publicClient: PublicClient
+  staker: PolygonStaker
+  delegatorAddress: Address
+}
+
+export const prepareTests = async (): Promise<TestSetup> => {
+  const privateKey = networkConfig.accounts[0].privateKey as Hex
+  const account = privateKeyToAccount(privateKey)
+
+  const walletClient = createWalletClient({
+    account,
+    chain: hardhat,
+    transport: http()
+  })
+
+  const publicClient = createPublicClient({
+    chain: hardhat,
+    transport: http()
+  })
+
+  const staker = new PolygonStaker({
+    rpcUrl: hardhat.rpcUrls.default.http[0]
+  })
+  await staker.init()
+
+  return {
+    validatorShareAddress: CHORUS_ONE_POLYGON_VALIDATORS.mainnet,
+    walletClient,
+    publicClient,
+    staker,
+    delegatorAddress: account.address
+  }
+}
+
+export const fundWithStakingToken = async ({
+  publicClient,
+  recipientAddress,
+  amount
+}: {
+  publicClient: PublicClient
+  recipientAddress: Address
+  amount: bigint
+}): Promise<void> => {
+  await publicClient.request({
+    method: 'hardhat_impersonateAccount',
+    params: [POLYGON_STAKE_MANAGER_ADDRESS]
+  } as any)
+
+  await publicClient.request({
+    method: 'hardhat_setBalance',
+    params: [POLYGON_STAKE_MANAGER_ADDRESS, toHex(parseEther('1'))]
+  } as any)
+
+  const impersonatedClient = createWalletClient({
+    account: POLYGON_STAKE_MANAGER_ADDRESS,
+    chain: hardhat,
+    transport: http()
+  })
+
+  const data = encodeFunctionData({
+    abi: ERC20_TRANSFER_ABI,
+    functionName: 'transfer',
+    args: [recipientAddress, amount]
+  })
+
+  const hash = await impersonatedClient.sendTransaction({
+    to: POLYGON_STAKING_TOKEN_ADDRESS,
+    data,
+    chain: null
+  })
+
+  const receipt = await publicClient.waitForTransactionReceipt({ hash })
+  if (receipt.status !== 'success') {
+    throw new Error('Failed to fund test account with staking token')
+  }
+
+  await publicClient.request({
+    method: 'hardhat_stopImpersonatingAccount',
+    params: [POLYGON_STAKE_MANAGER_ADDRESS]
+  } as any)
+}
+
+export const approve = async ({
+  delegatorAddress,
+  amount,
+  staker,
+  walletClient,
+  publicClient
+}: {
+  delegatorAddress: Address
+  amount: string
+  staker: PolygonStaker
+  walletClient: WalletClient
+  publicClient: PublicClient
+}): Promise<void> => {
+  const { tx } = await staker.buildApproveTx({ amount })
+
+  const request = await walletClient.prepareTransactionRequest({
+    ...tx,
+    chain: undefined
+  })
+
+  const hash = await walletClient.sendTransaction({
+    ...request,
+    account: delegatorAddress
+  })
+
+  const receipt = await publicClient.getTransactionReceipt({ hash })
+  assert.equal(receipt.status, 'success')
+}
+
+export const stake = async ({
+  delegatorAddress,
+  validatorShareAddress,
+  amount,
+  staker,
+  walletClient,
+  publicClient
+}: {
+  delegatorAddress: Address
+  validatorShareAddress: Address
+  amount: string
+  staker: PolygonStaker
+  walletClient: WalletClient
+  publicClient: PublicClient
+}): Promise<void> => {
+  const { tx } = await staker.buildStakeTx({
+    delegatorAddress,
+    validatorShareAddress,
+    amount
+  })
+
+  const request = await walletClient.prepareTransactionRequest({
+    ...tx,
+    chain: undefined
+  })
+
+  const hash = await walletClient.sendTransaction({
+    ...request,
+    account: delegatorAddress
+  })
+
+  const receipt = await publicClient.getTransactionReceipt({ hash })
+  assert.equal(receipt.status, 'success')
+}

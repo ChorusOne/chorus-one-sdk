@@ -1,0 +1,14 @@
+{
+  "networks": {
+    "ethereum": {
+      "name": "ethereum",
+      "url": "https://ethereum-rpc.publicnode.com"
+    }
+  },
+  "accounts": [
+    {
+      "privateKey": "0x689af8efa8c651a91ad287602527f3af2fe9f6501a7ac4b061667b5a93e037fd",
+      "balance": "10000000000000000000000"
+    }
+  ]
+}

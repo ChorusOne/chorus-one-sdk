@@ -25,6 +25,11 @@ packages/ethereum/hardhat.log
 packages/ethereum/hardhat.pid
 packages/ethereum/edr-fork-cache
 
+packages/polygon/cache
+packages/polygon/hardhat.log
+packages/polygon/hardhat.pid
+packages/polygon/edr-fork-cache
+
 .env
 packages/**/.env
 

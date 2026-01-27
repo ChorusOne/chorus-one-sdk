@@ -1,0 +1,47 @@
+{
+  "name": "@chorus-one/polygon",
+  "version": "1.0.0",
+  "description": "All-in-one toolkit for building staking dApps on Polygon network",
+  "scripts": {
+    "build": "rm -fr dist/* && tsc -p tsconfig.mjs.json --outDir dist/mjs && tsc -p tsconfig.cjs.json --outDir dist/cjs && bash ../../scripts/fix-package-json",
+    "test": "mocha 'test/**/*.spec.ts' --ignore 'test/integration/**/*.spec.ts'",
+    "hardhat:start": "hardhat node --network hardhat & echo $! > hardhat.pid;",
+    "hardhat:stop": "kill $(cat hardhat.pid) && rm hardhat.pid",
+    "test:integration": "npm run hardhat:start > hardhat.log & sleep 5; mocha --require tsx --timeout 60000 'test/integration/setup.ts' 'test/integration/**/*.spec.ts'; status=$?; npm run hardhat:stop; exit $status"
+  },
+  "main": "dist/cjs/index.js",
+  "module": "dist/mjs/index.js",
+  "types": "dist/mjs/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/mjs/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/mjs/index.d.ts"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChorusOne/chorus-one-sdk.git",
+    "directory": "packages/polygon"
+  },
+  "homepage": "https://chorus-one.gitbook.io/sdk",
+  "keywords": [
+    "polygon",
+    "staking",
+    "dApps",
+    "blockchain",
+    "chorus-one",
+    "sdk"
+  ],
+  "author": "Chorus One AG",
+  "license": "Apache-2.0",
+  "type": "module",
+  "dependencies": {
+    "@chorus-one/signer": "^1.0.0",
+    "secp256k1": "^5.0.0",
+    "viem": "^2.28.0"
+  },
+  "devDependencies": {
+    "hardhat": "^3.0.3"
+  }
+}
