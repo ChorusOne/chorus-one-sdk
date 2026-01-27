@@ -1,10 +1,25 @@
 import type { Address } from 'viem'
 
-/** Polygon StakeManager proxy contract on Ethereum mainnet */
-export const POLYGON_STAKE_MANAGER_ADDRESS: Address = '0x5e3Ef299fDDf15eAa0432E6e66473ace8c13D908'
+export type PolygonNetworks = 'mainnet' | 'testnet'
 
-/** POL token contract on Ethereum mainnet (staking token, migrated from MATIC via PIP-42) */
-export const POLYGON_STAKING_TOKEN_ADDRESS: Address = '0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6'
+export interface NetworkContracts {
+  stakeManagerAddress: Address
+  stakingTokenAddress: Address
+}
+
+/** Contract addresses per network (mainnet = Ethereum L1, testnet = Sepolia L1) */
+// Reference: https://docs.polygon.technology/pos/reference/rpc-endpoints/
+export const NETWORK_CONTRACTS: Record<PolygonNetworks, NetworkContracts> = {
+  mainnet: {
+    stakeManagerAddress: '0x5e3Ef299fDDf15eAa0432E6e66473ace8c13D908',
+    stakingTokenAddress: '0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6'
+  },
+  testnet: {
+    stakeManagerAddress: '0x4AE8f648B1Ec892B6cc68C89cc088583964d08bE',
+    stakingTokenAddress: '0x3fd0A53F4Bf853985a95F4Eb3F9C9FDE1F8e2b53'
+  }
+}
+
 
 /** Chorus One Polygon ValidatorShare contract addresses */
 export const CHORUS_ONE_POLYGON_VALIDATORS = {
@@ -90,29 +105,6 @@ export const VALIDATOR_SHARE_ABI = [
     type: 'function',
     name: 'getLiquidRewards',
     inputs: [{ name: 'user', type: 'address', internalType: 'address' }],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'view'
-  }
-] as const
-
-export const ERC20_ABI = [
-  {
-    type: 'function',
-    name: 'approve',
-    inputs: [
-      { name: 'spender', type: 'address', internalType: 'address' },
-      { name: 'amount', type: 'uint256', internalType: 'uint256' }
-    ],
-    outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
-    stateMutability: 'nonpayable'
-  },
-  {
-    type: 'function',
-    name: 'allowance',
-    inputs: [
-      { name: 'owner', type: 'address', internalType: 'address' },
-      { name: 'spender', type: 'address', internalType: 'address' }
-    ],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     stateMutability: 'view'
   }

@@ -9,21 +9,23 @@ import {
   serializeTransaction,
   createWalletClient,
   maxUint256,
+  erc20Abi,
   type PublicClient,
   type Address,
   type Hex,
   type Chain
 } from 'viem'
-import secp256k1 from 'secp256k1'
+import { mainnet, sepolia } from 'viem/chains'
+import { secp256k1 } from '@noble/curves/secp256k1.js'
 import type { Signer } from '@chorus-one/signer'
-import type { Transaction, PolygonTxStatus, StakeInfo, UnbondInfo } from './types.d'
+import type { Transaction, PolygonNetworkConfig, PolygonTxStatus, StakeInfo, UnbondInfo } from './types.d'
 import { buildReferrerTracking } from './referrer'
 import {
   VALIDATOR_SHARE_ABI,
-  ERC20_ABI,
   STAKE_MANAGER_ABI,
-  POLYGON_STAKE_MANAGER_ADDRESS,
-  POLYGON_STAKING_TOKEN_ADDRESS
+  NETWORK_CONTRACTS,
+  type PolygonNetworks,
+  type NetworkContracts
 } from './constants'
 
 /**
@@ -71,8 +73,15 @@ import {
  * }
  * ```
  */
+const NETWORK_CHAINS: Record<PolygonNetworks, Chain> = {
+  mainnet,
+  testnet: sepolia
+}
+
 export class PolygonStaker {
-  private readonly rpcUrl: string
+  private readonly rpcUrl?: string
+  private readonly network: PolygonNetworks
+  private readonly contracts: NetworkContracts
   private publicClient?: PublicClient
   private chain!: Chain
 
@@ -86,7 +95,7 @@ export class PolygonStaker {
   static getAddressDerivationFn =
     () =>
     async (publicKey: Uint8Array): Promise<Array<string>> => {
-      const pkUncompressed = secp256k1.publicKeyConvert(publicKey, false)
+      const pkUncompressed = secp256k1.Point.fromBytes(publicKey).toBytes(false)
       const hash = keccak256(pkUncompressed.subarray(1))
       const ethAddress = hash.slice(-40)
       return [ethAddress]
@@ -96,12 +105,15 @@ export class PolygonStaker {
    * Creates a PolygonStaker instance
    *
    * @param params - Initialization configuration
-   * @param params.rpcUrl - The URL of the Ethereum L1 RPC endpoint (Polygon staking contracts live on Ethereum mainnet)
+   * @param params.network - Network to use: 'mainnet' (Ethereum L1) or 'testnet' (Sepolia L1)
+   * @param params.rpcUrl - Optional RPC endpoint URL override. If not provided, uses viem's default for the network.
    *
    * @returns An instance of PolygonStaker
    */
-  constructor (params: { rpcUrl: string }) {
+  constructor (params: PolygonNetworkConfig) {
+    this.network = params.network
     this.rpcUrl = params.rpcUrl
+    this.contracts = NETWORK_CONTRACTS[params.network]
   }
 
   /**
@@ -110,21 +122,7 @@ export class PolygonStaker {
    * @returns A promise which resolves once the PolygonStaker instance has been initialized
    */
   async init (): Promise<void> {
-    const client = createPublicClient({
-      transport: http(this.rpcUrl)
-    })
-
-    const chainId = await client.getChainId()
-
-    this.chain = {
-      id: chainId,
-      name: 'Ethereum',
-      nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-      rpcUrls: {
-        default: { http: [this.rpcUrl] },
-        public: { http: [this.rpcUrl] }
-      }
-    }
+    this.chain = NETWORK_CHAINS[this.network]
 
     this.publicClient = createPublicClient({
       chain: this.chain,
@@ -153,14 +151,14 @@ export class PolygonStaker {
     const amountWei = amount === 'max' ? maxUint256 : this.parseAmount(amount)
 
     const data = encodeFunctionData({
-      abi: ERC20_ABI,
+      abi: erc20Abi,
       functionName: 'approve',
-      args: [POLYGON_STAKE_MANAGER_ADDRESS, amountWei]
+      args: [this.contracts.stakeManagerAddress, amountWei]
     })
 
     return {
       tx: {
-        to: POLYGON_STAKING_TOKEN_ADDRESS,
+        to: this.contracts.stakingTokenAddress,
         data,
         value: 0n,
         accessList: buildReferrerTracking(referrer)
@@ -567,10 +565,10 @@ export class PolygonStaker {
     }
 
     return this.publicClient.readContract({
-      address: POLYGON_STAKING_TOKEN_ADDRESS,
-      abi: ERC20_ABI,
+      address: this.contracts.stakingTokenAddress,
+      abi: erc20Abi,
       functionName: 'allowance',
-      args: [ownerAddress, POLYGON_STAKE_MANAGER_ADDRESS]
+      args: [ownerAddress, this.contracts.stakeManagerAddress]
     })
   }
 
@@ -585,7 +583,7 @@ export class PolygonStaker {
     }
 
     return this.publicClient.readContract({
-      address: POLYGON_STAKE_MANAGER_ADDRESS,
+      address: this.contracts.stakeManagerAddress,
       abi: STAKE_MANAGER_ABI,
       functionName: 'epoch'
     })

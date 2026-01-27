@@ -1,5 +1,5 @@
 import { PolygonStaker } from '@chorus-one/polygon'
-import { type Hex, type PublicClient, type WalletClient, type Address, parseEther, formatEther } from 'viem'
+import { type PublicClient, type WalletClient, type Address, parseEther } from 'viem'
 import { assert } from 'chai'
 import { prepareTests, fundWithStakingToken, approve, stake } from './utils'
 import { restoreToInitialState } from './setup'
@@ -193,7 +193,6 @@ describe('PolygonStaker.buildUnstakeTx', () => {
 describe('PolygonStaker - query methods', () => {
   let delegatorAddress: Address
   let validatorShareAddress: Address
-  let publicClient: PublicClient
   let staker: PolygonStaker
 
   beforeEach(async function () {
@@ -201,7 +200,6 @@ describe('PolygonStaker - query methods', () => {
     const setup = await prepareTests()
     delegatorAddress = setup.delegatorAddress
     validatorShareAddress = setup.validatorShareAddress
-    publicClient = setup.publicClient
     staker = setup.staker
   })
 

@@ -1,7 +1,8 @@
 {
-  "require": ["tsx/cjs"],
+  "require": ["tsx"],
   "extensions": ["ts"],
   "spec": ["test/**/*.spec.ts"],
+  "ignore": ["test/integration/**/*.spec.ts"],
   "timeout": 10000,
   "reporter": "spec"
 }

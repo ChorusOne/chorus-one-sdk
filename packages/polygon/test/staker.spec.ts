@@ -3,7 +3,7 @@ import { describe, it, beforeEach } from 'mocha'
 import { use, expect, assert } from 'chai'
 import chaiAsPromised from 'chai-as-promised'
 import type { Address, Hex } from 'viem'
-import { POLYGON_STAKING_TOKEN_ADDRESS } from '../src/constants'
+import { NETWORK_CONTRACTS } from '../src/constants'
 import { EXPECTED_APPROVE_TX, EXPECTED_APPROVE_MAX_TX, TEST_ADDRESS, TEST_VALIDATOR_SHARE } from './fixtures/expected-data'
 
 use(chaiAsPromised)
@@ -13,6 +13,7 @@ describe('PolygonStaker', () => {
 
   beforeEach(async () => {
     staker = new PolygonStaker({
+      network: 'mainnet',
       rpcUrl: 'https://ethereum-rpc.publicnode.com'
     })
 
@@ -42,7 +43,7 @@ describe('PolygonStaker', () => {
 
     it('should always target the staking token contract', async () => {
       const { tx } = await staker.buildApproveTx({ amount: '1' })
-      assert.equal(tx.to, POLYGON_STAKING_TOKEN_ADDRESS)
+      assert.equal(tx.to, NETWORK_CONTRACTS.mainnet.stakingTokenAddress)
     })
 
     it('should always have value of 0 (ERC20 approval, not ETH transfer)', async () => {
@@ -107,7 +108,7 @@ describe('PolygonStaker', () => {
     })
 
     it('should throw when not initialized', async () => {
-      const uninitializedStaker = new PolygonStaker({ rpcUrl: 'https://ethereum-rpc.publicnode.com' })
+      const uninitializedStaker = new PolygonStaker({ network: 'mainnet', rpcUrl: 'https://ethereum-rpc.publicnode.com' })
 
       await expect(uninitializedStaker.buildApproveTx({ amount: '100' })).to.be.rejectedWith(
         'PolygonStaker not initialized'
@@ -141,7 +142,7 @@ describe('PolygonStaker', () => {
     })
 
     it('should throw when not initialized', async () => {
-      const uninitializedStaker = new PolygonStaker({ rpcUrl: 'https://ethereum-rpc.publicnode.com' })
+      const uninitializedStaker = new PolygonStaker({ network: 'mainnet', rpcUrl: 'https://ethereum-rpc.publicnode.com' })
 
       await expect(
         uninitializedStaker.buildStakeTx({
