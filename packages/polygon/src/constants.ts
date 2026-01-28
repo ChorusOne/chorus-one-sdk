@@ -20,7 +20,6 @@ export const NETWORK_CONTRACTS: Record<PolygonNetworks, NetworkContracts> = {
   }
 }
 
-
 /** Chorus One Polygon ValidatorShare contract addresses */
 export const CHORUS_ONE_POLYGON_VALIDATORS = {
   mainnet: '0xD9E6987D77bf2c6d0647b8181fd68A259f838C36' as Address

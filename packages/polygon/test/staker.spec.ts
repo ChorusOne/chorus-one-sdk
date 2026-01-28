@@ -3,7 +3,12 @@ import { describe, it, beforeEach } from 'mocha'
 import { use, expect, assert } from 'chai'
 import chaiAsPromised from 'chai-as-promised'
 import type { Address, Hex } from 'viem'
-import { EXPECTED_APPROVE_TX, EXPECTED_APPROVE_MAX_TX, TEST_ADDRESS, TEST_VALIDATOR_SHARE } from './fixtures/expected-data'
+import {
+  EXPECTED_APPROVE_TX,
+  EXPECTED_APPROVE_MAX_TX,
+  TEST_ADDRESS,
+  TEST_VALIDATOR_SHARE
+} from './fixtures/expected-data'
 
 use(chaiAsPromised)
 

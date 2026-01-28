@@ -244,9 +244,7 @@ export class PolygonStaker {
 
     const stake = await this.getStake({ delegatorAddress, validatorShareAddress })
     if (stake.totalStaked < amountWei) {
-      throw new Error(
-        `Insufficient stake. Current: ${formatEther(stake.totalStaked)} POL, Requested: ${amount} POL`
-      )
+      throw new Error(`Insufficient stake. Current: ${formatEther(stake.totalStaked)} POL, Requested: ${amount} POL`)
     }
 
     const data = encodeFunctionData({
@@ -301,9 +299,7 @@ export class PolygonStaker {
 
     const currentEpoch = await this.getEpoch()
     if (currentEpoch < unbond.withdrawEpoch) {
-      throw new Error(
-        `Unbonding not complete. Current epoch: ${currentEpoch}, Withdraw epoch: ${unbond.withdrawEpoch}`
-      )
+      throw new Error(`Unbonding not complete. Current epoch: ${currentEpoch}, Withdraw epoch: ${unbond.withdrawEpoch}`)
     }
 
     const data = encodeFunctionData({
@@ -456,7 +452,6 @@ export class PolygonStaker {
    * @returns Promise resolving to the current unbond nonce
    */
   async getUnbondNonce (params: { delegatorAddress: Address; validatorShareAddress: Address }): Promise<bigint> {
-
     return this.publicClient.readContract({
       address: params.validatorShareAddress,
       abi: VALIDATOR_SHARE_ABI,
@@ -507,7 +502,6 @@ export class PolygonStaker {
    * @returns Promise resolving to the pending rewards in wei
    */
   async getLiquidRewards (params: { delegatorAddress: Address; validatorShareAddress: Address }): Promise<bigint> {
-
     return this.publicClient.readContract({
       address: params.validatorShareAddress,
       abi: VALIDATOR_SHARE_ABI,
@@ -524,7 +518,6 @@ export class PolygonStaker {
    * @returns Promise resolving to the current allowance in wei
    */
   async getAllowance (ownerAddress: Address): Promise<bigint> {
-
     return this.publicClient.readContract({
       address: this.contracts.stakingTokenAddress,
       abi: erc20Abi,
@@ -539,7 +532,6 @@ export class PolygonStaker {
    * @returns Promise resolving to the current epoch number
    */
   async getEpoch (): Promise<bigint> {
-
     return this.publicClient.readContract({
       address: this.contracts.stakeManagerAddress,
       abi: STAKE_MANAGER_ABI,
@@ -566,7 +558,6 @@ export class PolygonStaker {
     baseFeeMultiplier?: number
     defaultPriorityFee?: string
   }): Promise<{ signedTx: Hex }> {
-
     const { signer, signerAddress, tx, baseFeeMultiplier, defaultPriorityFee } = params
 
     const baseChain = this.chain
@@ -625,7 +616,6 @@ export class PolygonStaker {
    * @returns A promise that resolves to the transaction hash
    */
   async broadcast (params: { signedTx: Hex }): Promise<{ txHash: Hex }> {
-
     const { signedTx } = params
     const hash = await this.publicClient.sendRawTransaction({ serializedTransaction: signedTx })
     return { txHash: hash }
@@ -640,7 +630,6 @@ export class PolygonStaker {
    * @returns A promise that resolves to an object containing the transaction status
    */
   async getTxStatus (params: { txHash: Hex }): Promise<PolygonTxStatus> {
-
     const { txHash } = params
 
     try {
