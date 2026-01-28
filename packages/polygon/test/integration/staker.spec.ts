@@ -1,5 +1,5 @@
-import { PolygonStaker, NETWORK_CONTRACTS } from '@chorus-one/polygon'
-import { type PublicClient, type WalletClient, type Address, parseEther, erc20Abi, createWalletClient, http } from 'viem'
+import { PolygonStaker } from '@chorus-one/polygon'
+import { type PublicClient, type WalletClient, type Address, parseEther, createWalletClient, http } from 'viem'
 import { hardhat } from 'viem/chains'
 import { use, expect, assert } from 'chai'
 import chaiAsPromised from 'chai-as-promised'
@@ -11,7 +11,9 @@ import {
   unstake,
   sendTx,
   advanceEpoch,
-  impersonate
+  impersonate,
+  getStakingTokenBalance,
+  getWithdrawalDelay
 } from './utils'
 import { restoreToInitialState } from './setup'
 
@@ -122,25 +124,16 @@ describe('PolygonStaker', () => {
       const nonce = await staker.getUnbondNonce({ delegatorAddress, validatorShareAddress })
       const unbond = await staker.getUnbond({ delegatorAddress, validatorShareAddress, unbondNonce: nonce })
 
-      // Contract requires: withdrawEpoch + withdrawalDelay (80) <= currentEpoch
-      await advanceEpoch({ publicClient, staker, targetEpoch: unbond.withdrawEpoch + 80n })
+      // Reference: https://github.com/0xPolygon/pos-contracts/blob/main/contracts/staking/validatorShare/ValidatorShare.sol
+      const withdrawalDelay = await getWithdrawalDelay({ publicClient })
+      await advanceEpoch({ publicClient, staker, targetEpoch: unbond.withdrawEpoch + withdrawalDelay })
 
-      const balanceBefore = await publicClient.readContract({
-        address: NETWORK_CONTRACTS.mainnet.stakingTokenAddress,
-        abi: erc20Abi,
-        functionName: 'balanceOf',
-        args: [delegatorAddress]
-      })
+      const balanceBefore = await getStakingTokenBalance({ publicClient, address: delegatorAddress })
 
       const { tx } = await staker.buildWithdrawTx({ delegatorAddress, validatorShareAddress, unbondNonce: nonce })
       await sendTx({ tx, walletClient, publicClient, delegatorAddress })
 
-      const balanceAfter = await publicClient.readContract({
-        address: NETWORK_CONTRACTS.mainnet.stakingTokenAddress,
-        abi: erc20Abi,
-        functionName: 'balanceOf',
-        args: [delegatorAddress]
-      })
+      const balanceAfter = await getStakingTokenBalance({ publicClient, address: delegatorAddress })
       assert.equal(balanceAfter - balanceBefore, parseEther(AMOUNT))
     })
 
@@ -187,12 +180,7 @@ describe('PolygonStaker', () => {
       })
       assert.isTrue(rewardsBefore > 0n, 'Whale should have accrued rewards')
 
-      const balanceBefore = await publicClient.readContract({
-        address: NETWORK_CONTRACTS.mainnet.stakingTokenAddress,
-        abi: erc20Abi,
-        functionName: 'balanceOf',
-        args: [WHALE_DELEGATOR]
-      })
+      const balanceBefore = await getStakingTokenBalance({ publicClient, address: WHALE_DELEGATOR })
 
       const { tx } = await staker.buildClaimRewardsTx({
         delegatorAddress: WHALE_DELEGATOR,
@@ -206,12 +194,7 @@ describe('PolygonStaker', () => {
       })
       assert.equal(rewardsAfter, 0n)
 
-      const balanceAfter = await publicClient.readContract({
-        address: NETWORK_CONTRACTS.mainnet.stakingTokenAddress,
-        abi: erc20Abi,
-        functionName: 'balanceOf',
-        args: [WHALE_DELEGATOR]
-      })
+      const balanceAfter = await getStakingTokenBalance({ publicClient, address: WHALE_DELEGATOR })
       assert.equal(balanceAfter - balanceBefore, rewardsBefore)
     })
 

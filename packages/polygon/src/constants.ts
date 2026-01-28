@@ -21,10 +21,12 @@ export const NETWORK_CONTRACTS: Record<PolygonNetworks, NetworkContracts> = {
 }
 
 /** Chorus One Polygon ValidatorShare contract addresses */
+// Reference: https://staking.polygon.technology/validators/106
 export const CHORUS_ONE_POLYGON_VALIDATORS = {
   mainnet: '0xD9E6987D77bf2c6d0647b8181fd68A259f838C36' as Address
 } as const
 
+// Reference: https://github.com/0xPolygon/pos-contracts/blob/main/contracts/staking/validatorShare/ValidatorShare.sol
 export const VALIDATOR_SHARE_ABI = [
   {
     type: 'function',
@@ -109,6 +111,7 @@ export const VALIDATOR_SHARE_ABI = [
   }
 ] as const
 
+// Reference: https://github.com/0xPolygon/pos-contracts/blob/main/contracts/staking/stakeManager/StakeManager.sol
 export const STAKE_MANAGER_ABI = [
   {
     type: 'function',

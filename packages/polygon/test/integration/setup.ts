@@ -38,5 +38,4 @@ export const restoreToInitialState = async () => {
     throw new Error('Failed to take new snapshot after restore')
   }
   currentSnapshotId = newSnapshotId
-  return success
 }
