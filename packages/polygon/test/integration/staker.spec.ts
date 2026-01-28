@@ -115,21 +115,33 @@ describe('PolygonStaker', () => {
       assert.equal(stakeAfter.totalStaked, 0n)
     })
 
-    it('builds withdraw tx after unbonding period', async () => {
+    it('withdraws after unbonding period and verifies balance increase', async () => {
       await approveAndStake({ delegatorAddress, validatorShareAddress, amount: AMOUNT, staker, walletClient, publicClient })
       await unstake({ delegatorAddress, validatorShareAddress, amount: AMOUNT, staker, walletClient, publicClient })
 
       const nonce = await staker.getUnbondNonce({ delegatorAddress, validatorShareAddress })
       const unbond = await staker.getUnbond({ delegatorAddress, validatorShareAddress, unbondNonce: nonce })
 
-      await advanceEpoch({ publicClient, staker, targetEpoch: unbond.withdrawEpoch })
+      // Contract requires: withdrawEpoch + withdrawalDelay (80) <= currentEpoch
+      await advanceEpoch({ publicClient, staker, targetEpoch: unbond.withdrawEpoch + 80n })
+
+      const balanceBefore = await publicClient.readContract({
+        address: NETWORK_CONTRACTS.mainnet.stakingTokenAddress,
+        abi: erc20Abi,
+        functionName: 'balanceOf',
+        args: [delegatorAddress]
+      })
 
       const { tx } = await staker.buildWithdrawTx({ delegatorAddress, validatorShareAddress, unbondNonce: nonce })
+      await sendTx({ tx, walletClient, publicClient, delegatorAddress })
 
-      assert.equal(tx.to, validatorShareAddress)
-      assert.equal(tx.value, 0n)
-      assert.isDefined(tx.data)
-      assert.isDefined(tx.accessList)
+      const balanceAfter = await publicClient.readContract({
+        address: NETWORK_CONTRACTS.mainnet.stakingTokenAddress,
+        abi: erc20Abi,
+        functionName: 'balanceOf',
+        args: [delegatorAddress]
+      })
+      assert.equal(balanceAfter - balanceBefore, parseEther(AMOUNT))
     })
 
     it('rejects withdraw for non-existent unbond', async () => {
