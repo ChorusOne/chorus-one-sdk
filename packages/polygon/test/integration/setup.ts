@@ -1,7 +1,6 @@
 import { createPublicClient, http } from 'viem'
 import { hardhat } from 'viem/chains'
 
-let initialSnapshotId: string | null = null
 let currentSnapshotId: string | null = null
 
 const publicClient = createPublicClient({
@@ -9,14 +8,11 @@ const publicClient = createPublicClient({
   transport: http(hardhat.rpcUrls.default.http[0])
 })
 
-before(async function () {
-  this.timeout(10000)
-  initialSnapshotId = (await publicClient.request({
+before(async () => {
+  currentSnapshotId = (await publicClient.request({
     method: 'evm_snapshot',
     params: []
   } as any)) as string
-
-  currentSnapshotId = initialSnapshotId
 })
 
 export const restoreToInitialState = async () => {

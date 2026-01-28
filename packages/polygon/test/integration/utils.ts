@@ -25,6 +25,15 @@ export interface TestSetup {
   delegatorAddress: Address
 }
 
+export interface StakingParams {
+  delegatorAddress: Address
+  validatorShareAddress: Address
+  amount: string
+  staker: PolygonStaker
+  walletClient: WalletClient
+  publicClient: PublicClient
+}
+
 export const prepareTests = async (): Promise<TestSetup> => {
   const privateKey = networkConfig.accounts[0].privateKey as Hex
   const account = privateKeyToAccount(privateKey)
@@ -63,15 +72,7 @@ export const fundWithStakingToken = async ({
   recipientAddress: Address
   amount: bigint
 }): Promise<void> => {
-  await publicClient.request({
-    method: 'hardhat_impersonateAccount',
-    params: [NETWORK_CONTRACTS.mainnet.stakeManagerAddress]
-  } as any)
-
-  await publicClient.request({
-    method: 'hardhat_setBalance',
-    params: [NETWORK_CONTRACTS.mainnet.stakeManagerAddress, toHex(parseEther('1'))]
-  } as any)
+  await impersonate({ publicClient, address: NETWORK_CONTRACTS.mainnet.stakeManagerAddress })
 
   const impersonatedClient = createWalletClient({
     account: NETWORK_CONTRACTS.mainnet.stakeManagerAddress,
@@ -79,27 +80,20 @@ export const fundWithStakingToken = async ({
     transport: http()
   })
 
-  const data = encodeFunctionData({
-    abi: erc20Abi,
-    functionName: 'transfer',
-    args: [recipientAddress, amount]
+  await sendTx({
+    tx: {
+      to: NETWORK_CONTRACTS.mainnet.stakingTokenAddress,
+      data: encodeFunctionData({
+        abi: erc20Abi,
+        functionName: 'transfer',
+        args: [recipientAddress, amount]
+      }),
+      value: 0n
+    },
+    walletClient: impersonatedClient,
+    publicClient,
+    delegatorAddress: NETWORK_CONTRACTS.mainnet.stakeManagerAddress
   })
-
-  const hash = await impersonatedClient.sendTransaction({
-    to: NETWORK_CONTRACTS.mainnet.stakingTokenAddress,
-    data,
-    chain: null
-  })
-
-  const receipt = await publicClient.waitForTransactionReceipt({ hash })
-  if (receipt.status !== 'success') {
-    throw new Error('Failed to fund test account with staking token')
-  }
-
-  await publicClient.request({
-    method: 'hardhat_stopImpersonatingAccount',
-    params: [NETWORK_CONTRACTS.mainnet.stakeManagerAddress]
-  } as any)
 }
 
 export const approve = async ({
@@ -108,27 +102,9 @@ export const approve = async ({
   staker,
   walletClient,
   publicClient
-}: {
-  delegatorAddress: Address
-  amount: string
-  staker: PolygonStaker
-  walletClient: WalletClient
-  publicClient: PublicClient
-}): Promise<void> => {
+}: Omit<StakingParams, 'validatorShareAddress'>): Promise<void> => {
   const { tx } = await staker.buildApproveTx({ amount })
-
-  const request = await walletClient.prepareTransactionRequest({
-    ...tx,
-    chain: undefined
-  })
-
-  const hash = await walletClient.sendTransaction({
-    ...request,
-    account: delegatorAddress
-  })
-
-  const receipt = await publicClient.getTransactionReceipt({ hash })
-  assert.equal(receipt.status, 'success')
+  await sendTx({ tx, walletClient, publicClient, delegatorAddress })
 }
 
 export const stake = async ({
@@ -138,32 +114,14 @@ export const stake = async ({
   staker,
   walletClient,
   publicClient
-}: {
-  delegatorAddress: Address
-  validatorShareAddress: Address
-  amount: string
-  staker: PolygonStaker
-  walletClient: WalletClient
-  publicClient: PublicClient
-}): Promise<void> => {
-  const { tx } = await staker.buildStakeTx({
-    delegatorAddress,
-    validatorShareAddress,
-    amount
-  })
+}: StakingParams): Promise<void> => {
+  const { tx } = await staker.buildStakeTx({ delegatorAddress, validatorShareAddress, amount })
+  await sendTx({ tx, walletClient, publicClient, delegatorAddress })
+}
 
-  const request = await walletClient.prepareTransactionRequest({
-    ...tx,
-    chain: undefined
-  })
-
-  const hash = await walletClient.sendTransaction({
-    ...request,
-    account: delegatorAddress
-  })
-
-  const receipt = await publicClient.getTransactionReceipt({ hash })
-  assert.equal(receipt.status, 'success')
+export const approveAndStake = async (params: StakingParams): Promise<void> => {
+  await approve(params)
+  await stake(params)
 }
 
 export const sendTx = async ({
@@ -198,20 +156,8 @@ export const unstake = async ({
   staker,
   walletClient,
   publicClient
-}: {
-  delegatorAddress: Address
-  validatorShareAddress: Address
-  amount: string
-  staker: PolygonStaker
-  walletClient: WalletClient
-  publicClient: PublicClient
-}): Promise<void> => {
-  const { tx } = await staker.buildUnstakeTx({
-    delegatorAddress,
-    validatorShareAddress,
-    amount
-  })
-
+}: StakingParams): Promise<void> => {
+  const { tx } = await staker.buildUnstakeTx({ delegatorAddress, validatorShareAddress, amount })
   await sendTx({ tx, walletClient, publicClient, delegatorAddress })
 }
 
@@ -233,6 +179,20 @@ export const impersonate = async ({
   } as any)
 }
 
+// Reference: https://etherscan.io/address/0x6e7a5820baD6cebA8Ef5ea69c0C92EbbDAc9CE48
+const GOVERNANCE_ADDRESS = '0x6e7a5820baD6cebA8Ef5ea69c0C92EbbDAc9CE48' as Address
+
+// Reference: https://github.com/0xPolygon/pos-contracts/blob/main/contracts/staking/stakeManager/StakeManager.sol
+const SET_CURRENT_EPOCH_ABI = [
+  {
+    type: 'function',
+    name: 'setCurrentEpoch',
+    inputs: [{ name: '_currentEpoch', type: 'uint256' }],
+    outputs: [],
+    stateMutability: 'nonpayable'
+  }
+] as const
+
 export const advanceEpoch = async ({
   publicClient,
   staker,
@@ -245,43 +205,26 @@ export const advanceEpoch = async ({
   const currentEpoch = await staker.getEpoch()
   if (currentEpoch >= targetEpoch) return
 
-  const stakeManagerAddr = NETWORK_CONTRACTS.mainnet.stakeManagerAddress
-  const probeValue = currentEpoch + 999999n
+  await impersonate({ publicClient, address: GOVERNANCE_ADDRESS })
 
-  for (let i = 0; i < 200; i++) {
-    const slot = toHex(i, { size: 32 })
-    const value = (await publicClient.request({
-      method: 'eth_getStorageAt',
-      params: [stakeManagerAddr, slot, 'latest']
-    } as any)) as string
+  const governanceWallet = createWalletClient({
+    account: GOVERNANCE_ADDRESS,
+    chain: hardhat,
+    transport: http()
+  })
 
-    if (BigInt(value) !== currentEpoch) continue
-
-    // Candidate slot - verify by writing a probe value
-    await publicClient.request({
-      method: 'hardhat_setStorageAt',
-      params: [stakeManagerAddr, slot, toHex(probeValue, { size: 32 })]
-    } as any)
-
-    const probeEpoch = await staker.getEpoch()
-    if (probeEpoch === probeValue) {
-      // Confirmed slot - set target epoch
-      await publicClient.request({
-        method: 'hardhat_setStorageAt',
-        params: [stakeManagerAddr, slot, toHex(targetEpoch, { size: 32 })]
-      } as any)
-
-      // Mine a block so the state change is committed
-      await publicClient.request({ method: 'evm_mine', params: [] } as any)
-      return
-    }
-
-    // Wrong slot - restore original value
-    await publicClient.request({
-      method: 'hardhat_setStorageAt',
-      params: [stakeManagerAddr, slot, toHex(currentEpoch, { size: 32 })]
-    } as any)
-  }
-
-  throw new Error('Could not find epoch storage slot in StakeManager')
+  await sendTx({
+    tx: {
+      to: NETWORK_CONTRACTS.mainnet.stakeManagerAddress,
+      data: encodeFunctionData({
+        abi: SET_CURRENT_EPOCH_ABI,
+        functionName: 'setCurrentEpoch',
+        args: [targetEpoch]
+      }),
+      value: 0n
+    },
+    walletClient: governanceWallet,
+    publicClient,
+    delegatorAddress: GOVERNANCE_ADDRESS
+  })
 }
