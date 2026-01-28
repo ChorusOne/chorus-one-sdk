@@ -161,6 +161,37 @@ export const unstake = async ({
   await sendTx({ tx, walletClient, publicClient, delegatorAddress })
 }
 
+export const getStakingTokenBalance = async ({
+  publicClient,
+  address
+}: {
+  publicClient: PublicClient
+  address: Address
+}): Promise<bigint> => {
+  return publicClient.readContract({
+    address: NETWORK_CONTRACTS.mainnet.stakingTokenAddress,
+    abi: erc20Abi,
+    functionName: 'balanceOf',
+    args: [address]
+  })
+}
+
+export const getWithdrawalDelay = async ({ publicClient }: { publicClient: PublicClient }): Promise<bigint> => {
+  return publicClient.readContract({
+    address: NETWORK_CONTRACTS.mainnet.stakeManagerAddress,
+    abi: [
+      {
+        type: 'function',
+        name: 'withdrawalDelay',
+        inputs: [],
+        outputs: [{ name: '', type: 'uint256' }],
+        stateMutability: 'view'
+      }
+    ] as const,
+    functionName: 'withdrawalDelay'
+  })
+}
+
 export const impersonate = async ({
   publicClient,
   address
