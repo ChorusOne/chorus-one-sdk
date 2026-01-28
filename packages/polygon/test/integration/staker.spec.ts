@@ -93,7 +93,14 @@ describe('PolygonStaker', () => {
 
     it('stakes and verifies on-chain state', async () => {
       await approve({ delegatorAddress, amount: amountToApprove, staker, walletClient, publicClient })
-      await stake({ delegatorAddress, validatorShareAddress, amount: amountToStake, staker, walletClient, publicClient })
+      await stake({
+        delegatorAddress,
+        validatorShareAddress,
+        amount: amountToStake,
+        staker,
+        walletClient,
+        publicClient
+      })
 
       const stakeInfo = await staker.getStake({ delegatorAddress, validatorShareAddress })
       assert.equal(stakeInfo.totalStaked, parseEther(amountToStake))
@@ -101,12 +108,26 @@ describe('PolygonStaker', () => {
 
     it('unstakes and creates unbond request', async () => {
       await approve({ delegatorAddress, amount: amountToApprove, staker, walletClient, publicClient })
-      await stake({ delegatorAddress, validatorShareAddress, amount: amountToStake, staker, walletClient, publicClient })
+      await stake({
+        delegatorAddress,
+        validatorShareAddress,
+        amount: amountToStake,
+        staker,
+        walletClient,
+        publicClient
+      })
 
       const nonceBefore = await staker.getUnbondNonce({ delegatorAddress, validatorShareAddress })
       const epochBefore = await staker.getEpoch()
 
-      await unstake({ delegatorAddress, validatorShareAddress, amount: amountToUnstake, staker, walletClient, publicClient })
+      await unstake({
+        delegatorAddress,
+        validatorShareAddress,
+        amount: amountToUnstake,
+        staker,
+        walletClient,
+        publicClient
+      })
 
       const nonceAfter = await staker.getUnbondNonce({ delegatorAddress, validatorShareAddress })
       assert.equal(nonceAfter, nonceBefore + 1n)
@@ -121,8 +142,22 @@ describe('PolygonStaker', () => {
 
     it('builds withdraw tx after unbonding period', async () => {
       await approve({ delegatorAddress, amount: amountToApprove, staker, walletClient, publicClient })
-      await stake({ delegatorAddress, validatorShareAddress, amount: amountToStake, staker, walletClient, publicClient })
-      await unstake({ delegatorAddress, validatorShareAddress, amount: amountToUnstake, staker, walletClient, publicClient })
+      await stake({
+        delegatorAddress,
+        validatorShareAddress,
+        amount: amountToStake,
+        staker,
+        walletClient,
+        publicClient
+      })
+      await unstake({
+        delegatorAddress,
+        validatorShareAddress,
+        amount: amountToUnstake,
+        staker,
+        walletClient,
+        publicClient
+      })
 
       const nonce = await staker.getUnbondNonce({ delegatorAddress, validatorShareAddress })
       const unbond = await staker.getUnbond({ delegatorAddress, validatorShareAddress, unbondNonce: nonce })
@@ -150,7 +185,14 @@ describe('PolygonStaker', () => {
 
     it('rejects claim rewards when none available', async () => {
       await approve({ delegatorAddress, amount: amountToApprove, staker, walletClient, publicClient })
-      await stake({ delegatorAddress, validatorShareAddress, amount: amountToStake, staker, walletClient, publicClient })
+      await stake({
+        delegatorAddress,
+        validatorShareAddress,
+        amount: amountToStake,
+        staker,
+        walletClient,
+        publicClient
+      })
 
       let error: Error | undefined
       try {
@@ -164,7 +206,14 @@ describe('PolygonStaker', () => {
 
     it('rejects compound when no rewards available', async () => {
       await approve({ delegatorAddress, amount: amountToApprove, staker, walletClient, publicClient })
-      await stake({ delegatorAddress, validatorShareAddress, amount: amountToStake, staker, walletClient, publicClient })
+      await stake({
+        delegatorAddress,
+        validatorShareAddress,
+        amount: amountToStake,
+        staker,
+        walletClient,
+        publicClient
+      })
 
       let error: Error | undefined
       try {
