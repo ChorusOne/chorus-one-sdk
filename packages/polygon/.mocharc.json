@@ -1,0 +1,6 @@
+{
+  "require": ["tsx"],
+  "extensions": ["ts"],
+  "timeout": 10000,
+  "reporter": "spec"
+}
