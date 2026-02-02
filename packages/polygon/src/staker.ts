@@ -243,8 +243,8 @@ export class PolygonStaker {
     const amountWei = this.parseAmount(amount)
 
     const stake = await this.getStake({ delegatorAddress, validatorShareAddress })
-    if (stake.totalStaked < amountWei) {
-      throw new Error(`Insufficient stake. Current: ${formatEther(stake.totalStaked)} POL, Requested: ${amount} POL`)
+    if (parseEther(stake.balance) < amountWei) {
+      throw new Error(`Insufficient stake. Current: ${stake.balance} POL, Requested: ${amount} POL`)
     }
 
     const data = encodeFunctionData({
@@ -420,23 +420,20 @@ export class PolygonStaker {
    * @param params.validatorShareAddress - The validator's ValidatorShare contract address
    *
    * @returns Promise resolving to stake information:
-   *   - totalStaked: Total staked amount in wei
+   *   - balance: Total staked amount formatted in POL
    *   - shares: Total shares held by the delegator
    */
   async getStake (params: { delegatorAddress: Address; validatorShareAddress: Address }): Promise<StakeInfo> {
     const { delegatorAddress, validatorShareAddress } = params
 
-    const result = await this.publicClient.readContract({
+    const [balance, shares] = await this.publicClient.readContract({
       address: validatorShareAddress,
       abi: VALIDATOR_SHARE_ABI,
       functionName: 'getTotalStake',
       args: [delegatorAddress]
     })
 
-    return {
-      totalStaked: result[0],
-      shares: result[1]
-    }
+    return { balance: formatEther(balance), shares }
   }
 
   /**
@@ -479,17 +476,14 @@ export class PolygonStaker {
   }): Promise<UnbondInfo> {
     const { delegatorAddress, validatorShareAddress, unbondNonce } = params
 
-    const result = await this.publicClient.readContract({
+    const [shares, withdrawEpoch] = await this.publicClient.readContract({
       address: validatorShareAddress,
       abi: VALIDATOR_SHARE_ABI,
       functionName: 'unbonds_new',
       args: [delegatorAddress, unbondNonce]
     })
 
-    return {
-      shares: result[0],
-      withdrawEpoch: result[1]
-    }
+    return { shares, withdrawEpoch }
   }
 
   /**
@@ -576,7 +570,7 @@ export class PolygonStaker {
 
     const client = createWalletClient({
       chain,
-      transport: http(),
+      transport: http(this.rpcUrl),
       account: signerAddress
     })
 

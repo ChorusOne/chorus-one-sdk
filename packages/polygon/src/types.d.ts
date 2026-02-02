@@ -1,4 +1,4 @@
-import type { AccessList, Address, Hex, TransactionReceipt } from 'viem'
+import type { AccessList, Hex, TransactionReceipt } from 'viem'
 import type { PolygonNetworks } from './constants'
 
 export interface PolygonNetworkConfig {
@@ -10,11 +10,11 @@ export interface PolygonNetworkConfig {
 
 export interface Transaction {
   /** The recipient (contract) address in hexadecimal format */
-  to: Address
+  to: Hex
   /** The data to be included in the transaction in hexadecimal format */
   data: Hex
   /** The amount of ETH (in wei) to be sent with the transaction */
-  value: bigint
+  value?: bigint
   /** Optional EIP-2930 access list for referrer tracking */
   accessList?: AccessList
 }
@@ -27,8 +27,8 @@ export interface PolygonTxStatus {
 }
 
 export interface StakeInfo {
-  /** Total staked amount in wei */
-  totalStaked: bigint
+  /** Total staked amount formatted in POL */
+  balance: string
   /** Total shares held by the delegator */
   shares: bigint
 }
