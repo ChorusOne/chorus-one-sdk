@@ -1,5 +1,5 @@
 import { PolygonStaker } from '@chorus-one/polygon'
-import { type PublicClient, type WalletClient, type Address, parseEther, createWalletClient, http } from 'viem'
+import { type PublicClient, type WalletClient, type Address, parseEther, formatEther, createWalletClient, http } from 'viem'
 import { hardhat } from 'viem/chains'
 import { use, expect, assert } from 'chai'
 import chaiAsPromised from 'chai-as-promised'
@@ -49,7 +49,7 @@ describe('PolygonStaker', () => {
 
     it('reads stake info', async () => {
       const stakeInfo = await staker.getStake({ delegatorAddress: WHALE_DELEGATOR, validatorShareAddress })
-      assert.equal(stakeInfo.totalStaked, 21988992415946939745339n)
+      assert.equal(stakeInfo.balance, formatEther(21988992415946939745339n))
     })
 
     it('reads allowance', async () => {
@@ -95,7 +95,7 @@ describe('PolygonStaker', () => {
       await approveAndStake({ delegatorAddress, validatorShareAddress, amount: AMOUNT, staker, walletClient, publicClient })
 
       const stakeInfo = await staker.getStake({ delegatorAddress, validatorShareAddress })
-      assert.equal(stakeInfo.totalStaked, parseEther(AMOUNT))
+      assert.equal(stakeInfo.balance, AMOUNT)
     })
 
     it('unstakes and creates unbond request', async () => {
@@ -114,7 +114,7 @@ describe('PolygonStaker', () => {
       assert.isTrue(unbond.withdrawEpoch >= epochBefore)
 
       const stakeAfter = await staker.getStake({ delegatorAddress, validatorShareAddress })
-      assert.equal(stakeAfter.totalStaked, 0n)
+      assert.equal(stakeAfter.balance, '0')
     })
 
     it('withdraws after unbonding period and verifies balance increase', async () => {
@@ -226,7 +226,7 @@ describe('PolygonStaker', () => {
         delegatorAddress: WHALE_DELEGATOR,
         validatorShareAddress
       })
-      assert.equal(stakeAfter.totalStaked - stakeBefore.totalStaked, rewardsBefore)
+      assert.equal(parseEther(stakeAfter.balance) - parseEther(stakeBefore.balance), rewardsBefore)
     })
   })
 })
