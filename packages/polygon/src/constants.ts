@@ -16,14 +16,16 @@ export const NETWORK_CONTRACTS: Record<PolygonNetworks, NetworkContracts> = {
   },
   testnet: {
     stakeManagerAddress: '0x4AE8f648B1Ec892B6cc68C89cc088583964d08bE',
-    stakingTokenAddress: '0x3fd0A53F4Bf853985a95F4Eb3F9C9FDE1F8e2b53'
+    stakingTokenAddress: '0x44499312f493F62f2DFd3C6435Ca3603EbFCeeBa'
   }
 }
 
 /** Chorus One Polygon ValidatorShare contract addresses */
-// Reference: https://staking.polygon.technology/validators/106
+// Reference mainnet: https://staking.polygon.technology/validators/106
+// Reference testnet: https://staking.polygon.technology/validators/31
 export const CHORUS_ONE_POLYGON_VALIDATORS = {
-  mainnet: '0xD9E6987D77bf2c6d0647b8181fd68A259f838C36' as Address
+  mainnet: '0xD9E6987D77bf2c6d0647b8181fd68A259f838C36' as Address,
+  testnet: '0x91344055cb0511b3aa36c561d741ee356b95f1c9' as Address
 } as const
 
 // Reference: https://github.com/0xPolygon/pos-contracts/blob/main/contracts/staking/validatorShare/ValidatorShare.sol
