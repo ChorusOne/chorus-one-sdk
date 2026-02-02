@@ -189,9 +189,9 @@ export class PolygonStaker {
     const amountWei = this.parseAmount(amount)
 
     const allowance = await this.getAllowance(delegatorAddress)
-    if (allowance < amountWei) {
+    if (parseEther(allowance) < amountWei) {
       throw new Error(
-        `Insufficient POL allowance. Current: ${formatEther(allowance)}, Required: ${amount}. Call buildApproveTx() first.`
+        `Insufficient POL allowance. Current: ${allowance}, Required: ${amount}. Call buildApproveTx() first.`
       )
     }
 
@@ -215,7 +215,7 @@ export class PolygonStaker {
    * Builds an unstaking transaction
    *
    * Creates an unbond request to unstake POL tokens from a validator.
-   * After the unbonding period (~80 checkpoints), call buildWithdrawTx() to claim funds.
+   * After the unbonding period (~80 checkpoints, approximately 3-4 days days), call buildWithdrawTx() to claim funds.
    *
    * @param params - Parameters for building the transaction
    * @param params.delegatorAddress - The delegator's address
@@ -269,10 +269,14 @@ export class PolygonStaker {
    * Claims unstaked POL tokens after the unbonding period has elapsed.
    * Use getUnbond() to check if the unbonding period is complete.
    *
+   * Note: Each unstake creates a separate unbond with its own nonce (1, 2, 3, etc.).
+   * Withdrawals must be done per-nonce. To withdraw all pending unbonds, iterate
+   * through nonces from 1 to getUnbondNonce() and withdraw each eligible one.
+   *
    * @param params - Parameters for building the transaction
    * @param params.delegatorAddress - The delegator's address that will receive the funds
    * @param params.validatorShareAddress - The validator's ValidatorShare contract address
-   * @param params.unbondNonce - The unbond nonce from the unstaking operation
+   * @param params.unbondNonce - The specific unbond nonce to withdraw
    * @param params.referrer - (Optional) Custom 32-byte hex string for tracking. If not provided, uses default Chorus One encoding.
    *
    * @returns Returns a promise that resolves to a Polygon withdrawal transaction
@@ -345,7 +349,7 @@ export class PolygonStaker {
     }
 
     const rewards = await this.getLiquidRewards({ delegatorAddress, validatorShareAddress })
-    if (rewards === 0n) {
+    if (parseEther(rewards) === 0n) {
       throw new Error('No rewards available to claim')
     }
 
@@ -391,7 +395,7 @@ export class PolygonStaker {
     }
 
     const rewards = await this.getLiquidRewards({ delegatorAddress, validatorShareAddress })
-    if (rewards === 0n) {
+    if (parseEther(rewards) === 0n) {
       throw new Error('No rewards available to compound')
     }
 
@@ -437,16 +441,17 @@ export class PolygonStaker {
   }
 
   /**
-   * Retrieves the current unbond nonce for a delegator
+   * Retrieves the latest unbond nonce for a delegator
    *
-   * The nonce represents the index of the latest unbond request.
-   * The first unbond is stored at nonce 1. The latest unbond request has nonce = unbondNonces.
+   * Each unstake operation creates a new unbond request with an incrementing nonce.
+   * The returned value represents the total number of unstakes performed.
+   * For example, if this returns 3n, unbonds exist at nonces 1, 2, and 3.
    *
    * @param params - Parameters for the query
    * @param params.delegatorAddress - Ethereum address of the delegator
    * @param params.validatorShareAddress - The validator's ValidatorShare contract address
    *
-   * @returns Promise resolving to the current unbond nonce
+   * @returns Promise resolving to the latest unbond nonce (0n if no unstakes performed)
    */
   async getUnbondNonce (params: { delegatorAddress: Address; validatorShareAddress: Address }): Promise<bigint> {
     return this.publicClient.readContract({
@@ -458,15 +463,18 @@ export class PolygonStaker {
   }
 
   /**
-   * Retrieves unbond request information
+   * Retrieves unbond request information for a specific nonce
+   *
+   * Use this to check the status of individual unbond requests.
+   * Compare withdrawEpoch with getEpoch() to determine if withdrawal is possible.
    *
    * @param params - Parameters for the query
    * @param params.delegatorAddress - Ethereum address of the delegator
    * @param params.validatorShareAddress - The validator's ValidatorShare contract address
-   * @param params.unbondNonce - The unbond nonce to query
+   * @param params.unbondNonce - The specific unbond nonce to query (1, 2, 3, etc.)
    *
    * @returns Promise resolving to unbond information:
-   *   - shares: Shares amount pending unbonding (0 if no request exists)
+   *   - shares: Shares amount pending unbonding (0n if already withdrawn or doesn't exist)
    *   - withdrawEpoch: Epoch number when the unbond becomes claimable
    */
   async getUnbond (params: {
@@ -493,15 +501,16 @@ export class PolygonStaker {
    * @param params.delegatorAddress - Ethereum address of the delegator
    * @param params.validatorShareAddress - The validator's ValidatorShare contract address
    *
-   * @returns Promise resolving to the pending rewards in wei
+   * @returns Promise resolving to the pending rewards in POL
    */
-  async getLiquidRewards (params: { delegatorAddress: Address; validatorShareAddress: Address }): Promise<bigint> {
-    return this.publicClient.readContract({
+  async getLiquidRewards (params: { delegatorAddress: Address; validatorShareAddress: Address }): Promise<string> {
+    const rewards = await this.publicClient.readContract({
       address: params.validatorShareAddress,
       abi: VALIDATOR_SHARE_ABI,
       functionName: 'getLiquidRewards',
       args: [params.delegatorAddress]
     })
+    return formatEther(rewards)
   }
 
   /**
@@ -509,15 +518,16 @@ export class PolygonStaker {
    *
    * @param ownerAddress - The token owner's address
    *
-   * @returns Promise resolving to the current allowance in wei
+   * @returns Promise resolving to the current allowance in POL
    */
-  async getAllowance (ownerAddress: Address): Promise<bigint> {
-    return this.publicClient.readContract({
+  async getAllowance (ownerAddress: Address): Promise<string> {
+    const allowance = await this.publicClient.readContract({
       address: this.contracts.stakingTokenAddress,
       abi: erc20Abi,
       functionName: 'allowance',
       args: [ownerAddress, this.contracts.stakeManagerAddress]
     })
+    return formatEther(allowance)
   }
 
   /**

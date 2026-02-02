@@ -1,4 +1,4 @@
-import { type PublicClient, parseEther } from 'viem'
+import { type PublicClient, parseEther, maxUint256 } from 'viem'
 import { hardhat } from 'viem/chains'
 import { assert } from 'chai'
 import { fundWithStakingToken, impersonate, getStakingTokenBalance, getWithdrawalDelay, advanceEpoch } from './utils'
@@ -43,7 +43,7 @@ describe('PolygonStaker with LocalSigner', () => {
     await testStaker.approve(AMOUNT)
 
     const allowance = await testStaker.staker.getAllowance(testStaker.delegatorAddress)
-    assert.equal(allowance, parseEther(AMOUNT))
+    assert.equal(allowance, AMOUNT)
 
     await testStaker.stake(AMOUNT)
 
@@ -52,6 +52,13 @@ describe('PolygonStaker with LocalSigner', () => {
       validatorShareAddress: testStaker.validatorShareAddress
     })
     assert.equal(stakeInfo.balance, AMOUNT)
+  })
+
+  it('approves max (unlimited) allowance using LocalSigner', async () => {
+    await testStaker.approve('max')
+
+    const allowance = await testStaker.staker.getAllowance(testStaker.delegatorAddress)
+    assert.equal(parseEther(allowance), maxUint256)
   })
 
   it('unstakes using LocalSigner', async () => {
