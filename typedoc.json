@@ -8,6 +8,7 @@
     "packages/substrate/src/index.ts",
     "packages/ton/src/index.ts",
     "packages/hyperliquid/src/index.ts",
+    "packages/polygon/src/index.ts",
     "packages/signer-fireblocks/src/index.ts",
     "packages/signer-local/src/index.ts",
     "packages/signer/src/index.ts"

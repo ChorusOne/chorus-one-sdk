@@ -1,5 +1,13 @@
 import { PolygonStaker } from '@chorus-one/polygon'
-import { type PublicClient, type WalletClient, type Address, parseEther, formatEther, createWalletClient, http } from 'viem'
+import {
+  type PublicClient,
+  type WalletClient,
+  type Address,
+  parseEther,
+  formatEther,
+  createWalletClient,
+  http
+} from 'viem'
 import { hardhat } from 'viem/chains'
 import { use, expect, assert } from 'chai'
 import chaiAsPromised from 'chai-as-promised'
@@ -54,7 +62,7 @@ describe('PolygonStaker', () => {
 
     it('reads allowance', async () => {
       const allowance = await staker.getAllowance(WHALE_DELEGATOR)
-      assert.equal(allowance, 0n)
+      assert.equal(allowance, '0')
     })
 
     it('reads unbond nonce', async () => {
@@ -64,7 +72,7 @@ describe('PolygonStaker', () => {
 
     it('reads liquid rewards', async () => {
       const rewards = await staker.getLiquidRewards({ delegatorAddress: WHALE_DELEGATOR, validatorShareAddress })
-      assert.equal(rewards, 262938803657614873036n)
+      assert.equal(rewards, '262.938803657614873036')
     })
   })
 
@@ -88,18 +96,32 @@ describe('PolygonStaker', () => {
       await approve({ delegatorAddress, amount: AMOUNT, staker, walletClient, publicClient })
 
       const allowance = await staker.getAllowance(delegatorAddress)
-      assert.equal(allowance, parseEther(AMOUNT))
+      assert.equal(allowance, AMOUNT)
     })
 
     it('stakes and verifies on-chain state', async () => {
-      await approveAndStake({ delegatorAddress, validatorShareAddress, amount: AMOUNT, staker, walletClient, publicClient })
+      await approveAndStake({
+        delegatorAddress,
+        validatorShareAddress,
+        amount: AMOUNT,
+        staker,
+        walletClient,
+        publicClient
+      })
 
       const stakeInfo = await staker.getStake({ delegatorAddress, validatorShareAddress })
       assert.equal(stakeInfo.balance, AMOUNT)
     })
 
     it('unstakes and creates unbond request', async () => {
-      await approveAndStake({ delegatorAddress, validatorShareAddress, amount: AMOUNT, staker, walletClient, publicClient })
+      await approveAndStake({
+        delegatorAddress,
+        validatorShareAddress,
+        amount: AMOUNT,
+        staker,
+        walletClient,
+        publicClient
+      })
 
       const nonceBefore = await staker.getUnbondNonce({ delegatorAddress, validatorShareAddress })
       const epochBefore = await staker.getEpoch()
@@ -118,7 +140,14 @@ describe('PolygonStaker', () => {
     })
 
     it('withdraws after unbonding period and verifies balance increase', async () => {
-      await approveAndStake({ delegatorAddress, validatorShareAddress, amount: AMOUNT, staker, walletClient, publicClient })
+      await approveAndStake({
+        delegatorAddress,
+        validatorShareAddress,
+        amount: AMOUNT,
+        staker,
+        walletClient,
+        publicClient
+      })
       await unstake({ delegatorAddress, validatorShareAddress, amount: AMOUNT, staker, walletClient, publicClient })
 
       const nonce = await staker.getUnbondNonce({ delegatorAddress, validatorShareAddress })
@@ -144,19 +173,33 @@ describe('PolygonStaker', () => {
     })
 
     it('rejects claim rewards when none available', async () => {
-      await approveAndStake({ delegatorAddress, validatorShareAddress, amount: AMOUNT, staker, walletClient, publicClient })
+      await approveAndStake({
+        delegatorAddress,
+        validatorShareAddress,
+        amount: AMOUNT,
+        staker,
+        walletClient,
+        publicClient
+      })
 
-      await expect(
-        staker.buildClaimRewardsTx({ delegatorAddress, validatorShareAddress })
-      ).to.be.rejectedWith('No rewards available to claim')
+      await expect(staker.buildClaimRewardsTx({ delegatorAddress, validatorShareAddress })).to.be.rejectedWith(
+        'No rewards available to claim'
+      )
     })
 
     it('rejects compound when no rewards available', async () => {
-      await approveAndStake({ delegatorAddress, validatorShareAddress, amount: AMOUNT, staker, walletClient, publicClient })
+      await approveAndStake({
+        delegatorAddress,
+        validatorShareAddress,
+        amount: AMOUNT,
+        staker,
+        walletClient,
+        publicClient
+      })
 
-      await expect(
-        staker.buildCompoundTx({ delegatorAddress, validatorShareAddress })
-      ).to.be.rejectedWith('No rewards available to compound')
+      await expect(staker.buildCompoundTx({ delegatorAddress, validatorShareAddress })).to.be.rejectedWith(
+        'No rewards available to compound'
+      )
     })
   })
 
@@ -178,7 +221,7 @@ describe('PolygonStaker', () => {
         delegatorAddress: WHALE_DELEGATOR,
         validatorShareAddress
       })
-      assert.isTrue(rewardsBefore > 0n, 'Whale should have accrued rewards')
+      assert.isTrue(parseEther(rewardsBefore) > 0n, 'Whale should have accrued rewards')
 
       const balanceBefore = await getStakingTokenBalance({ publicClient, address: WHALE_DELEGATOR })
 
@@ -192,10 +235,10 @@ describe('PolygonStaker', () => {
         delegatorAddress: WHALE_DELEGATOR,
         validatorShareAddress
       })
-      assert.equal(rewardsAfter, 0n)
+      assert.equal(rewardsAfter, '0')
 
       const balanceAfter = await getStakingTokenBalance({ publicClient, address: WHALE_DELEGATOR })
-      assert.equal(balanceAfter - balanceBefore, rewardsBefore)
+      assert.equal(balanceAfter - balanceBefore, parseEther(rewardsBefore))
     })
 
     it('compounds rewards and verifies stake increase', async () => {
@@ -203,7 +246,7 @@ describe('PolygonStaker', () => {
         delegatorAddress: WHALE_DELEGATOR,
         validatorShareAddress
       })
-      assert.isTrue(rewardsBefore > 0n, 'Whale should have accrued rewards')
+      assert.isTrue(parseEther(rewardsBefore) > 0n, 'Whale should have accrued rewards')
 
       const stakeBefore = await staker.getStake({
         delegatorAddress: WHALE_DELEGATOR,
@@ -220,13 +263,13 @@ describe('PolygonStaker', () => {
         delegatorAddress: WHALE_DELEGATOR,
         validatorShareAddress
       })
-      assert.equal(rewardsAfter, 0n)
+      assert.equal(rewardsAfter, '0')
 
       const stakeAfter = await staker.getStake({
         delegatorAddress: WHALE_DELEGATOR,
         validatorShareAddress
       })
-      assert.equal(parseEther(stakeAfter.balance) - parseEther(stakeBefore.balance), rewardsBefore)
+      assert.equal(parseEther(stakeAfter.balance) - parseEther(stakeBefore.balance), parseEther(rewardsBefore))
     })
   })
 })
