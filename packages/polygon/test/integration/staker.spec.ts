@@ -30,7 +30,7 @@ use(chaiAsPromised)
 
 const AMOUNT = '100'
 
-// Existing Chorus One validator delegator with accrued rewards at block 24369869
+// Existing Chorus One validator delegator with accrued rewards at block 24382010
 const WHALE_DELEGATOR = '0xf382c7202ff9fa88f5ee4054b124fbb9cc196c6e' as Address
 
 describe('PolygonStaker', () => {
@@ -54,7 +54,7 @@ describe('PolygonStaker', () => {
 
     it('reads current epoch', async () => {
       const epoch = await staker.getEpoch()
-      assert.equal(epoch, 96699n)
+      assert.equal(epoch, 96822n)
     })
 
     it('reads stake info', async () => {
@@ -74,7 +74,7 @@ describe('PolygonStaker', () => {
 
     it('reads liquid rewards', async () => {
       const rewards = await staker.getLiquidRewards({ delegatorAddress: WHALE_DELEGATOR, validatorShareAddress })
-      assert.equal(rewards, '29.168279722050262884')
+      assert.equal(rewards, '45.307877957471003709')
     })
   })
 

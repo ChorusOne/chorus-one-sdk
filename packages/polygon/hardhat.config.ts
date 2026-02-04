@@ -10,7 +10,7 @@ const config: HardhatUserConfig = {
       forking: {
         url: networkConfig.networks.ethereum.url,
         enabled: true,
-        blockNumber: 24369869 // Fetched on 2026-02-02
+        blockNumber: 24382010 // Fetched on 2026-02-04
       },
       accounts: networkConfig.accounts.map((acc) => ({
         privateKey: acc.privateKey,
