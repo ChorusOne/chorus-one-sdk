@@ -33,12 +33,6 @@ describe('PolygonStaker', () => {
       await expect(staker.buildApproveTx({ amount: '' })).to.be.rejectedWith('Amount cannot be empty')
       await expect(staker.buildApproveTx({ amount: 'invalid' })).to.be.rejectedWith('Amount must be a valid number')
     })
-
-    it('should not include accessList (no referrer tracking for approve)', async () => {
-      const { tx } = await staker.buildApproveTx({ amount: '100' })
-
-      assert.isUndefined(tx.accessList)
-    })
   })
 
   describe('address validation', () => {

@@ -122,6 +122,31 @@ describe('PolygonStaker', () => {
       assert.equal(stakeInfo.balance, AMOUNT)
     })
 
+    it('stakes with referrer tracking in tx data', async () => {
+      await approve({ delegatorAddress, amount: AMOUNT, staker, walletClient, publicClient })
+
+      const { tx } = await staker.buildStakeTx({
+        delegatorAddress,
+        validatorShareAddress,
+        amount: AMOUNT,
+        minSharesToMint: 0n
+      })
+
+      assert.isTrue(tx.data.includes('c1c1'), 'tx data should contain referrer marker')
+
+      const request = await walletClient.prepareTransactionRequest({ ...tx, chain: undefined })
+      const hash = await walletClient.sendTransaction({ ...request, account: delegatorAddress })
+
+      const onChainTx = await publicClient.getTransaction({ hash })
+      assert.isTrue(onChainTx.input.includes('c1c1'), 'on-chain tx input should contain referrer marker')
+
+      const receipt = await publicClient.getTransactionReceipt({ hash })
+      assert.equal(receipt.status, 'success')
+
+      const stakeInfo = await staker.getStake({ delegatorAddress, validatorShareAddress })
+      assert.equal(stakeInfo.balance, AMOUNT)
+    })
+
     it('unstakes and creates unbond request', async () => {
       await approveAndStake({
         delegatorAddress,

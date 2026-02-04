@@ -1,4 +1,4 @@
-import type { AccessList, Hex, TransactionReceipt } from 'viem'
+import type { Hex, TransactionReceipt } from 'viem'
 import type { PolygonNetworks } from './constants'
 
 export interface PolygonNetworkConfig {
@@ -11,12 +11,10 @@ export interface PolygonNetworkConfig {
 export interface Transaction {
   /** The recipient (contract) address in hexadecimal format */
   to: Hex
-  /** The data to be included in the transaction in hexadecimal format */
+  /** The data to be included in the transaction in hexadecimal format (includes referrer tracking suffix) */
   data: Hex
   /** The amount of ETH (in wei) to be sent with the transaction */
   value?: bigint
-  /** Optional EIP-2930 access list for referrer tracking */
-  accessList?: AccessList
 }
 
 export interface PolygonTxStatus {
