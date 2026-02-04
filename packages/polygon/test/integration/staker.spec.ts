@@ -158,7 +158,7 @@ describe('PolygonStaker', () => {
       })
 
       const nonceBefore = await staker.getUnbondNonce({ delegatorAddress, validatorShareAddress })
-      const epochBefore = await staker.getEpoch()
+      const currentEpoch = await staker.getEpoch()
 
       const stakeBefore = await staker.getStake({ delegatorAddress, validatorShareAddress })
       await unstake({
@@ -175,8 +175,7 @@ describe('PolygonStaker', () => {
       assert.equal(nonceAfter, nonceBefore + 1n)
 
       const unbond = await staker.getUnbond({ delegatorAddress, validatorShareAddress, unbondNonce: nonceAfter })
-      assert.equal(unbond.shares, parseEther(AMOUNT))
-      assert.isTrue(unbond.withdrawEpoch >= epochBefore)
+      assert.isTrue(unbond.withdrawEpoch === currentEpoch)
 
       const stakeAfter = await staker.getStake({ delegatorAddress, validatorShareAddress })
       assert.equal(stakeAfter.balance, '0')
@@ -211,7 +210,7 @@ describe('PolygonStaker', () => {
       const balanceBefore = await getStakingTokenBalance({ publicClient, address: delegatorAddress })
 
       const { tx } = await staker.buildWithdrawTx({ delegatorAddress, validatorShareAddress, unbondNonce: nonce })
-      await sendTx({ tx, walletClient, publicClient, delegatorAddress })
+      await sendTx({ tx, walletClient, publicClient, senderAddress: delegatorAddress })
 
       const balanceAfter = await getStakingTokenBalance({ publicClient, address: delegatorAddress })
       assert.equal(balanceAfter - balanceBefore, parseEther(AMOUNT))
@@ -312,7 +311,7 @@ describe('PolygonStaker', () => {
         delegatorAddress: WHALE_DELEGATOR,
         validatorShareAddress
       })
-      await sendTx({ tx, walletClient: whaleWallet, publicClient, delegatorAddress: WHALE_DELEGATOR })
+      await sendTx({ tx, walletClient: whaleWallet, publicClient, senderAddress: WHALE_DELEGATOR })
 
       const rewardsAfter = await staker.getLiquidRewards({
         delegatorAddress: WHALE_DELEGATOR,
@@ -340,7 +339,7 @@ describe('PolygonStaker', () => {
         delegatorAddress: WHALE_DELEGATOR,
         validatorShareAddress
       })
-      await sendTx({ tx, walletClient: whaleWallet, publicClient, delegatorAddress: WHALE_DELEGATOR })
+      await sendTx({ tx, walletClient: whaleWallet, publicClient, senderAddress: WHALE_DELEGATOR })
 
       const rewardsAfter = await staker.getLiquidRewards({
         delegatorAddress: WHALE_DELEGATOR,

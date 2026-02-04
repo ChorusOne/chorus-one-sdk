@@ -22,7 +22,7 @@ export const NETWORK_CONTRACTS: Record<PolygonNetworks, NetworkContracts> = {
 
 /** Chorus One Polygon ValidatorShare contract addresses */
 // Reference mainnet: https://staking.polygon.technology/validators/106
-// Reference testnet: https://staking.polygon.technology/validators/31
+// Reference testnet (Random Validator): https://staking.polygon.technology/validators/31
 export const CHORUS_ONE_POLYGON_VALIDATORS = {
   mainnet: '0xD9E6987D77bf2c6d0647b8181fd68A259f838C36' as Address,
   testnet: '0x91344055cb0511b3aa36c561d741ee356b95f1c9' as Address
