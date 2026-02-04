@@ -78,11 +78,12 @@ export class PolygonTestStaker {
     return txHash
   }
 
-  async stake (amount: string): Promise<string> {
+  async stake (amount: string, minSharesToMint: bigint): Promise<string> {
     const { tx } = await this.staker.buildStakeTx({
       delegatorAddress: this.delegatorAddress,
       validatorShareAddress: this.validatorShareAddress,
-      amount
+      amount,
+      minSharesToMint
     })
     const { signedTx } = await this.staker.sign({
       signer: this.localSigner,

@@ -46,7 +46,8 @@ const { tx: approveTx } = await staker.buildApproveTx({
 const { tx } = await staker.buildStakeTx({
   delegatorAddress,
   validatorShareAddress,
-  amount: '1000' // Amount in POL
+  amount: '1000', // Amount in POL
+  minSharesToMint: 0n // Minimum shares to receive (slippage protection)
 })
 
 // Signing the transaction with Fireblocks

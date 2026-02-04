@@ -45,7 +45,7 @@ describe('PolygonStaker with LocalSigner', () => {
     const allowance = await testStaker.staker.getAllowance(testStaker.delegatorAddress)
     assert.equal(allowance, AMOUNT)
 
-    await testStaker.stake(AMOUNT)
+    await testStaker.stake(AMOUNT, 0n)
 
     const stakeInfo = await testStaker.staker.getStake({
       delegatorAddress: testStaker.delegatorAddress,
@@ -63,7 +63,7 @@ describe('PolygonStaker with LocalSigner', () => {
 
   it('unstakes using LocalSigner', async () => {
     await testStaker.approve(AMOUNT)
-    await testStaker.stake(AMOUNT)
+    await testStaker.stake(AMOUNT, 0n)
 
     const nonceBefore = await testStaker.staker.getUnbondNonce({
       delegatorAddress: testStaker.delegatorAddress,
@@ -91,7 +91,7 @@ describe('PolygonStaker with LocalSigner', () => {
 
   it('withdraws using LocalSigner after unbonding period', async () => {
     await testStaker.approve(AMOUNT)
-    await testStaker.stake(AMOUNT)
+    await testStaker.stake(AMOUNT, 0n)
 
     const stakeBefore = await testStaker.staker.getStake({
       delegatorAddress: testStaker.delegatorAddress,
