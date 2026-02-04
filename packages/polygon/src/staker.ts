@@ -19,7 +19,7 @@ import { mainnet, sepolia } from 'viem/chains'
 import { secp256k1 } from '@noble/curves/secp256k1.js'
 import type { Signer } from '@chorus-one/signer'
 import type { Transaction, PolygonNetworkConfig, PolygonTxStatus, StakeInfo, UnbondInfo } from './types.d'
-import { buildReferrerTracking } from './referrer'
+import { appendReferrerTracking } from './referrer'
 import {
   VALIDATOR_SHARE_ABI,
   STAKE_MANAGER_ABI,
@@ -39,39 +39,15 @@ import {
  *
  * ---
  *
- * **⚠️ EIP-2930 Access List Compatibility Warning**
+ * **Referrer Tracking**
  *
- * All transaction builders include an EIP-2930 access list for referrer tracking by default.
- * Some wallets (e.g., Phantom) do not support EIP-2930 access lists and will fail during
- * gas estimation with `InvalidInputRpcError` or `InvalidParamsRpcError`.
+ * Transaction builders that support referrer tracking (stake, unstake, claim rewards, compound)
+ * append a tracking marker to the transaction calldata. The marker format is `c1c1` followed by
+ * the first 3 bytes of the keccak256 hash of the referrer string. By default, `sdk-chorusone-staking`
+ * is used as the referrer.
  *
- * If you need to support these wallets, implement a fallback that retries without the access list:
- *
- * @example
- * ```typescript
- * import { BaseError, InvalidInputRpcError, InvalidParamsRpcError } from 'viem'
- *
- * const shouldRetryWithoutAccessList = (error: unknown): boolean => {
- *   const matches = (err: unknown) =>
- *     err instanceof InvalidInputRpcError || err instanceof InvalidParamsRpcError
- *   if (error instanceof BaseError) {
- *     return Boolean(error.walk(matches))
- *   }
- *   return false
- * }
- *
- * const sendTransaction = async (tx: Transaction) => {
- *   try {
- *     return await walletClient.sendTransaction(tx)
- *   } catch (err) {
- *     if (tx.accessList && shouldRetryWithoutAccessList(err)) {
- *       const { accessList: _omit, ...fallbackTx } = tx
- *       return await walletClient.sendTransaction(fallbackTx)
- *     }
- *     throw err
- *   }
- * }
- * ```
+ * To extract the referrer from on-chain transactions, look for the `c1c1` prefix in the trailing
+ * bytes after the function calldata.
  */
 const NETWORK_CHAINS: Record<PolygonNetworks, Chain> = {
   mainnet,
@@ -164,7 +140,7 @@ export class PolygonStaker {
    * @param params.validatorShareAddress - The validator's ValidatorShare contract address
    * @param params.amount - The amount to stake in POL
    * @param params.minSharesToMint - Minimum validator shares to receive for slippage protection.
-   * @param params.referrer - (Optional) Custom 32-byte hex string for tracking. If not provided, uses default Chorus One encoding.
+   * @param params.referrer - (Optional) Custom referrer string for tracking. If not provided, uses 'sdk-chorusone-staking'.
    *
    * @returns Returns a promise that resolves to a Polygon staking transaction
    */
@@ -173,7 +149,7 @@ export class PolygonStaker {
     validatorShareAddress: Address
     amount: string
     minSharesToMint: bigint
-    referrer?: Hex
+    referrer?: string
   }): Promise<{ tx: Transaction }> {
     const { delegatorAddress, validatorShareAddress, amount, minSharesToMint, referrer } = params
 
@@ -193,7 +169,7 @@ export class PolygonStaker {
       )
     }
 
-    const data = encodeFunctionData({
+    const calldata = encodeFunctionData({
       abi: VALIDATOR_SHARE_ABI,
       functionName: 'buyVoucherPOL',
       args: [amountWei, minSharesToMint]
@@ -202,9 +178,8 @@ export class PolygonStaker {
     return {
       tx: {
         to: validatorShareAddress,
-        data,
-        value: 0n,
-        accessList: buildReferrerTracking(referrer)
+        data: appendReferrerTracking(calldata, referrer),
+        value: 0n
       }
     }
   }
@@ -220,7 +195,7 @@ export class PolygonStaker {
    * @param params.validatorShareAddress - The validator's ValidatorShare contract address
    * @param params.amount - The amount to unstake in POL (will be converted to wei internally)
    * @param params.maximumSharesToBurn - Maximum validator shares willing to burn for slippage protection.
-   * @param params.referrer - (Optional) Custom 32-byte hex string for tracking. If not provided, uses default Chorus One encoding.
+   * @param params.referrer - (Optional) Custom referrer string for tracking. If not provided, uses 'sdk-chorusone-staking'.
    *
    * @returns Returns a promise that resolves to a Polygon unstaking transaction
    */
@@ -229,7 +204,7 @@ export class PolygonStaker {
     validatorShareAddress: Address
     amount: string
     maximumSharesToBurn: bigint
-    referrer?: Hex
+    referrer?: string
   }): Promise<{ tx: Transaction }> {
     const { delegatorAddress, validatorShareAddress, amount, maximumSharesToBurn, referrer } = params
 
@@ -247,7 +222,7 @@ export class PolygonStaker {
       throw new Error(`Insufficient stake. Current: ${stake.balance} POL, Requested: ${amount} POL`)
     }
 
-    const data = encodeFunctionData({
+    const calldata = encodeFunctionData({
       abi: VALIDATOR_SHARE_ABI,
       functionName: 'sellVoucher_newPOL',
       args: [amountWei, maximumSharesToBurn]
@@ -256,9 +231,8 @@ export class PolygonStaker {
     return {
       tx: {
         to: validatorShareAddress,
-        data,
-        value: 0n,
-        accessList: buildReferrerTracking(referrer)
+        data: appendReferrerTracking(calldata, referrer),
+        value: 0n
       }
     }
   }
@@ -329,14 +303,14 @@ export class PolygonStaker {
    * @param params - Parameters for building the transaction
    * @param params.delegatorAddress - The delegator's address that will receive the rewards
    * @param params.validatorShareAddress - The validator's ValidatorShare contract address
-   * @param params.referrer - (Optional) Custom 32-byte hex string for tracking. If not provided, uses default Chorus One encoding.
+   * @param params.referrer - (Optional) Custom referrer string for tracking. If not provided, uses 'sdk-chorusone-staking'.
    *
    * @returns Returns a promise that resolves to a Polygon claim rewards transaction
    */
   async buildClaimRewardsTx (params: {
     delegatorAddress: Address
     validatorShareAddress: Address
-    referrer?: Hex
+    referrer?: string
   }): Promise<{ tx: Transaction }> {
     const { delegatorAddress, validatorShareAddress, referrer } = params
 
@@ -352,7 +326,7 @@ export class PolygonStaker {
       throw new Error('No rewards available to claim')
     }
 
-    const data = encodeFunctionData({
+    const calldata = encodeFunctionData({
       abi: VALIDATOR_SHARE_ABI,
       functionName: 'withdrawRewardsPOL'
     })
@@ -360,9 +334,8 @@ export class PolygonStaker {
     return {
       tx: {
         to: validatorShareAddress,
-        data,
-        value: 0n,
-        accessList: buildReferrerTracking(referrer)
+        data: appendReferrerTracking(calldata, referrer),
+        value: 0n
       }
     }
   }
@@ -375,14 +348,14 @@ export class PolygonStaker {
    * @param params - Parameters for building the transaction
    * @param params.delegatorAddress - The delegator's address
    * @param params.validatorShareAddress - The validator's ValidatorShare contract address
-   * @param params.referrer - (Optional) Custom 32-byte hex string for tracking. If not provided, uses default Chorus One encoding.
+   * @param params.referrer - (Optional) Custom referrer string for tracking. If not provided, uses 'sdk-chorusone-staking'.
    *
    * @returns Returns a promise that resolves to a Polygon compound transaction
    */
   async buildCompoundTx (params: {
     delegatorAddress: Address
     validatorShareAddress: Address
-    referrer?: Hex
+    referrer?: string
   }): Promise<{ tx: Transaction }> {
     const { delegatorAddress, validatorShareAddress, referrer } = params
 
@@ -398,7 +371,7 @@ export class PolygonStaker {
       throw new Error('No rewards available to compound')
     }
 
-    const data = encodeFunctionData({
+    const calldata = encodeFunctionData({
       abi: VALIDATOR_SHARE_ABI,
       functionName: 'restakePOL'
     })
@@ -406,9 +379,8 @@ export class PolygonStaker {
     return {
       tx: {
         to: validatorShareAddress,
-        data,
-        value: 0n,
-        accessList: buildReferrerTracking(referrer)
+        data: appendReferrerTracking(calldata, referrer),
+        value: 0n
       }
     }
   }
@@ -614,8 +586,7 @@ export class PolygonStaker {
       to: tx.to,
       value: tx.value,
       data: tx.data,
-      type: 'eip1559',
-      ...(tx.accessList && { accessList: tx.accessList })
+      type: 'eip1559'
     })
 
     const message = keccak256(serializeTransaction(request)).slice(2)
