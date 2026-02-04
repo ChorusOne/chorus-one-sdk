@@ -177,6 +177,10 @@ describe('PolygonStaker', () => {
       const unbond = await staker.getUnbond({ delegatorAddress, validatorShareAddress, unbondNonce: nonceAfter })
       assert.isTrue(unbond.withdrawEpoch === currentEpoch)
 
+      const EXCHANGE_RATE_PRECISION = 10n ** 29n // For non-foundation nodes, the exchange rate is 10^29
+      const unbondAmount = (unbond.shares * stakeBefore.exchangeRate) / EXCHANGE_RATE_PRECISION
+      assert.equal(unbondAmount, parseEther(AMOUNT))
+
       const stakeAfter = await staker.getStake({ delegatorAddress, validatorShareAddress })
       assert.equal(stakeAfter.balance, '0')
     })
