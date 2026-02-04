@@ -94,11 +94,12 @@ export class PolygonTestStaker {
     return txHash
   }
 
-  async unstake (amount: string): Promise<string> {
+  async unstake (amount: string, maximumSharesToBurn: bigint): Promise<string> {
     const { tx } = await this.staker.buildUnstakeTx({
       delegatorAddress: this.delegatorAddress,
       validatorShareAddress: this.validatorShareAddress,
-      amount
+      amount,
+      maximumSharesToBurn
     })
     const { signedTx } = await this.staker.sign({
       signer: this.localSigner,

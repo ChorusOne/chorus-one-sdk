@@ -121,5 +121,12 @@ export const STAKE_MANAGER_ABI = [
     inputs: [],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     stateMutability: 'view'
+  },
+  {
+    type: 'function',
+    name: 'withdrawalDelay',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view'
   }
 ] as const

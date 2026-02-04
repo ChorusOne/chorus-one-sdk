@@ -31,6 +31,8 @@ export interface StakeInfo {
   balance: string
   /** Total shares held by the delegator */
   shares: bigint
+  /** Current exchange rate between shares and POL (with high precision) */
+  exchangeRate: bigint
 }
 
 export interface UnbondInfo {

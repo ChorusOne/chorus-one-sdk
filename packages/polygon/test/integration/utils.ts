@@ -29,6 +29,7 @@ export interface StakingParams {
   delegatorAddress: Address
   validatorShareAddress: Address
   amount: string
+  maximumSharesToBurn?: bigint
   staker: PolygonStaker
   walletClient: WalletClient
   publicClient: PublicClient
@@ -153,11 +154,12 @@ export const unstake = async ({
   delegatorAddress,
   validatorShareAddress,
   amount,
+  maximumSharesToBurn,
   staker,
   walletClient,
   publicClient
-}: StakingParams): Promise<void> => {
-  const { tx } = await staker.buildUnstakeTx({ delegatorAddress, validatorShareAddress, amount })
+}: Required<StakingParams>): Promise<void> => {
+  const { tx } = await staker.buildUnstakeTx({ delegatorAddress, validatorShareAddress, amount, maximumSharesToBurn })
   await sendTx({ tx, walletClient, publicClient, delegatorAddress })
 }
 

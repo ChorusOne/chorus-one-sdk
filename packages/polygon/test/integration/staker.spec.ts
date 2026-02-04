@@ -47,6 +47,7 @@ describe('PolygonStaker', () => {
     beforeEach(async () => {
       const setup = await prepareTests()
       validatorShareAddress = setup.validatorShareAddress
+      publicClient = setup.publicClient
       staker = setup.staker
     })
 
@@ -126,7 +127,16 @@ describe('PolygonStaker', () => {
       const nonceBefore = await staker.getUnbondNonce({ delegatorAddress, validatorShareAddress })
       const epochBefore = await staker.getEpoch()
 
-      await unstake({ delegatorAddress, validatorShareAddress, amount: AMOUNT, staker, walletClient, publicClient })
+      const stakeBefore = await staker.getStake({ delegatorAddress, validatorShareAddress })
+      await unstake({
+        delegatorAddress,
+        validatorShareAddress,
+        amount: AMOUNT,
+        maximumSharesToBurn: stakeBefore.shares,
+        staker,
+        walletClient,
+        publicClient
+      })
 
       const nonceAfter = await staker.getUnbondNonce({ delegatorAddress, validatorShareAddress })
       assert.equal(nonceAfter, nonceBefore + 1n)
@@ -148,12 +158,20 @@ describe('PolygonStaker', () => {
         walletClient,
         publicClient
       })
-      await unstake({ delegatorAddress, validatorShareAddress, amount: AMOUNT, staker, walletClient, publicClient })
+      const stakeBefore = await staker.getStake({ delegatorAddress, validatorShareAddress })
+      await unstake({
+        delegatorAddress,
+        validatorShareAddress,
+        amount: AMOUNT,
+        maximumSharesToBurn: stakeBefore.shares,
+        staker,
+        walletClient,
+        publicClient
+      })
 
       const nonce = await staker.getUnbondNonce({ delegatorAddress, validatorShareAddress })
       const unbond = await staker.getUnbond({ delegatorAddress, validatorShareAddress, unbondNonce: nonce })
 
-      // Reference: https://github.com/0xPolygon/pos-contracts/blob/main/contracts/staking/validatorShare/ValidatorShare.sol
       const withdrawalDelay = await getWithdrawalDelay({ publicClient })
       await advanceEpoch({ publicClient, staker, targetEpoch: unbond.withdrawEpoch + withdrawalDelay })
 
@@ -170,6 +188,38 @@ describe('PolygonStaker', () => {
       await expect(
         staker.buildWithdrawTx({ delegatorAddress, validatorShareAddress, unbondNonce: 999n })
       ).to.be.rejectedWith('No unbond request found for nonce 999')
+    })
+
+    it('rejects withdraw before unbonding period completes (withdrawEpoch + withdrawalDelay)', async () => {
+      await approveAndStake({
+        delegatorAddress,
+        validatorShareAddress,
+        amount: AMOUNT,
+        staker,
+        walletClient,
+        publicClient
+      })
+
+      const stakeBefore = await staker.getStake({ delegatorAddress, validatorShareAddress })
+      await unstake({
+        delegatorAddress,
+        validatorShareAddress,
+        amount: AMOUNT,
+        maximumSharesToBurn: stakeBefore.shares,
+        staker,
+        walletClient,
+        publicClient
+      })
+
+      const nonce = await staker.getUnbondNonce({ delegatorAddress, validatorShareAddress })
+      const unbond = await staker.getUnbond({ delegatorAddress, validatorShareAddress, unbondNonce: nonce })
+      const withdrawalDelay = await getWithdrawalDelay({ publicClient })
+
+      await expect(
+        staker.buildWithdrawTx({ delegatorAddress, validatorShareAddress, unbondNonce: nonce })
+      ).to.be.rejectedWith(
+        `Unbonding not complete. Current epoch: ${unbond.withdrawEpoch}, Required epoch: ${unbond.withdrawEpoch + withdrawalDelay}`
+      )
     })
 
     it('rejects claim rewards when none available', async () => {
