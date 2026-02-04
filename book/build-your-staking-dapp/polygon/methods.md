@@ -69,11 +69,16 @@ In this example, we're staking 100 POL with the Chorus One validator.
 
 The `buildUnstakeTx` method creates a transaction to unstake POL tokens from a validator.
 
-After unstaking, there is an unbonding period of approximately 80 checkpoints (around 3-4 days days) before the tokens can be withdrawn.
+After unstaking, there is an unbonding period of approximately 80 checkpoints (around 3-4 days) before the tokens can be withdrawn.
 
 ### How to Use
 
-To build an unstaking transaction, you need to specify the delegator's address, the validator's ValidatorShare contract address, and the amount to unstake.
+To build an unstaking transaction, you need to specify:
+
+- **delegatorAddress**: The address of the delegator
+- **validatorShareAddress**: The validator's ValidatorShare contract address
+- **amount**: The amount of POL to unstake
+- **maximumSharesToBurn**: Maximum validator shares willing to burn for slippage protection.
 
 ### Example
 
@@ -81,7 +86,8 @@ To build an unstaking transaction, you need to specify the delegator's address, 
 const { tx } = await staker.buildUnstakeTx({
   delegatorAddress: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
   validatorShareAddress: CHORUS_ONE_POLYGON_VALIDATORS.mainnet,
-  amount: '50' // 50 POL
+  amount: '50', // 50 POL
+  maximumSharesToBurn: 50n
 })
 ```
 
@@ -134,28 +140,6 @@ const { tx } = await staker.buildWithdrawTx({
   validatorShareAddress: CHORUS_ONE_POLYGON_VALIDATORS.mainnet,
   unbondNonce: latestNonce
 })
-
-// To withdraw all pending unbonds, iterate through each nonce:
-for (let nonce = 1n; nonce <= latestNonce; nonce++) {
-  const unbond = await staker.getUnbond({
-    delegatorAddress: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
-    validatorShareAddress: CHORUS_ONE_POLYGON_VALIDATORS.mainnet,
-    unbondNonce: nonce
-  })
-
-  // Skip if already withdrawn (shares = 0) or not yet claimable
-  if (unbond.shares === 0n) continue
-
-  const currentEpoch = await staker.getEpoch()
-  if (currentEpoch < unbond.withdrawEpoch) continue
-
-  const { tx } = await staker.buildWithdrawTx({
-    delegatorAddress: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
-    validatorShareAddress: CHORUS_ONE_POLYGON_VALIDATORS.mainnet,
-    unbondNonce: nonce
-  })
-  // Sign and broadcast tx...
-}
 ```
 
 - [Read more in the API Reference](../../docs/classes/polygon_src.PolygonStaker.md#buildwithdrawtx)
@@ -218,6 +202,12 @@ const { tx } = await staker.buildCompoundTx({
 
 The `getStake` method retrieves the staking information for a specified delegator, including the amount of POL tokens currently staked with a specified validator.
 
+Returns:
+
+- `balance`: Total staked amount formatted in POL
+- `shares`: Total shares held by the delegator
+- `exchangeRate`: Current exchange rate between shares and POL (with high precision)
+
 ### How to Use
 
 To get staking information, you will need to provide the delegator's address and the validator's ValidatorShare contract address.
@@ -225,13 +215,14 @@ To get staking information, you will need to provide the delegator's address and
 ### Example
 
 ```javascript
-const { balance, shares } = await staker.getStake({
+const { balance, shares, exchangeRate } = await staker.getStake({
   delegatorAddress: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
   validatorShareAddress: CHORUS_ONE_POLYGON_VALIDATORS.mainnet
 })
 
 console.log(`Staked balance: ${balance} POL`)
 console.log(`Shares held: ${shares}`)
+console.log(`Exchange rate: ${exchangeRate}`)
 ```
 
 - [Read more in the API Reference](../../docs/classes/polygon_src.PolygonStaker.md#getstake)
@@ -297,10 +288,10 @@ console.log(`Total unstake operations: ${latestNonce}`)
 
 ### Description
 
-The `getUnbond` method retrieves information about a specific unbond request, including the shares amount and the epoch when the unbond becomes claimable.
+The `getUnbond` method retrieves information about a specific unbond request, including the shares amount and the epoch when the unbond was created.
 
 - `shares`: The amount pending withdrawal. Returns `0n` if the unbond has already been withdrawn or doesn't exist.
-- `withdrawEpoch`: The epoch number when the unbond becomes claimable. Compare with `getEpoch()` to check if withdrawal is possible.
+- `withdrawEpoch`: The epoch when the unbond was created. Note: withdrawal is only possible after `withdrawEpoch + withdrawalDelay` (use `getWithdrawalDelay()` to get the delay).
 
 ### How to Use
 
@@ -318,11 +309,12 @@ const unbond = await staker.getUnbond({
 if (unbond.shares === 0n) {
   console.log('Unbond already withdrawn or does not exist')
 } else {
-  const currentEpoch = await staker.getEpoch()
-  if (currentEpoch >= unbond.withdrawEpoch) {
+  const [currentEpoch, withdrawalDelay] = await Promise.all([staker.getEpoch(), staker.getWithdrawalDelay()])
+  const claimableEpoch = unbond.withdrawEpoch + withdrawalDelay
+  if (currentEpoch >= claimableEpoch) {
     console.log('Ready to withdraw!')
   } else {
-    console.log(`Withdrawal available at epoch ${unbond.withdrawEpoch} (current: ${currentEpoch})`)
+    console.log(`Withdrawal available at epoch ${claimableEpoch} (current: ${currentEpoch})`)
   }
 }
 ```
@@ -337,7 +329,7 @@ if (unbond.shares === 0n) {
 
 The `getEpoch` method retrieves the current checkpoint epoch from the StakeManager contract.
 
-This can be used to check if an unbonding period has elapsed.
+This can be used in combination with `getWithdrawalDelay()` to check if an unbonding period has elapsed.
 
 ### How to Use
 
@@ -352,6 +344,30 @@ console.log(`Current epoch: ${currentEpoch}`)
 ```
 
 - [Read more in the API Reference](../../docs/classes/polygon_src.PolygonStaker.md#getepoch)
+
+---
+
+## getWithdrawalDelay
+
+### Description
+
+The `getWithdrawalDelay` method retrieves the withdrawal delay from the StakeManager contract.
+
+The withdrawal delay is the number of epochs that must pass after an unbond request before the funds can be withdrawn (~80 checkpoints, approximately 3-4 days).
+
+### How to Use
+
+Call the method without any parameters to get the withdrawal delay.
+
+### Example
+
+```javascript
+const withdrawalDelay = await staker.getWithdrawalDelay()
+
+console.log(`Withdrawal delay: ${withdrawalDelay} epochs`)
+```
+
+- [Read more in the API Reference](../../docs/classes/polygon_src.PolygonStaker.md#getwithdrawaldelay)
 
 ---
 

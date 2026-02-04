@@ -70,7 +70,11 @@ describe('PolygonStaker with LocalSigner', () => {
       validatorShareAddress: testStaker.validatorShareAddress
     })
 
-    await testStaker.unstake(AMOUNT)
+    const stakeBefore = await testStaker.staker.getStake({
+      delegatorAddress: testStaker.delegatorAddress,
+      validatorShareAddress: testStaker.validatorShareAddress
+    })
+    await testStaker.unstake(AMOUNT, stakeBefore.shares)
 
     const nonceAfter = await testStaker.staker.getUnbondNonce({
       delegatorAddress: testStaker.delegatorAddress,
@@ -88,7 +92,12 @@ describe('PolygonStaker with LocalSigner', () => {
   it('withdraws using LocalSigner after unbonding period', async () => {
     await testStaker.approve(AMOUNT)
     await testStaker.stake(AMOUNT)
-    await testStaker.unstake(AMOUNT)
+
+    const stakeBefore = await testStaker.staker.getStake({
+      delegatorAddress: testStaker.delegatorAddress,
+      validatorShareAddress: testStaker.validatorShareAddress
+    })
+    await testStaker.unstake(AMOUNT, stakeBefore.shares)
 
     const nonce = await testStaker.staker.getUnbondNonce({
       delegatorAddress: testStaker.delegatorAddress,
