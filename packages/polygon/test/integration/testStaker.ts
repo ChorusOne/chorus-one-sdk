@@ -128,33 +128,4 @@ export class PolygonTestStaker {
     return txHash
   }
 
-  async claimRewards (): Promise<string> {
-    const { tx } = await this.staker.buildClaimRewardsTx({
-      delegatorAddress: this.delegatorAddress,
-      validatorShareAddress: this.validatorShareAddress
-    })
-    const { signedTx } = await this.staker.sign({
-      signer: this.localSigner,
-      signerAddress: this.delegatorAddress,
-      tx
-    })
-    const { txHash } = await this.staker.broadcast({ signedTx })
-    await this.waitForTx(txHash)
-    return txHash
-  }
-
-  async compound (): Promise<string> {
-    const { tx } = await this.staker.buildCompoundTx({
-      delegatorAddress: this.delegatorAddress,
-      validatorShareAddress: this.validatorShareAddress
-    })
-    const { signedTx } = await this.staker.sign({
-      signer: this.localSigner,
-      signerAddress: this.delegatorAddress,
-      tx
-    })
-    const { txHash } = await this.staker.broadcast({ signedTx })
-    await this.waitForTx(txHash)
-    return txHash
-  }
 }
