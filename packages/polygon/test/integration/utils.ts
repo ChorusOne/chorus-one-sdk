@@ -116,7 +116,7 @@ export const stake = async ({
   walletClient,
   publicClient
 }: StakingParams): Promise<void> => {
-  const { tx } = await staker.buildStakeTx({ delegatorAddress, validatorShareAddress, amount })
+  const { tx } = await staker.buildStakeTx({ delegatorAddress, validatorShareAddress, amount, minSharesToMint: 0n })
   await sendTx({ tx, walletClient, publicClient, delegatorAddress })
 }
 

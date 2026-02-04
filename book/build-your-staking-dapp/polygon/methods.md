@@ -43,7 +43,12 @@ Staking tokens involves delegating them to a validator via their ValidatorShare 
 
 ### How to Use
 
-To build a staking transaction, you will need to specify the delegator's address, the validator's ValidatorShare contract address, and the amount to stake.
+To build a staking transaction, you will need to specify:
+
+- **delegatorAddress**: The delegator's Ethereum address
+- **validatorShareAddress**: The validator's ValidatorShare contract address
+- **amount**: The amount to stake in POL
+- **minSharesToMint**: Minimum validator shares to receive for slippage protection.
 
 ### Example
 
@@ -53,7 +58,8 @@ import { CHORUS_ONE_POLYGON_VALIDATORS } from '@chorus-one/polygon'
 const { tx } = await staker.buildStakeTx({
   delegatorAddress: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
   validatorShareAddress: CHORUS_ONE_POLYGON_VALIDATORS.mainnet,
-  amount: '100' // 100 POL
+  amount: '100', // 100 POL
+  minSharesToMint: 0n
 })
 ```
 

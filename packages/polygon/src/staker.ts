@@ -109,7 +109,7 @@ export class PolygonStaker {
    *
    * @returns An instance of PolygonStaker
    */
-  constructor(params: PolygonNetworkConfig) {
+  constructor (params: PolygonNetworkConfig) {
     this.rpcUrl = params.rpcUrl
     this.contracts = NETWORK_CONTRACTS[params.network]
     this.chain = NETWORK_CHAINS[params.network]
@@ -120,7 +120,7 @@ export class PolygonStaker {
   }
 
   /** @deprecated No longer required. Kept for backward compatibility. */
-  async init(): Promise<void> {}
+  async init (): Promise<void> {}
 
   /**
    * Builds a token approval transaction
@@ -130,12 +130,11 @@ export class PolygonStaker {
    *
    * @param params - Parameters for building the transaction
    * @param params.amount - The amount to approve in POL (will be converted to wei internally). Pass "max" for unlimited approval.
-   * @param params.referrer - (Optional) Custom 32-byte hex string for tracking. If not provided, uses default Chorus One encoding.
    *
    * @returns Returns a promise that resolves to an approval transaction
    */
-  async buildApproveTx(params: { amount: string; referrer?: Hex }): Promise<{ tx: Transaction }> {
-    const { amount, referrer } = params
+  async buildApproveTx (params: { amount: string }): Promise<{ tx: Transaction }> {
+    const { amount } = params
 
     const amountWei = amount === 'max' ? maxUint256 : this.parseAmount(amount)
 
@@ -149,8 +148,7 @@ export class PolygonStaker {
       tx: {
         to: this.contracts.stakingTokenAddress,
         data,
-        value: 0n,
-        accessList: buildReferrerTracking(referrer)
+        value: 0n
       }
     }
   }
@@ -165,17 +163,19 @@ export class PolygonStaker {
    * @param params.delegatorAddress - The delegator's Ethereum address
    * @param params.validatorShareAddress - The validator's ValidatorShare contract address
    * @param params.amount - The amount to stake in POL
+   * @param params.minSharesToMint - Minimum validator shares to receive for slippage protection.
    * @param params.referrer - (Optional) Custom 32-byte hex string for tracking. If not provided, uses default Chorus One encoding.
    *
    * @returns Returns a promise that resolves to a Polygon staking transaction
    */
-  async buildStakeTx(params: {
+  async buildStakeTx (params: {
     delegatorAddress: Address
     validatorShareAddress: Address
     amount: string
+    minSharesToMint: bigint
     referrer?: Hex
   }): Promise<{ tx: Transaction }> {
-    const { delegatorAddress, validatorShareAddress, amount, referrer } = params
+    const { delegatorAddress, validatorShareAddress, amount, minSharesToMint, referrer } = params
 
     if (!isAddress(delegatorAddress)) {
       throw new Error(`Invalid delegator address: ${delegatorAddress}`)
@@ -196,7 +196,7 @@ export class PolygonStaker {
     const data = encodeFunctionData({
       abi: VALIDATOR_SHARE_ABI,
       functionName: 'buyVoucherPOL',
-      args: [amountWei, 0n]
+      args: [amountWei, minSharesToMint]
     })
 
     return {
@@ -224,7 +224,7 @@ export class PolygonStaker {
    *
    * @returns Returns a promise that resolves to a Polygon unstaking transaction
    */
-  async buildUnstakeTx(params: {
+  async buildUnstakeTx (params: {
     delegatorAddress: Address
     validatorShareAddress: Address
     amount: string
@@ -277,17 +277,15 @@ export class PolygonStaker {
    * @param params.delegatorAddress - The delegator's address that will receive the funds
    * @param params.validatorShareAddress - The validator's ValidatorShare contract address
    * @param params.unbondNonce - The specific unbond nonce to withdraw
-   * @param params.referrer - (Optional) Custom 32-byte hex string for tracking. If not provided, uses default Chorus One encoding.
    *
    * @returns Returns a promise that resolves to a Polygon withdrawal transaction
    */
-  async buildWithdrawTx(params: {
+  async buildWithdrawTx (params: {
     delegatorAddress: Address
     validatorShareAddress: Address
     unbondNonce: bigint
-    referrer?: Hex
   }): Promise<{ tx: Transaction }> {
-    const { delegatorAddress, validatorShareAddress, unbondNonce, referrer } = params
+    const { delegatorAddress, validatorShareAddress, unbondNonce } = params
 
     if (!isAddress(delegatorAddress)) {
       throw new Error(`Invalid delegator address: ${delegatorAddress}`)
@@ -318,8 +316,7 @@ export class PolygonStaker {
       tx: {
         to: validatorShareAddress,
         data,
-        value: 0n,
-        accessList: buildReferrerTracking(referrer)
+        value: 0n
       }
     }
   }
@@ -336,7 +333,7 @@ export class PolygonStaker {
    *
    * @returns Returns a promise that resolves to a Polygon claim rewards transaction
    */
-  async buildClaimRewardsTx(params: {
+  async buildClaimRewardsTx (params: {
     delegatorAddress: Address
     validatorShareAddress: Address
     referrer?: Hex
@@ -382,7 +379,7 @@ export class PolygonStaker {
    *
    * @returns Returns a promise that resolves to a Polygon compound transaction
    */
-  async buildCompoundTx(params: {
+  async buildCompoundTx (params: {
     delegatorAddress: Address
     validatorShareAddress: Address
     referrer?: Hex
@@ -428,9 +425,9 @@ export class PolygonStaker {
    * @returns Promise resolving to stake information:
    *   - balance: Total staked amount formatted in POL
    *   - shares: Total shares held by the delegator
-   *   - exchangeRate: Current exchange rate between shares and POL (with high precision)
+   *   - exchangeRate: Current exchange rate between shares and POL
    */
-  async getStake(params: { delegatorAddress: Address; validatorShareAddress: Address }): Promise<StakeInfo> {
+  async getStake (params: { delegatorAddress: Address; validatorShareAddress: Address }): Promise<StakeInfo> {
     const { delegatorAddress, validatorShareAddress } = params
 
     const [balance, exchangeRate] = await this.publicClient.readContract({
@@ -454,8 +451,9 @@ export class PolygonStaker {
    * Retrieves the latest unbond nonce for a delegator
    *
    * Each unstake operation creates a new unbond request with an incrementing nonce.
-   * The returned value represents the total number of unstakes performed.
-   * For example, if this returns 3n, unbonds exist at nonces 1, 2, and 3.
+   * Nonces start at 1 and increment with each unstake.
+   * Note: a nonce having existed does not mean it is still pending —
+   * claimed unbonds are deleted, but the counter is never decremented.
    *
    * @param params - Parameters for the query
    * @param params.delegatorAddress - Ethereum address of the delegator
@@ -463,7 +461,7 @@ export class PolygonStaker {
    *
    * @returns Promise resolving to the latest unbond nonce (0n if no unstakes performed)
    */
-  async getUnbondNonce(params: { delegatorAddress: Address; validatorShareAddress: Address }): Promise<bigint> {
+  async getUnbondNonce (params: { delegatorAddress: Address; validatorShareAddress: Address }): Promise<bigint> {
     return this.publicClient.readContract({
       address: params.validatorShareAddress,
       abi: VALIDATOR_SHARE_ABI,
@@ -476,7 +474,7 @@ export class PolygonStaker {
    * Retrieves unbond request information for a specific nonce
    *
    * Use this to check the status of individual unbond requests.
-   * Compare withdrawEpoch with getEpoch() to determine if withdrawal is possible.
+   * Compare withdrawEpoch + withdrawalDelay with getEpoch() to determine if withdrawal is possible.
    *
    * @param params - Parameters for the query
    * @param params.delegatorAddress - Ethereum address of the delegator
@@ -485,9 +483,9 @@ export class PolygonStaker {
    *
    * @returns Promise resolving to unbond information:
    *   - shares: Shares amount pending unbonding (0n if already withdrawn or doesn't exist)
-   *   - withdrawEpoch: Epoch number when the unbond becomes claimable
+   *   - withdrawEpoch: Epoch number when the unbond started
    */
-  async getUnbond(params: {
+  async getUnbond (params: {
     delegatorAddress: Address
     validatorShareAddress: Address
     unbondNonce: bigint
@@ -513,7 +511,7 @@ export class PolygonStaker {
    *
    * @returns Promise resolving to the pending rewards in POL
    */
-  async getLiquidRewards(params: { delegatorAddress: Address; validatorShareAddress: Address }): Promise<string> {
+  async getLiquidRewards (params: { delegatorAddress: Address; validatorShareAddress: Address }): Promise<string> {
     const rewards = await this.publicClient.readContract({
       address: params.validatorShareAddress,
       abi: VALIDATOR_SHARE_ABI,
@@ -530,7 +528,7 @@ export class PolygonStaker {
    *
    * @returns Promise resolving to the current allowance in POL
    */
-  async getAllowance(ownerAddress: Address): Promise<string> {
+  async getAllowance (ownerAddress: Address): Promise<string> {
     const allowance = await this.publicClient.readContract({
       address: this.contracts.stakingTokenAddress,
       abi: erc20Abi,
@@ -545,7 +543,7 @@ export class PolygonStaker {
    *
    * @returns Promise resolving to the current epoch number
    */
-  async getEpoch(): Promise<bigint> {
+  async getEpoch (): Promise<bigint> {
     return this.publicClient.readContract({
       address: this.contracts.stakeManagerAddress,
       abi: STAKE_MANAGER_ABI,
@@ -561,7 +559,7 @@ export class PolygonStaker {
    *
    * @returns Promise resolving to the withdrawal delay in epochs
    */
-  async getWithdrawalDelay(): Promise<bigint> {
+  async getWithdrawalDelay (): Promise<bigint> {
     return this.publicClient.readContract({
       address: this.contracts.stakeManagerAddress,
       abi: STAKE_MANAGER_ABI,
@@ -581,7 +579,7 @@ export class PolygonStaker {
    *
    * @returns A promise that resolves to an object containing the signed transaction
    */
-  async sign(params: {
+  async sign (params: {
     signer: Signer
     signerAddress: Address
     tx: Transaction
@@ -645,7 +643,7 @@ export class PolygonStaker {
    *
    * @returns A promise that resolves to the transaction hash
    */
-  async broadcast(params: { signedTx: Hex }): Promise<{ txHash: Hex }> {
+  async broadcast (params: { signedTx: Hex }): Promise<{ txHash: Hex }> {
     const { signedTx } = params
     const hash = await this.publicClient.sendRawTransaction({ serializedTransaction: signedTx })
     return { txHash: hash }
@@ -659,7 +657,7 @@ export class PolygonStaker {
    *
    * @returns A promise that resolves to an object containing the transaction status
    */
-  async getTxStatus(params: { txHash: Hex }): Promise<PolygonTxStatus> {
+  async getTxStatus (params: { txHash: Hex }): Promise<PolygonTxStatus> {
     const { txHash } = params
 
     try {
@@ -680,7 +678,7 @@ export class PolygonStaker {
     }
   }
 
-  private parseAmount(amount: string): bigint {
+  private parseAmount (amount: string): bigint {
     if (typeof amount === 'bigint') {
       throw new Error(
         'Amount must be a string, denominated in POL. e.g. "1.5" - 1.5 POL. You can use `formatEther` to convert a `bigint` to a string'

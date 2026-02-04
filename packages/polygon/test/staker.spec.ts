@@ -2,7 +2,7 @@ import { PolygonStaker } from '../src/staker'
 import { describe, it, beforeEach } from 'mocha'
 import { use, expect, assert } from 'chai'
 import chaiAsPromised from 'chai-as-promised'
-import type { Address, Hex } from 'viem'
+import type { Address } from 'viem'
 import {
   EXPECTED_APPROVE_TX,
   EXPECTED_APPROVE_MAX_TX,
@@ -49,32 +49,10 @@ describe('PolygonStaker', () => {
       await expect(staker.buildApproveTx({ amount: 'invalid' })).to.be.rejectedWith('Amount must be a valid number')
     })
 
-    it('should include default c1c1 referrer tracking in accessList', async () => {
+    it('should not include accessList (no referrer tracking for approve)', async () => {
       const { tx } = await staker.buildApproveTx({ amount: '100' })
 
-      const expectedStorageKey: Hex = '0xc1c17d208d000000000000000000000000000000000000000000000000000000'
-      const expectedAccessList: Array<{ address: Address; storageKeys: Hex[] }> = [
-        {
-          address: '0x000000000000000000000000000000000000dEaD',
-          storageKeys: [expectedStorageKey]
-        }
-      ]
-
-      assert.deepEqual(tx.accessList, expectedAccessList)
-    })
-
-    it('should use custom referrer directly when provided', async () => {
-      const customReferrer: Hex = '0x0000000000000000000000001234567890123456789012345678901234567890'
-      const { tx } = await staker.buildApproveTx({ amount: '100', referrer: customReferrer })
-
-      const expectedAccessList: Array<{ address: Address; storageKeys: Hex[] }> = [
-        {
-          address: '0x000000000000000000000000000000000000dEaD',
-          storageKeys: [customReferrer]
-        }
-      ]
-
-      assert.deepEqual(tx.accessList, expectedAccessList)
+      assert.isUndefined(tx.accessList)
     })
   })
 
@@ -84,7 +62,8 @@ describe('PolygonStaker', () => {
         staker.buildStakeTx({
           delegatorAddress: 'invalid' as Address,
           validatorShareAddress: TEST_VALIDATOR_SHARE,
-          amount: '100'
+          amount: '100',
+          minSharesToMint: 0n
         })
       ).to.be.rejectedWith('Invalid delegator address')
     })
@@ -94,7 +73,8 @@ describe('PolygonStaker', () => {
         staker.buildStakeTx({
           delegatorAddress: TEST_ADDRESS,
           validatorShareAddress: 'invalid' as Address,
-          amount: '100'
+          amount: '100',
+          minSharesToMint: 0n
         })
       ).to.be.rejectedWith('Invalid validator share address')
     })
