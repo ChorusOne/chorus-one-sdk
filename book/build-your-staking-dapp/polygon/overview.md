@@ -14,7 +14,7 @@ This guide will walk you through the fundamentals of staking on Polygon using th
 
 **Compatibility Notice**
 
-The methods provided in this documentation are compatible with popular Ethereum libraries such as `viem` and `ethers.js`. This compatibility ensures that you can seamlessly integrate these methods into your existing Ethereum and Polygon projects.
+The methods provided in this documentation are compatible with popular Ethereum libraries such as `viem`. This compatibility ensures that you can seamlessly integrate these methods into your existing Ethereum and Polygon projects.
 
 {% endhint %}
 
@@ -77,7 +77,8 @@ const validatorShareAddress = CHORUS_ONE_POLYGON_VALIDATORS.mainnet
 const { tx } = await staker.buildStakeTx({
   delegatorAddress,
   validatorShareAddress,
-  amount: '1' // 1 POL
+  amount: '1', // 1 POL
+  minSharesToMint: 0n // Minimum shares to receive (slippage protection)
 })
 ```
 
@@ -129,14 +130,7 @@ To set up Fireblocks, you will need to provide the necessary API key, secret key
 import { PolygonStaker } from '@chorus-one/polygon'
 import { FireblocksSigner } from '@chorus-one/signer-fireblocks'
 
-const signer = new FireblocksSigner({
-  apiSecretKey: 'your-api-secret-key',
-  apiKey: 'your-api-key',
-  vaultName: 'your-vault-name',
-  assetId: 'ETH',
-  addressDerivationFn: PolygonStaker.getAddressDerivationFn()
-})
-
+const signer = new FireblocksSigner({...})
 await signer.init()
 
 const { signedTx } = await staker.sign({
