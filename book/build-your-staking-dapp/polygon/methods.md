@@ -93,7 +93,7 @@ const { tx } = await staker.buildUnstakeTx({
   delegatorAddress: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
   validatorShareAddress: CHORUS_ONE_POLYGON_VALIDATORS.mainnet,
   amount: '50', // 50 POL
-  maximumSharesToBurn: 50n
+  maximumSharesToBurn: BigInt(50e18) // Maximum shares willing to burn (slippage protection)
 })
 ```
 
@@ -212,7 +212,7 @@ Returns:
 
 - `balance`: Total staked amount formatted in POL
 - `shares`: Total shares held by the delegator
-- `exchangeRate`: Current exchange rate between shares and POL (with high precision)
+- `exchangeRate`: Current exchange rate between shares and POL
 
 ### How to Use
 
