@@ -6,7 +6,8 @@
     "cleanup": "prettier --write packages/** && eslint --no-error-on-unmatched-pattern --fix packages/**",
     "build": "turbo build --cache-dir='./.turbo/cache'",
     "test": "mocha 'packages/**/test/*.spec.ts' --ignore 'packages/ethereum/**/*.spec.ts'",
-    "test:ethereum": "cd packages/ethereum && npm test"
+    "test:ethereum": "cd packages/ethereum && npm test",
+    "test:polygon": "cd packages/polygon && npm run test:integration"
   },
   "packageManager": "npm@10.2.4",
   "license": "Apache-2.0",
