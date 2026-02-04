@@ -93,7 +93,7 @@ export const fundWithStakingToken = async ({
     },
     walletClient: impersonatedClient,
     publicClient,
-    delegatorAddress: NETWORK_CONTRACTS.mainnet.stakeManagerAddress
+    senderAddress: NETWORK_CONTRACTS.mainnet.stakeManagerAddress
   })
 }
 
@@ -105,7 +105,7 @@ export const approve = async ({
   publicClient
 }: Omit<StakingParams, 'validatorShareAddress'>): Promise<void> => {
   const { tx } = await staker.buildApproveTx({ amount })
-  await sendTx({ tx, walletClient, publicClient, delegatorAddress })
+  await sendTx({ tx, walletClient, publicClient, senderAddress: delegatorAddress })
 }
 
 export const stake = async ({
@@ -117,7 +117,7 @@ export const stake = async ({
   publicClient
 }: StakingParams): Promise<void> => {
   const { tx } = await staker.buildStakeTx({ delegatorAddress, validatorShareAddress, amount, minSharesToMint: 0n })
-  await sendTx({ tx, walletClient, publicClient, delegatorAddress })
+  await sendTx({ tx, walletClient, publicClient, senderAddress: delegatorAddress })
 }
 
 export const approveAndStake = async (params: StakingParams): Promise<void> => {
@@ -129,12 +129,12 @@ export const sendTx = async ({
   tx,
   walletClient,
   publicClient,
-  delegatorAddress
+  senderAddress
 }: {
   tx: Transaction
   walletClient: WalletClient
   publicClient: PublicClient
-  delegatorAddress: Address
+  senderAddress: Address
 }): Promise<void> => {
   const request = await walletClient.prepareTransactionRequest({
     ...tx,
@@ -143,7 +143,7 @@ export const sendTx = async ({
 
   const hash = await walletClient.sendTransaction({
     ...request,
-    account: delegatorAddress
+    account: senderAddress
   })
 
   const receipt = await publicClient.getTransactionReceipt({ hash })
@@ -160,7 +160,7 @@ export const unstake = async ({
   publicClient
 }: Required<StakingParams>): Promise<void> => {
   const { tx } = await staker.buildUnstakeTx({ delegatorAddress, validatorShareAddress, amount, maximumSharesToBurn })
-  await sendTx({ tx, walletClient, publicClient, delegatorAddress })
+  await sendTx({ tx, walletClient, publicClient, senderAddress: delegatorAddress })
 }
 
 export const getStakingTokenBalance = async ({
@@ -258,6 +258,6 @@ export const advanceEpoch = async ({
     },
     walletClient: governanceWallet,
     publicClient,
-    delegatorAddress: GOVERNANCE_ADDRESS
+    senderAddress: GOVERNANCE_ADDRESS
   })
 }
