@@ -3,12 +3,7 @@ import { describe, it, beforeEach } from 'mocha'
 import { use, expect, assert } from 'chai'
 import chaiAsPromised from 'chai-as-promised'
 import type { Address } from 'viem'
-import {
-  EXPECTED_APPROVE_TX,
-  EXPECTED_APPROVE_MAX_TX,
-  TEST_ADDRESS,
-  TEST_VALIDATOR_SHARE
-} from './fixtures/expected-data'
+import { EXPECTED_APPROVE_TX, TEST_ADDRESS, TEST_VALIDATOR_SHARE } from './fixtures/expected-data'
 
 use(chaiAsPromised)
 
@@ -31,16 +26,6 @@ describe('PolygonStaker', () => {
       assert.equal(tx.to, EXPECTED_APPROVE_TX.expected.to)
       assert.equal(tx.data, EXPECTED_APPROVE_TX.expected.data)
       assert.equal(tx.value, EXPECTED_APPROVE_TX.expected.value)
-    })
-
-    it('should generate max uint256 approval when amount is "max"', async () => {
-      const { tx } = await staker.buildApproveTx({
-        amount: EXPECTED_APPROVE_MAX_TX.amount
-      })
-
-      assert.equal(tx.to, EXPECTED_APPROVE_MAX_TX.expected.to)
-      assert.equal(tx.data, EXPECTED_APPROVE_MAX_TX.expected.data)
-      assert.equal(tx.value, EXPECTED_APPROVE_MAX_TX.expected.value)
     })
 
     it('should reject invalid amounts', async () => {

@@ -6,7 +6,8 @@ import {
   parseEther,
   formatEther,
   createWalletClient,
-  http
+  http,
+  maxUint256
 } from 'viem'
 import { hardhat } from 'viem/chains'
 import { use, expect, assert } from 'chai'
@@ -98,6 +99,13 @@ describe('PolygonStaker', () => {
 
       const allowance = await staker.getAllowance(delegatorAddress)
       assert.equal(allowance, AMOUNT)
+    })
+
+    it('approves max (unlimited) allowance', async () => {
+      await approve({ delegatorAddress, amount: 'max', staker, walletClient, publicClient })
+
+      const allowance = await staker.getAllowance(delegatorAddress)
+      assert.equal(parseEther(allowance), maxUint256)
     })
 
     it('stakes and verifies on-chain state', async () => {

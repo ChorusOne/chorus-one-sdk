@@ -15,13 +15,3 @@ export const EXPECTED_APPROVE_TX = {
     value: 0n
   }
 }
-
-export const EXPECTED_APPROVE_MAX_TX = {
-  amount: 'max',
-  expected: {
-    to: stakingTokenAddress as Address,
-    // approve(address spender, uint256 amount) with spender = stakeManagerAddress, amount = maxUint256
-    data: '0x095ea7b30000000000000000000000005e3ef299fddf15eaa0432e6e66473ace8c13d908ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' as Hex,
-    value: 0n
-  }
-}
