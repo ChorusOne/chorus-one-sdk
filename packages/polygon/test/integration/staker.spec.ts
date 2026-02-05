@@ -1,4 +1,4 @@
-import { PolygonStaker } from '@chorus-one/polygon'
+import { PolygonStaker, EXCHANGE_RATE_HIGH_PRECISION, VALIDATOR_SHARE_ABI } from '@chorus-one/polygon'
 import {
   type PublicClient,
   type WalletClient,
@@ -76,6 +76,29 @@ describe('PolygonStaker', () => {
       const rewards = await staker.getLiquidRewards({ delegatorAddress: WHALE_DELEGATOR, validatorShareAddress })
       assert.equal(rewards, '45.307877957471003709')
     })
+
+    it('reads withdrawal delay', async () => {
+      const delay = await staker.getWithdrawalDelay()
+      assert.equal(delay, 80n)
+    })
+
+    it('caches withdrawal delay on subsequent calls', async () => {
+      const delay1 = await staker.getWithdrawalDelay()
+      const delay2 = await staker.getWithdrawalDelay()
+      assert.equal(delay1, delay2)
+      assert.equal(delay1, 80n)
+    })
+
+    it('reads exchange rate precision for non-foundation validator', async () => {
+      const precision = await staker.getExchangeRatePrecision(validatorShareAddress)
+      assert.equal(precision, EXCHANGE_RATE_HIGH_PRECISION)
+    })
+
+    it('caches exchange rate precision on subsequent calls', async () => {
+      const precision1 = await staker.getExchangeRatePrecision(validatorShareAddress)
+      const precision2 = await staker.getExchangeRatePrecision(validatorShareAddress)
+      assert.equal(precision1, precision2)
+    })
   })
 
   describe('staking lifecycle', () => {
@@ -147,7 +170,7 @@ describe('PolygonStaker', () => {
       assert.equal(stakeInfo.balance, AMOUNT)
     })
 
-    it('unstakes and creates unbond request', async () => {
+    it('unstakes and creates unbond request with amount and isWithdrawable fields', async () => {
       await approveAndStake({
         delegatorAddress,
         validatorShareAddress,
@@ -176,16 +199,217 @@ describe('PolygonStaker', () => {
 
       const unbond = await staker.getUnbond({ delegatorAddress, validatorShareAddress, unbondNonce: nonceAfter })
       assert.isTrue(unbond.withdrawEpoch === currentEpoch)
-
-      const EXCHANGE_RATE_PRECISION = 10n ** 29n // For non-foundation nodes, the exchange rate is 10^29
-      const unbondAmount = (unbond.shares * stakeBefore.exchangeRate) / EXCHANGE_RATE_PRECISION
-      assert.equal(unbondAmount, parseEther(AMOUNT))
+      assert.equal(unbond.amount, AMOUNT)
+      assert.equal(unbond.isWithdrawable, false)
 
       const stakeAfter = await staker.getStake({ delegatorAddress, validatorShareAddress })
       assert.equal(stakeAfter.balance, '0')
     })
 
-    it('withdraws after unbonding period and verifies balance increase', async () => {
+    it('stakes with slippageBps and verifies minSharesToMint calculation matches contract formula', async () => {
+      await approve({ delegatorAddress, amount: AMOUNT, staker, walletClient, publicClient })
+
+      const amountWei = parseEther(AMOUNT)
+      const precision = await staker.getExchangeRatePrecision(validatorShareAddress)
+
+      // Get exchange rate from contract (same way the SDK does)
+      const exchangeRate = await publicClient
+        .readContract({
+          address: validatorShareAddress,
+          abi: VALIDATOR_SHARE_ABI,
+          functionName: 'getTotalStake',
+          args: [validatorShareAddress]
+        })
+        .then(([, rate]) => rate)
+
+      // Contract formula: shares = amount * precision / exchangeRate
+      const expectedShares = (amountWei * precision) / exchangeRate
+
+      // SDK slippage formula: minSharesToMint = expectedShares - (expectedShares * slippageBps / 10000)
+      const slippageBps = 100n // 1%
+      const expectedMinShares = expectedShares - (expectedShares * slippageBps) / 10000n
+
+      const { tx } = await staker.buildStakeTx({
+        delegatorAddress,
+        validatorShareAddress,
+        amount: AMOUNT,
+        slippageBps: Number(slippageBps)
+      })
+
+      // Decode the calldata to verify minSharesToMint
+      const decodedMinShares = BigInt('0x' + tx.data.slice(74, 138))
+      assert.equal(decodedMinShares, expectedMinShares, 'minSharesToMint should match calculated value')
+
+      // Verify transaction succeeds
+      await sendTx({ tx, walletClient, publicClient, senderAddress: delegatorAddress })
+
+      const stakeInfo = await staker.getStake({ delegatorAddress, validatorShareAddress })
+      assert.equal(stakeInfo.balance, AMOUNT)
+
+      // Verify actual shares received are >= minSharesToMint
+      assert.isTrue(stakeInfo.shares >= expectedMinShares, 'Actual shares should be >= minSharesToMint')
+    })
+
+    it('stakes with 0 slippageBps sets minSharesToMint to exact expected shares', async () => {
+      await approve({ delegatorAddress, amount: AMOUNT, staker, walletClient, publicClient })
+
+      const amountWei = parseEther(AMOUNT)
+      const precision = await staker.getExchangeRatePrecision(validatorShareAddress)
+
+      const exchangeRate = await publicClient
+        .readContract({
+          address: validatorShareAddress,
+          abi: VALIDATOR_SHARE_ABI,
+          functionName: 'getTotalStake',
+          args: [validatorShareAddress]
+        })
+        .then(([, rate]) => rate)
+
+      const expectedShares = (amountWei * precision) / exchangeRate
+
+      const { tx } = await staker.buildStakeTx({
+        delegatorAddress,
+        validatorShareAddress,
+        amount: AMOUNT,
+        slippageBps: 0
+      })
+
+      const decodedMinShares = BigInt('0x' + tx.data.slice(74, 138))
+      assert.equal(decodedMinShares, expectedShares, 'With 0 slippage, minSharesToMint should equal expected shares')
+
+      await sendTx({ tx, walletClient, publicClient, senderAddress: delegatorAddress })
+      const stakeInfo = await staker.getStake({ delegatorAddress, validatorShareAddress })
+      assert.equal(stakeInfo.shares, expectedShares, 'Actual shares should equal expected shares')
+    })
+
+    it('unstakes with slippageBps and verifies maximumSharesToBurn calculation matches contract formula', async () => {
+      await approveAndStake({
+        delegatorAddress,
+        validatorShareAddress,
+        amount: AMOUNT,
+        staker,
+        walletClient,
+        publicClient
+      })
+
+      const stake = await staker.getStake({ delegatorAddress, validatorShareAddress })
+      const amountWei = parseEther(AMOUNT)
+      const precision = await staker.getExchangeRatePrecision(validatorShareAddress)
+
+      // Contract formula: shares = claimAmount * precision / exchangeRate
+      const expectedShares = (amountWei * precision) / stake.exchangeRate
+
+      // SDK slippage formula: maximumSharesToBurn = expectedShares + (expectedShares * slippageBps / 10000)
+      const slippageBps = 100n // 1%
+      const expectedMaxShares = expectedShares + (expectedShares * slippageBps) / 10000n
+
+      const { tx } = await staker.buildUnstakeTx({
+        delegatorAddress,
+        validatorShareAddress,
+        amount: AMOUNT,
+        slippageBps: Number(slippageBps)
+      })
+
+      // Decode the calldata to verify maximumSharesToBurn (second arg after 4 byte selector + 32 byte amount)
+      const decodedMaxShares = BigInt('0x' + tx.data.slice(74, 138))
+      assert.equal(decodedMaxShares, expectedMaxShares, 'maximumSharesToBurn should match calculated value')
+
+      await sendTx({ tx, walletClient, publicClient, senderAddress: delegatorAddress })
+
+      const stakeAfter = await staker.getStake({ delegatorAddress, validatorShareAddress })
+      assert.equal(stakeAfter.balance, '0')
+
+      // TODO: Check if shares are lower than max
+    })
+
+    it('unstakes with 0 slippageBps sets maximumSharesToBurn to exact expected shares', async () => {
+      await approveAndStake({
+        delegatorAddress,
+        validatorShareAddress,
+        amount: AMOUNT,
+        staker,
+        walletClient,
+        publicClient
+      })
+
+      const stake = await staker.getStake({ delegatorAddress, validatorShareAddress })
+      const amountWei = parseEther(AMOUNT)
+      const precision = await staker.getExchangeRatePrecision(validatorShareAddress)
+
+      const expectedShares = (amountWei * precision) / stake.exchangeRate
+
+      const { tx } = await staker.buildUnstakeTx({
+        delegatorAddress,
+        validatorShareAddress,
+        amount: AMOUNT,
+        slippageBps: 0
+      })
+
+      const decodedMaxShares = BigInt('0x' + tx.data.slice(74, 138))
+      assert.equal(
+        decodedMaxShares,
+        expectedShares,
+        'With 0 slippage, maximumSharesToBurn should equal expected shares'
+      )
+
+      await sendTx({ tx, walletClient, publicClient, senderAddress: delegatorAddress })
+
+      // TODO: check if shares are equal to expected
+    })
+
+    // TODO: unstake different amounts
+    it('fetches multiple unbonds with getUnbonds batch method', async () => {
+      await approveAndStake({
+        delegatorAddress,
+        validatorShareAddress,
+        amount: AMOUNT,
+        staker,
+        walletClient,
+        publicClient
+      })
+
+      const stakeBefore = await staker.getStake({ delegatorAddress, validatorShareAddress })
+
+      await unstake({
+        delegatorAddress,
+        validatorShareAddress,
+        amount: '50',
+        maximumSharesToBurn: stakeBefore.shares / 2n,
+        staker,
+        walletClient,
+        publicClient
+      })
+
+      const stakeAfterFirstUnstake = await staker.getStake({ delegatorAddress, validatorShareAddress })
+      await unstake({
+        delegatorAddress,
+        validatorShareAddress,
+        amount: '50',
+        maximumSharesToBurn: stakeAfterFirstUnstake.shares,
+        staker,
+        walletClient,
+        publicClient
+      })
+
+      const nonce = await staker.getUnbondNonce({ delegatorAddress, validatorShareAddress })
+      assert.equal(nonce, 2n)
+
+      const unbonds = await staker.getUnbonds({
+        delegatorAddress,
+        validatorShareAddress,
+        unbondNonces: [1n, 2n]
+      })
+
+      assert.lengthOf(unbonds, 2)
+      assert.equal(unbonds[0].amount, '50')
+      assert.equal(unbonds[1].amount, '50')
+      assert.equal(unbonds[0].isWithdrawable, false)
+      assert.equal(unbonds[1].isWithdrawable, false)
+      assert.isTrue(unbonds[0].shares > 0n)
+      assert.isTrue(unbonds[1].shares > 0n)
+    })
+
+    it('withdraws after unbonding period and verifies isWithdrawable becomes true', async () => {
       await approveAndStake({
         delegatorAddress,
         validatorShareAddress,
@@ -206,10 +430,14 @@ describe('PolygonStaker', () => {
       })
 
       const nonce = await staker.getUnbondNonce({ delegatorAddress, validatorShareAddress })
-      const unbond = await staker.getUnbond({ delegatorAddress, validatorShareAddress, unbondNonce: nonce })
+      const unbondBefore = await staker.getUnbond({ delegatorAddress, validatorShareAddress, unbondNonce: nonce })
+      assert.equal(unbondBefore.isWithdrawable, false)
 
       const withdrawalDelay = await getWithdrawalDelay({ publicClient })
-      await advanceEpoch({ publicClient, staker, targetEpoch: unbond.withdrawEpoch + withdrawalDelay })
+      await advanceEpoch({ publicClient, staker, targetEpoch: unbondBefore.withdrawEpoch + withdrawalDelay })
+
+      const unbondAfter = await staker.getUnbond({ delegatorAddress, validatorShareAddress, unbondNonce: nonce })
+      assert.equal(unbondAfter.isWithdrawable, true)
 
       const balanceBefore = await getStakingTokenBalance({ publicClient, address: delegatorAddress })
 
