@@ -127,5 +127,4 @@ export class PolygonTestStaker {
     await this.waitForTx(txHash)
     return txHash
   }
-
 }

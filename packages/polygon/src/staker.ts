@@ -18,12 +18,14 @@ import {
 import { mainnet, sepolia } from 'viem/chains'
 import { secp256k1 } from '@noble/curves/secp256k1.js'
 import type { Signer } from '@chorus-one/signer'
-import type { Transaction, PolygonNetworkConfig, PolygonTxStatus, StakeInfo, UnbondInfo } from './types.d'
+import type { Transaction, PolygonNetworkConfig, PolygonTxStatus, StakeInfo, UnbondInfo } from './types'
 import { appendReferrerTracking } from './referrer'
 import {
   VALIDATOR_SHARE_ABI,
   STAKE_MANAGER_ABI,
   NETWORK_CONTRACTS,
+  EXCHANGE_RATE_PRECISION,
+  EXCHANGE_RATE_HIGH_PRECISION,
   type PolygonNetworks,
   type NetworkContracts
 } from './constants'
@@ -59,6 +61,9 @@ export class PolygonStaker {
   private readonly contracts: NetworkContracts
   private readonly publicClient: PublicClient
   private readonly chain: Chain
+
+  private withdrawalDelayCache: bigint | null = null
+  private readonly validatorPrecisionCache: Map<Address, bigint> = new Map()
 
   /**
    * This **static** method is used to derive an address from a public key.
@@ -139,7 +144,8 @@ export class PolygonStaker {
    * @param params.delegatorAddress - The delegator's Ethereum address
    * @param params.validatorShareAddress - The validator's ValidatorShare contract address
    * @param params.amount - The amount to stake in POL
-   * @param params.minSharesToMint - Minimum validator shares to receive for slippage protection.
+   * @param params.slippageBps - (Optional) Slippage tolerance in basis points (e.g., 50 = 0.5%). Used to calculate minSharesToMint.
+   * @param params.minSharesToMint - (Optional) Minimum validator shares to receive. Use this OR slippageBps, not both.
    * @param params.referrer - (Optional) Custom referrer string for tracking. If not provided, uses 'sdk-chorusone-staking'.
    *
    * @returns Returns a promise that resolves to a Polygon staking transaction
@@ -148,16 +154,21 @@ export class PolygonStaker {
     delegatorAddress: Address
     validatorShareAddress: Address
     amount: string
-    minSharesToMint: bigint
+    slippageBps?: number
+    minSharesToMint?: bigint
     referrer?: string
   }): Promise<{ tx: Transaction }> {
-    const { delegatorAddress, validatorShareAddress, amount, minSharesToMint, referrer } = params
+    const { delegatorAddress, validatorShareAddress, amount, slippageBps, referrer } = params
+    let { minSharesToMint } = params
 
     if (!isAddress(delegatorAddress)) {
       throw new Error(`Invalid delegator address: ${delegatorAddress}`)
     }
     if (!isAddress(validatorShareAddress)) {
       throw new Error(`Invalid validator share address: ${validatorShareAddress}`)
+    }
+    if (slippageBps !== undefined && minSharesToMint !== undefined) {
+      throw new Error('Cannot specify both slippageBps and minSharesToMint. Use one or the other.')
     }
 
     const amountWei = this.parseAmount(amount)
@@ -167,6 +178,19 @@ export class PolygonStaker {
       throw new Error(
         `Insufficient POL allowance. Current: ${allowance}, Required: ${amount}. Call buildApproveTx() first.`
       )
+    }
+
+    if (slippageBps !== undefined) {
+      const [exchangeRate, precision] = await Promise.all([
+        this.getExchangeRate(validatorShareAddress),
+        this.getExchangeRatePrecision(validatorShareAddress)
+      ])
+      const expectedShares = (amountWei * precision) / exchangeRate
+      minSharesToMint = expectedShares - (expectedShares * BigInt(slippageBps)) / 10000n
+    }
+
+    if (minSharesToMint === undefined) {
+      throw new Error('Either slippageBps or minSharesToMint must be provided')
     }
 
     const calldata = encodeFunctionData({
@@ -194,7 +218,8 @@ export class PolygonStaker {
    * @param params.delegatorAddress - The delegator's address
    * @param params.validatorShareAddress - The validator's ValidatorShare contract address
    * @param params.amount - The amount to unstake in POL (will be converted to wei internally)
-   * @param params.maximumSharesToBurn - Maximum validator shares willing to burn for slippage protection.
+   * @param params.slippageBps - (Optional) Slippage tolerance in basis points (e.g., 50 = 0.5%). Used to calculate maximumSharesToBurn.
+   * @param params.maximumSharesToBurn - (Optional) Maximum validator shares willing to burn. Use this OR slippageBps, not both.
    * @param params.referrer - (Optional) Custom referrer string for tracking. If not provided, uses 'sdk-chorusone-staking'.
    *
    * @returns Returns a promise that resolves to a Polygon unstaking transaction
@@ -203,10 +228,12 @@ export class PolygonStaker {
     delegatorAddress: Address
     validatorShareAddress: Address
     amount: string
-    maximumSharesToBurn: bigint
+    slippageBps?: number
+    maximumSharesToBurn?: bigint
     referrer?: string
   }): Promise<{ tx: Transaction }> {
-    const { delegatorAddress, validatorShareAddress, amount, maximumSharesToBurn, referrer } = params
+    const { delegatorAddress, validatorShareAddress, amount, slippageBps, referrer } = params
+    let { maximumSharesToBurn } = params
 
     if (!isAddress(delegatorAddress)) {
       throw new Error(`Invalid delegator address: ${delegatorAddress}`)
@@ -214,12 +241,25 @@ export class PolygonStaker {
     if (!isAddress(validatorShareAddress)) {
       throw new Error(`Invalid validator share address: ${validatorShareAddress}`)
     }
+    if (slippageBps !== undefined && maximumSharesToBurn !== undefined) {
+      throw new Error('Cannot specify both slippageBps and maximumSharesToBurn. Use one or the other.')
+    }
 
     const amountWei = this.parseAmount(amount)
 
     const stake = await this.getStake({ delegatorAddress, validatorShareAddress })
     if (parseEther(stake.balance) < amountWei) {
       throw new Error(`Insufficient stake. Current: ${stake.balance} POL, Requested: ${amount} POL`)
+    }
+
+    if (slippageBps !== undefined) {
+      const precision = await this.getExchangeRatePrecision(validatorShareAddress)
+      const expectedShares = (amountWei * precision) / stake.exchangeRate
+      maximumSharesToBurn = expectedShares + (expectedShares * BigInt(slippageBps)) / 10000n
+    }
+
+    if (maximumSharesToBurn === undefined) {
+      throw new Error('Either slippageBps or maximumSharesToBurn must be provided')
     }
 
     const calldata = encodeFunctionData({
@@ -446,7 +486,7 @@ export class PolygonStaker {
    * Retrieves unbond request information for a specific nonce
    *
    * Use this to check the status of individual unbond requests.
-   * Compare withdrawEpoch + withdrawalDelay with getEpoch() to determine if withdrawal is possible.
+   * For fetching multiple unbonds efficiently, use getUnbonds() instead.
    *
    * @param params - Parameters for the query
    * @param params.delegatorAddress - Ethereum address of the delegator
@@ -454,6 +494,8 @@ export class PolygonStaker {
    * @param params.unbondNonce - The specific unbond nonce to query (1, 2, 3, etc.)
    *
    * @returns Promise resolving to unbond information:
+   *   - amount: Amount pending unbonding in POL
+   *   - isWithdrawable: Whether the unbond can be withdrawn now
    *   - shares: Shares amount pending unbonding (0n if already withdrawn or doesn't exist)
    *   - withdrawEpoch: Epoch number when the unbond started
    */
@@ -464,14 +506,125 @@ export class PolygonStaker {
   }): Promise<UnbondInfo> {
     const { delegatorAddress, validatorShareAddress, unbondNonce } = params
 
-    const [shares, withdrawEpoch] = await this.publicClient.readContract({
+    const [multicallResults, withdrawalDelay, precision] = await Promise.all([
+      this.publicClient.multicall({
+        contracts: [
+          {
+            address: validatorShareAddress,
+            abi: VALIDATOR_SHARE_ABI,
+            functionName: 'unbonds_new',
+            args: [delegatorAddress, unbondNonce]
+          },
+          {
+            address: this.contracts.stakeManagerAddress,
+            abi: STAKE_MANAGER_ABI,
+            functionName: 'epoch'
+          },
+          {
+            address: validatorShareAddress,
+            abi: VALIDATOR_SHARE_ABI,
+            functionName: 'getTotalStake',
+            args: [validatorShareAddress]
+          }
+        ]
+      }),
+      this.getWithdrawalDelay(),
+      this.getExchangeRatePrecision(validatorShareAddress)
+    ])
+
+    const [unbondResult, epochResult, stakeResult] = multicallResults
+
+    if (unbondResult.status === 'failure' || epochResult.status === 'failure' || stakeResult.status === 'failure') {
+      throw new Error('Failed to fetch unbond information')
+    }
+
+    const [shares, withdrawEpoch] = unbondResult.result
+    const currentEpoch = epochResult.result
+    const [, exchangeRate] = stakeResult.result
+
+    const amountWei = (shares * exchangeRate) / precision
+    const amount = formatEther(amountWei)
+    const isWithdrawable = shares > 0n && currentEpoch >= withdrawEpoch + withdrawalDelay
+
+    return { amount, isWithdrawable, shares, withdrawEpoch }
+  }
+
+  /**
+   * Retrieves unbond request information for multiple nonces efficiently
+   *
+   * This method batches all contract reads into a single RPC call, making it
+   * much more efficient than calling getUnbond() multiple times.
+   *
+   * @param params - Parameters for the query
+   * @param params.delegatorAddress - Ethereum address of the delegator
+   * @param params.validatorShareAddress - The validator's ValidatorShare contract address
+   * @param params.unbondNonces - Array of unbond nonces to query (1, 2, 3, etc.)
+   *
+   * @returns Promise resolving to array of unbond information (same order as input nonces)
+   */
+  async getUnbonds (params: {
+    delegatorAddress: Address
+    validatorShareAddress: Address
+    unbondNonces: bigint[]
+  }): Promise<UnbondInfo[]> {
+    const { delegatorAddress, validatorShareAddress, unbondNonces } = params
+
+    if (unbondNonces.length === 0) {
+      return []
+    }
+
+    const unbondContracts = unbondNonces.map((nonce) => ({
       address: validatorShareAddress,
       abi: VALIDATOR_SHARE_ABI,
-      functionName: 'unbonds_new',
-      args: [delegatorAddress, unbondNonce]
-    })
+      functionName: 'unbonds_new' as const,
+      args: [delegatorAddress, nonce] as const
+    }))
 
-    return { shares, withdrawEpoch }
+    const [multicallResults, withdrawalDelay, precision] = await Promise.all([
+      this.publicClient.multicall({
+        contracts: [
+          ...unbondContracts,
+          {
+            address: this.contracts.stakeManagerAddress,
+            abi: STAKE_MANAGER_ABI,
+            functionName: 'epoch' as const
+          },
+          {
+            address: validatorShareAddress,
+            abi: VALIDATOR_SHARE_ABI,
+            functionName: 'getTotalStake' as const,
+            args: [validatorShareAddress] as const
+          }
+        ]
+      }),
+      this.getWithdrawalDelay(),
+      this.getExchangeRatePrecision(validatorShareAddress)
+    ])
+
+    const epochResult = multicallResults[unbondNonces.length]
+    const stakeResult = multicallResults[unbondNonces.length + 1]
+
+    if (epochResult.status === 'failure' || stakeResult.status === 'failure') {
+      throw new Error('Failed to fetch epoch or exchange rate')
+    }
+
+    const currentEpoch = epochResult.result as bigint
+    const [, exchangeRate] = stakeResult.result as [bigint, bigint]
+
+    return unbondNonces.map((_, index) => {
+      const unbondResult = multicallResults[index]
+
+      if (unbondResult.status === 'failure') {
+        throw new Error(`Failed to fetch unbond for nonce ${unbondNonces[index]}`)
+      }
+
+      const [shares, withdrawEpoch] = unbondResult.result as [bigint, bigint]
+      const amountWei = (shares * exchangeRate) / precision
+      const amount = formatEther(amountWei)
+      const isWithdrawable = shares > 0n && currentEpoch >= withdrawEpoch + withdrawalDelay
+
+      return { amount, isWithdrawable, shares, withdrawEpoch }
+    })
   }
 
   /**
@@ -532,11 +685,61 @@ export class PolygonStaker {
    * @returns Promise resolving to the withdrawal delay in epochs
    */
   async getWithdrawalDelay (): Promise<bigint> {
-    return this.publicClient.readContract({
+    if (this.withdrawalDelayCache !== null) {
+      return this.withdrawalDelayCache
+    }
+
+    const delay = await this.publicClient.readContract({
       address: this.contracts.stakeManagerAddress,
       abi: STAKE_MANAGER_ABI,
       functionName: 'withdrawalDelay'
     })
+
+    this.withdrawalDelayCache = delay
+    return delay
+  }
+
+  /**
+   * Retrieves the exchange rate precision for a validator
+   *
+   * Foundation validators (ID < 8) use precision of 100, others use 10^29.
+   *
+   * @param validatorShareAddress - The validator's ValidatorShare contract address
+   *
+   * @returns Promise resolving to the precision constant
+   */
+  async getExchangeRatePrecision (validatorShareAddress: Address): Promise<bigint> {
+    const cached = this.validatorPrecisionCache.get(validatorShareAddress)
+    if (cached !== undefined) {
+      return cached
+    }
+
+    const validatorId = await this.publicClient.readContract({
+      address: validatorShareAddress,
+      abi: VALIDATOR_SHARE_ABI,
+      functionName: 'validatorId'
+    })
+
+    const precision = validatorId < 8n ? EXCHANGE_RATE_PRECISION : EXCHANGE_RATE_HIGH_PRECISION
+    this.validatorPrecisionCache.set(validatorShareAddress, precision)
+    return precision
+  }
+
+  /**
+   * Retrieves the current exchange rate for a validator
+   *
+   * @param validatorShareAddress - The validator's ValidatorShare contract address
+   *
+   * @returns Promise resolving to the exchange rate
+   */
+  private async getExchangeRate (validatorShareAddress: Address): Promise<bigint> {
+    const [, exchangeRate] = await this.publicClient.readContract({
+      address: validatorShareAddress,
+      abi: VALIDATOR_SHARE_ABI,
+      functionName: 'getTotalStake',
+      args: [validatorShareAddress]
+    })
+    return exchangeRate
   }
 
   /**
