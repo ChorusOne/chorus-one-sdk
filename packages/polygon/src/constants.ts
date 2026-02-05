@@ -110,8 +110,20 @@ export const VALIDATOR_SHARE_ABI = [
     inputs: [{ name: 'user', type: 'address', internalType: 'address' }],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     stateMutability: 'view'
+  },
+  {
+    type: 'function',
+    name: 'validatorId',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view'
   }
 ] as const
+
+// Exchange rate precision constants from the ValidatorShare contract
+// Reference: https://github.com/0xPolygon/pos-contracts/blob/main/contracts/staking/validatorShare/ValidatorShare.sol
+export const EXCHANGE_RATE_PRECISION = 100n
+export const EXCHANGE_RATE_HIGH_PRECISION = 10n ** 29n
 
 // Reference: https://github.com/0xPolygon/pos-contracts/blob/main/contracts/staking/stakeManager/StakeManager.sol
 export const STAKE_MANAGER_ABI = [

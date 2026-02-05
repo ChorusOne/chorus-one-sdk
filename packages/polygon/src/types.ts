@@ -34,6 +34,10 @@ export interface StakeInfo {
 }
 
 export interface UnbondInfo {
+  /** Amount pending unbonding in POL */
+  amount: string
+  /** Whether the unbond can be withdrawn now */
+  isWithdrawable: boolean
   /** Shares amount pending unbonding */
   shares: bigint
   /** Epoch number when the unbond becomes claimable */
