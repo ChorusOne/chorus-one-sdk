@@ -1,9 +1,11 @@
+[polygon/src](../modules/polygon_src.md).NetworkContracts
+
 ## Table of contents
 
 ### Properties
 
-- [stakeManagerAddress](NetworkContracts.md#stakemanageraddress)
-- [stakingTokenAddress](NetworkContracts.md#stakingtokenaddress)
+- [stakeManagerAddress](polygon_src.NetworkContracts.md#stakemanageraddress)
+- [stakingTokenAddress](polygon_src.NetworkContracts.md#stakingtokenaddress)
 
 ## Properties
 

@@ -1,3 +1,5 @@
+[polygon/src](../modules/polygon_src.md).PolygonStaker
+
 ## Table of contents
 
 ### Constructors
@@ -17,10 +19,12 @@
 - [getStake](polygon_src.PolygonStaker.md#getstake)
 - [getUnbondNonce](polygon_src.PolygonStaker.md#getunbondnonce)
 - [getUnbond](polygon_src.PolygonStaker.md#getunbond)
+- [getUnbonds](polygon_src.PolygonStaker.md#getunbonds)
 - [getLiquidRewards](polygon_src.PolygonStaker.md#getliquidrewards)
 - [getAllowance](polygon_src.PolygonStaker.md#getallowance)
 - [getEpoch](polygon_src.PolygonStaker.md#getepoch)
 - [getWithdrawalDelay](polygon_src.PolygonStaker.md#getwithdrawaldelay)
+- [getExchangeRatePrecision](polygon_src.PolygonStaker.md#getexchangerateprecision)
 - [sign](polygon_src.PolygonStaker.md#sign)
 - [broadcast](polygon_src.PolygonStaker.md#broadcast)
 - [getTxStatus](polygon_src.PolygonStaker.md#gettxstatus)
@@ -130,7 +134,8 @@ Requires prior token approval to the StakeManager contract.
 | `params.delegatorAddress` | \`0x$\{string}\` | The delegator's Ethereum address |
 | `params.validatorShareAddress` | \`0x$\{string}\` | The validator's ValidatorShare contract address |
 | `params.amount` | `string` | The amount to stake in POL |
-| `params.minSharesToMint` | `bigint` | Minimum validator shares to receive for slippage protection. |
+| `params.slippageBps?` | `number` | (Optional) Slippage tolerance in basis points (e.g., 50 = 0.5%). Used to calculate minSharesToMint. |
+| `params.minSharesToMint?` | `bigint` | (Optional) Minimum validator shares to receive. Use this OR slippageBps, not both. |
 | `params.referrer?` | `string` | (Optional) Custom referrer string for tracking. If not provided, uses 'sdk-chorusone-staking'. |
 
 #### Returns
@@ -158,7 +163,8 @@ After the unbonding period (~80 checkpoints, approximately 3-4 days), call build
 | `params.delegatorAddress` | \`0x$\{string}\` | The delegator's address |
 | `params.validatorShareAddress` | \`0x$\{string}\` | The validator's ValidatorShare contract address |
 | `params.amount` | `string` | The amount to unstake in POL (will be converted to wei internally) |
-| `params.maximumSharesToBurn` | `bigint` | Maximum validator shares willing to burn for slippage protection. |
+| `params.slippageBps?` | `number` | (Optional) Slippage tolerance in basis points (e.g., 50 = 0.5%). Used to calculate maximumSharesToBurn. |
+| `params.maximumSharesToBurn?` | `bigint` | (Optional) Maximum validator shares willing to burn. Use this OR slippageBps, not both. |
 | `params.referrer?` | `string` | (Optional) Custom referrer string for tracking. If not provided, uses 'sdk-chorusone-staking'. |
 
 #### Returns
@@ -308,7 +314,7 @@ ___
 Retrieves unbond request information for a specific nonce
 
 Use this to check the status of individual unbond requests.
-Compare withdrawEpoch + withdrawalDelay with getEpoch() to determine if withdrawal is possible.
+For fetching multiple unbonds efficiently, use getUnbonds() instead.
 
 #### Parameters
 
@@ -324,8 +330,36 @@ Compare withdrawEpoch + withdrawalDelay with getEpoch() to determine if withdraw
 `Promise`\<[`UnbondInfo`](../interfaces/polygon_src.UnbondInfo.md)\>
 
 Promise resolving to unbond information:
+  - amount: Amount pending unbonding in POL
+  - isWithdrawable: Whether the unbond can be withdrawn now
   - shares: Shares amount pending unbonding (0n if already withdrawn or doesn't exist)
   - withdrawEpoch: Epoch number when the unbond started
+
+___
+
+### getUnbonds
+
+▸ **getUnbonds**(`params`): `Promise`\<[`UnbondInfo`](../interfaces/polygon_src.UnbondInfo.md)[]\>
+
+Retrieves unbond request information for multiple nonces efficiently
+
+This method batches all contract reads into a single RPC call, making it
+much more efficient than calling getUnbond() multiple times.
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | Parameters for the query |
+| `params.delegatorAddress` | \`0x$\{string}\` | Ethereum address of the delegator |
+| `params.validatorShareAddress` | \`0x$\{string}\` | The validator's ValidatorShare contract address |
+| `params.unbondNonces` | `bigint`[] | Array of unbond nonces to query (1, 2, 3, etc.) |
+
+#### Returns
+
+`Promise`\<[`UnbondInfo`](../interfaces/polygon_src.UnbondInfo.md)[]\>
+
+Promise resolving to array of unbond information (same order as input nonces)
 
 ___
 
@@ -399,6 +433,28 @@ request before the funds can be withdrawn (~80 checkpoints, approximately 3-4 da
 `Promise`\<`bigint`\>
 
 Promise resolving to the withdrawal delay in epochs
+
+___
+
+### getExchangeRatePrecision
+
+▸ **getExchangeRatePrecision**(`validatorShareAddress`): `Promise`\<`bigint`\>
+
+Retrieves the exchange rate precision for a validator
+
+Foundation validators (ID < 8) use precision of 100, others use 10^29.
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `validatorShareAddress` | \`0x$\{string}\` | The validator's ValidatorShare contract address |
+
+#### Returns
+
+`Promise`\<`bigint`\>
+
+Promise resolving to the precision constant
 
 ___
 

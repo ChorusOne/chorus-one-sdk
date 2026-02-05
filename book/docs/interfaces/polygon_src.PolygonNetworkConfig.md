@@ -1,15 +1,17 @@
+[polygon/src](../modules/polygon_src.md).PolygonNetworkConfig
+
 ## Table of contents
 
 ### Properties
 
-- [network](PolygonNetworkConfig.md#network)
-- [rpcUrl](PolygonNetworkConfig.md#rpcurl)
+- [network](polygon_src.PolygonNetworkConfig.md#network)
+- [rpcUrl](polygon_src.PolygonNetworkConfig.md#rpcurl)
 
 ## Properties
 
 ### network
 
-• **network**: [`PolygonNetworks`](../README.md#polygonnetworks)
+• **network**: [`PolygonNetworks`](../modules/polygon_src.md#polygonnetworks)
 
 Network to use: 'mainnet' (Ethereum L1) or 'testnet' (Sepolia L1)
 

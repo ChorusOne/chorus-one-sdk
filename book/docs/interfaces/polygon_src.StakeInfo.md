@@ -1,10 +1,12 @@
+[polygon/src](../modules/polygon_src.md).StakeInfo
+
 ## Table of contents
 
 ### Properties
 
-- [balance](StakeInfo.md#balance)
-- [shares](StakeInfo.md#shares)
-- [exchangeRate](StakeInfo.md#exchangerate)
+- [balance](polygon_src.StakeInfo.md#balance)
+- [shares](polygon_src.StakeInfo.md#shares)
+- [exchangeRate](polygon_src.StakeInfo.md#exchangerate)
 
 ## Properties
 

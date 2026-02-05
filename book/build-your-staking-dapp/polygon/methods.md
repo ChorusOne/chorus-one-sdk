@@ -48,18 +48,28 @@ To build a staking transaction, you will need to specify:
 - **delegatorAddress**: The delegator's Ethereum address
 - **validatorShareAddress**: The validator's ValidatorShare contract address
 - **amount**: The amount to stake in POL
-- **minSharesToMint**: Minimum validator shares to receive for slippage protection.
+- **slippageBps**: (Optional) Slippage tolerance in basis points (e.g., 50 = 0.5%). Used to calculate minSharesToMint automatically.
+- **minSharesToMint**: (Optional) Minimum validator shares to receive for slippage protection. Use this OR slippageBps, not both.
 
 ### Example
 
 ```javascript
 import { CHORUS_ONE_POLYGON_VALIDATORS } from '@chorus-one/polygon'
 
+// Using slippageBps for automatic slippage calculation
 const { tx } = await staker.buildStakeTx({
   delegatorAddress: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
   validatorShareAddress: CHORUS_ONE_POLYGON_VALIDATORS.mainnet,
   amount: '100', // 100 POL
-  minSharesToMint: 0n
+  slippageBps: 50 // 0.5% slippage tolerance
+})
+
+// Or using minSharesToMint directly
+const { tx: txDirect } = await staker.buildStakeTx({
+  delegatorAddress: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
+  validatorShareAddress: CHORUS_ONE_POLYGON_VALIDATORS.mainnet,
+  amount: '100',
+  minSharesToMint: 99n * 10n ** 18n
 })
 ```
 
@@ -84,16 +94,26 @@ To build an unstaking transaction, you need to specify:
 - **delegatorAddress**: The address of the delegator
 - **validatorShareAddress**: The validator's ValidatorShare contract address
 - **amount**: The amount of POL to unstake
-- **maximumSharesToBurn**: Maximum validator shares willing to burn for slippage protection.
+- **slippageBps**: (Optional) Slippage tolerance in basis points (e.g., 50 = 0.5%). Used to calculate maximumSharesToBurn automatically.
+- **maximumSharesToBurn**: (Optional) Maximum validator shares willing to burn for slippage protection. Use this OR slippageBps, not both.
 
 ### Example
 
 ```javascript
+// Using slippageBps for automatic slippage calculation
 const { tx } = await staker.buildUnstakeTx({
   delegatorAddress: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
   validatorShareAddress: CHORUS_ONE_POLYGON_VALIDATORS.mainnet,
   amount: '50', // 50 POL
-  maximumSharesToBurn: BigInt(50e18) // Maximum shares willing to burn (slippage protection)
+  slippageBps: 50 // 0.5% slippage tolerance
+})
+
+// Or using maximumSharesToBurn directly
+const { tx: txDirect } = await staker.buildUnstakeTx({
+  delegatorAddress: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
+  validatorShareAddress: CHORUS_ONE_POLYGON_VALIDATORS.mainnet,
+  amount: '50',
+  maximumSharesToBurn: 51n * 10n ** 18n
 })
 ```
 
@@ -294,10 +314,14 @@ console.log(`Total unstake operations: ${latestNonce}`)
 
 ### Description
 
-The `getUnbond` method retrieves information about a specific unbond request, including the shares amount and the epoch when the unbond was created.
+The `getUnbond` method retrieves information about a specific unbond request.
 
-- `shares`: The amount pending withdrawal. Returns `0n` if the unbond has already been withdrawn or doesn't exist.
-- `withdrawEpoch`: The epoch when the unbond was created. Note: withdrawal is only possible after `withdrawEpoch + withdrawalDelay` (use `getWithdrawalDelay()` to get the delay).
+Returns:
+
+- `amount`: The amount pending withdrawal in POL.
+- `isWithdrawable`: Whether the unbond can be withdrawn now.
+- `shares`: The shares amount pending withdrawal. Returns `0n` if the unbond has already been withdrawn or doesn't exist.
+- `withdrawEpoch`: The epoch when the unbond was created.
 
 ### How to Use
 
@@ -314,18 +338,54 @@ const unbond = await staker.getUnbond({
 
 if (unbond.shares === 0n) {
   console.log('Unbond already withdrawn or does not exist')
+} else if (unbond.isWithdrawable) {
+  console.log(`Ready to withdraw ${unbond.amount} POL!`)
 } else {
-  const [currentEpoch, withdrawalDelay] = await Promise.all([staker.getEpoch(), staker.getWithdrawalDelay()])
-  const claimableEpoch = unbond.withdrawEpoch + withdrawalDelay
-  if (currentEpoch >= claimableEpoch) {
-    console.log('Ready to withdraw!')
-  } else {
-    console.log(`Withdrawal available at epoch ${claimableEpoch} (current: ${currentEpoch})`)
-  }
+  console.log(`${unbond.amount} POL pending, not yet withdrawable`)
 }
 ```
 
 - [Read more in the API Reference](../../docs/classes/polygon_src.PolygonStaker.md#getunbond)
+
+---
+
+## getUnbonds
+
+### Description
+
+The `getUnbonds` method retrieves unbond request information for multiple nonces efficiently in a single RPC call.
+
+This is more efficient than calling `getUnbond()` multiple times when you need to check several unbond requests.
+
+### How to Use
+
+To get multiple unbond information, provide the delegator's address, the validator's ValidatorShare contract address, and an array of unbond nonces to query.
+
+### Example
+
+```javascript
+// Get the latest nonce first
+const latestNonce = await staker.getUnbondNonce({
+  delegatorAddress: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
+  validatorShareAddress: CHORUS_ONE_POLYGON_VALIDATORS.mainnet
+})
+
+// Fetch all unbonds at once
+const nonces = Array.from({ length: Number(latestNonce) }, (_, i) => BigInt(i + 1))
+const unbonds = await staker.getUnbonds({
+  delegatorAddress: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
+  validatorShareAddress: CHORUS_ONE_POLYGON_VALIDATORS.mainnet,
+  unbondNonces: nonces
+})
+
+unbonds.forEach((unbond, i) => {
+  if (unbond.shares > 0n) {
+    console.log(`Unbond ${i + 1}: ${unbond.amount} POL, withdrawable: ${unbond.isWithdrawable}`)
+  }
+})
+```
+
+- [Read more in the API Reference](../../docs/classes/polygon_src.PolygonStaker.md#getunbonds)
 
 ---
 

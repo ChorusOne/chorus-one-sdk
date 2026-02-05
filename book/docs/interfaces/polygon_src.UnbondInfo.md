@@ -1,11 +1,31 @@
+[polygon/src](../modules/polygon_src.md).UnbondInfo
+
 ## Table of contents
 
 ### Properties
 
-- [shares](UnbondInfo.md#shares)
-- [withdrawEpoch](UnbondInfo.md#withdrawepoch)
+- [amount](polygon_src.UnbondInfo.md#amount)
+- [isWithdrawable](polygon_src.UnbondInfo.md#iswithdrawable)
+- [shares](polygon_src.UnbondInfo.md#shares)
+- [withdrawEpoch](polygon_src.UnbondInfo.md#withdrawepoch)
 
 ## Properties
+
+### amount
+
+• **amount**: `string`
+
+Amount pending unbonding in POL
+
+___
+
+### isWithdrawable
+
+• **isWithdrawable**: `boolean`
+
+Whether the unbond can be withdrawn now
+
+___
 
 ### shares
 
