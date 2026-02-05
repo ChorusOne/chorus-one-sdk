@@ -611,11 +611,11 @@ export class PolygonStaker {
     const currentEpoch = epochResult.result as bigint
     const [, exchangeRate] = stakeResult.result as [bigint, bigint]
 
-    return unbondNonces.map((_, index) => {
+    return unbondNonces.map((nonce, index) => {
       const unbondResult = multicallResults[index]
 
       if (unbondResult.status === 'failure') {
-        throw new Error(`Failed to fetch unbond for nonce ${unbondNonces[index]}`)
+        throw new Error(`Failed to fetch unbond for nonce ${nonce}`)
       }
 
       const [shares, withdrawEpoch] = unbondResult.result as [bigint, bigint]
