@@ -117,6 +117,13 @@ export const VALIDATOR_SHARE_ABI = [
     inputs: [],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     stateMutability: 'view'
+  },
+  {
+    type: 'function',
+    name: 'withdrawExchangeRate',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view'
   }
 ] as const
 

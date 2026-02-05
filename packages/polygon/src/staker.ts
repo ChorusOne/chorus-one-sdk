@@ -523,8 +523,7 @@ export class PolygonStaker {
           {
             address: validatorShareAddress,
             abi: VALIDATOR_SHARE_ABI,
-            functionName: 'getTotalStake',
-            args: [validatorShareAddress]
+            functionName: 'withdrawExchangeRate'
           }
         ]
       }),
@@ -532,17 +531,21 @@ export class PolygonStaker {
       this.getExchangeRatePrecision(validatorShareAddress)
     ])
 
-    const [unbondResult, epochResult, stakeResult] = multicallResults
+    const [unbondResult, epochResult, withdrawRateResult] = multicallResults
 
-    if (unbondResult.status === 'failure' || epochResult.status === 'failure' || stakeResult.status === 'failure') {
+    if (
+      unbondResult.status === 'failure' ||
+      epochResult.status === 'failure' ||
+      withdrawRateResult.status === 'failure'
+    ) {
       throw new Error('Failed to fetch unbond information')
     }
 
     const [shares, withdrawEpoch] = unbondResult.result
     const currentEpoch = epochResult.result
-    const [, exchangeRate] = stakeResult.result
+    const withdrawExchangeRate = withdrawRateResult.result
 
-    const amountWei = (shares * exchangeRate) / precision
+    const amountWei = (shares * withdrawExchangeRate) / precision
     const amount = formatEther(amountWei)
     const isWithdrawable = shares > 0n && currentEpoch >= withdrawEpoch + withdrawalDelay
 
@@ -592,8 +595,7 @@ export class PolygonStaker {
           {
             address: validatorShareAddress,
             abi: VALIDATOR_SHARE_ABI,
-            functionName: 'getTotalStake' as const,
-            args: [validatorShareAddress] as const
+            functionName: 'withdrawExchangeRate' as const
           }
         ]
       }),
@@ -602,14 +604,14 @@ export class PolygonStaker {
     ])
 
     const epochResult = multicallResults[unbondNonces.length]
-    const stakeResult = multicallResults[unbondNonces.length + 1]
+    const withdrawRateResult = multicallResults[unbondNonces.length + 1]
 
-    if (epochResult.status === 'failure' || stakeResult.status === 'failure') {
+    if (epochResult.status === 'failure' || withdrawRateResult.status === 'failure') {
       throw new Error('Failed to fetch epoch or exchange rate')
     }
 
     const currentEpoch = epochResult.result as bigint
-    const [, exchangeRate] = stakeResult.result as [bigint, bigint]
+    const withdrawExchangeRate = withdrawRateResult.result as bigint
 
     return unbondNonces.map((nonce, index) => {
       const unbondResult = multicallResults[index]
@@ -619,7 +621,7 @@ export class PolygonStaker {
       }
 
       const [shares, withdrawEpoch] = unbondResult.result as [bigint, bigint]
-      const amountWei = (shares * exchangeRate) / precision
+      const amountWei = (shares * withdrawExchangeRate) / precision
       const amount = formatEther(amountWei)
       const isWithdrawable = shares > 0n && currentEpoch >= withdrawEpoch + withdrawalDelay
 

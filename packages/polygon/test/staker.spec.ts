@@ -1,4 +1,5 @@
 import { PolygonStaker } from '../src/staker'
+import { EXCHANGE_RATE_PRECISION, EXCHANGE_RATE_HIGH_PRECISION } from '../src/constants'
 import { describe, it, beforeEach } from 'mocha'
 import { use, expect, assert } from 'chai'
 import chaiAsPromised from 'chai-as-promised'
@@ -36,7 +37,7 @@ describe('PolygonStaker', () => {
   })
 
   describe('address validation', () => {
-    it('should reject invalid delegator address', async () => {
+    it('should reject invalid delegator address in buildStakeTx', async () => {
       await expect(
         staker.buildStakeTx({
           delegatorAddress: 'invalid' as Address,
@@ -47,7 +48,7 @@ describe('PolygonStaker', () => {
       ).to.be.rejectedWith('Invalid delegator address')
     })
 
-    it('should reject invalid validator share address', async () => {
+    it('should reject invalid validator share address in buildStakeTx', async () => {
       await expect(
         staker.buildStakeTx({
           delegatorAddress: TEST_ADDRESS,
@@ -56,6 +57,79 @@ describe('PolygonStaker', () => {
           minSharesToMint: 0n
         })
       ).to.be.rejectedWith('Invalid validator share address')
+    })
+
+    it('should reject invalid delegator address in buildUnstakeTx', async () => {
+      await expect(
+        staker.buildUnstakeTx({
+          delegatorAddress: 'invalid' as Address,
+          validatorShareAddress: TEST_VALIDATOR_SHARE,
+          amount: '100',
+          maximumSharesToBurn: 0n
+        })
+      ).to.be.rejectedWith('Invalid delegator address')
+    })
+
+    it('should reject invalid validator share address in buildUnstakeTx', async () => {
+      await expect(
+        staker.buildUnstakeTx({
+          delegatorAddress: TEST_ADDRESS,
+          validatorShareAddress: 'invalid' as Address,
+          amount: '100',
+          maximumSharesToBurn: 0n
+        })
+      ).to.be.rejectedWith('Invalid validator share address')
+    })
+  })
+
+  describe('buildStakeTx slippage validation', () => {
+    it('should reject when both slippageBps and minSharesToMint are provided', async () => {
+      await expect(
+        staker.buildStakeTx({
+          delegatorAddress: TEST_ADDRESS,
+          validatorShareAddress: TEST_VALIDATOR_SHARE,
+          amount: '100',
+          slippageBps: 50,
+          minSharesToMint: 100n
+        })
+      ).to.be.rejectedWith('Cannot specify both slippageBps and minSharesToMint. Use one or the other.')
+    })
+  })
+
+  describe('buildUnstakeTx slippage validation', () => {
+    it('should reject when both slippageBps and maximumSharesToBurn are provided', async () => {
+      await expect(
+        staker.buildUnstakeTx({
+          delegatorAddress: TEST_ADDRESS,
+          validatorShareAddress: TEST_VALIDATOR_SHARE,
+          amount: '100',
+          slippageBps: 50,
+          maximumSharesToBurn: 100n
+        })
+      ).to.be.rejectedWith('Cannot specify both slippageBps and maximumSharesToBurn. Use one or the other.')
+    })
+  })
+
+  describe('getUnbonds', () => {
+    it('should return empty array for empty nonces input', async () => {
+      const result = await staker.getUnbonds({
+        delegatorAddress: TEST_ADDRESS,
+        validatorShareAddress: TEST_VALIDATOR_SHARE,
+        unbondNonces: []
+      })
+
+      assert.isArray(result)
+      assert.lengthOf(result, 0)
+    })
+  })
+
+  describe('exchange rate precision constants', () => {
+    it('should have correct EXCHANGE_RATE_PRECISION value', () => {
+      assert.equal(EXCHANGE_RATE_PRECISION, 100n)
+    })
+
+    it('should have correct EXCHANGE_RATE_HIGH_PRECISION value', () => {
+      assert.equal(EXCHANGE_RATE_HIGH_PRECISION, 10n ** 29n)
     })
   })
 
