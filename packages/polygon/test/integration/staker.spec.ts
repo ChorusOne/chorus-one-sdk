@@ -319,7 +319,9 @@ describe('PolygonStaker', () => {
       const stakeAfter = await staker.getStake({ delegatorAddress, validatorShareAddress })
       assert.equal(stakeAfter.balance, '0')
 
-      // TODO: Check if shares are lower than max
+      const nonce = await staker.getUnbondNonce({ delegatorAddress, validatorShareAddress })
+      const unbond = await staker.getUnbond({ delegatorAddress, validatorShareAddress, unbondNonce: nonce })
+      assert.isTrue(unbond.shares <= expectedMaxShares, 'Actual shares burned should be at most maximumSharesToBurn')
     })
 
     it('unstakes with 0 slippageBps sets maximumSharesToBurn to exact expected shares', async () => {
@@ -354,10 +356,11 @@ describe('PolygonStaker', () => {
 
       await sendTx({ tx, walletClient, publicClient, senderAddress: delegatorAddress })
 
-      // TODO: check if shares are equal to expected
+      const nonce = await staker.getUnbondNonce({ delegatorAddress, validatorShareAddress })
+      const unbond = await staker.getUnbond({ delegatorAddress, validatorShareAddress, unbondNonce: nonce })
+      assert.equal(unbond.shares, expectedShares, 'With 0 slippage, actual shares should equal expected shares')
     })
 
-    // TODO: unstake different amounts
     it('fetches multiple unbonds with getUnbonds batch method', async () => {
       await approveAndStake({
         delegatorAddress,
@@ -373,8 +376,8 @@ describe('PolygonStaker', () => {
       await unstake({
         delegatorAddress,
         validatorShareAddress,
-        amount: '50',
-        maximumSharesToBurn: stakeBefore.shares / 2n,
+        amount: '30',
+        maximumSharesToBurn: (stakeBefore.shares * 30n) / 100n,
         staker,
         walletClient,
         publicClient
@@ -384,7 +387,7 @@ describe('PolygonStaker', () => {
       await unstake({
         delegatorAddress,
         validatorShareAddress,
-        amount: '50',
+        amount: '70',
         maximumSharesToBurn: stakeAfterFirstUnstake.shares,
         staker,
         walletClient,
@@ -401,8 +404,8 @@ describe('PolygonStaker', () => {
       })
 
       assert.lengthOf(unbonds, 2)
-      assert.equal(unbonds[0].amount, '50')
-      assert.equal(unbonds[1].amount, '50')
+      assert.equal(unbonds[0].amount, '30')
+      assert.equal(unbonds[1].amount, '70')
       assert.equal(unbonds[0].isWithdrawable, false)
       assert.equal(unbonds[1].isWithdrawable, false)
       assert.isTrue(unbonds[0].shares > 0n)
