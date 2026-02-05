@@ -53,8 +53,18 @@ console.log('Current Allowance:', allowance, 'POL')
 const unbondNonce = await staker.getUnbondNonce({ delegatorAddress, validatorShareAddress })
 if (unbondNonce > 0n) {
   const unbond = await staker.getUnbond({ delegatorAddress, validatorShareAddress, unbondNonce })
-  console.log('Unbond Shares:', unbond.shares)
+  console.log('Amount:', unbond.amount, 'POL')
+  console.log('Withdrawable:', unbond.isWithdrawable)
+  console.log('Shares:', unbond.shares)
   console.log('Withdraw Epoch:', unbond.withdrawEpoch)
+
+  // Or fetch multiple unbonds efficiently in a single RPC call
+  const unbonds = await staker.getUnbonds({
+    delegatorAddress,
+    validatorShareAddress,
+    unbondNonces: [1n, 2n, 3n]
+  })
+  unbonds.forEach((u, i) => console.log(`Unbond ${i + 1}: ${u.amount} POL, withdrawable: ${u.isWithdrawable}`))
 }
 
 // Get current epoch and withdrawal delay
@@ -96,7 +106,8 @@ const { tx } = await staker.buildStakeTx({
   delegatorAddress,
   validatorShareAddress,
   amount: '1000', // Amount in POL
-  minSharesToMint: 0n // Minimum shares to receive (slippage protection)
+  slippageBps: 50 // 0.5% slippage tolerance (auto-calculates minSharesToMint)
+  // Or use minSharesToMint directly: minSharesToMint: 999n * 10n ** 18n
 })
 
 const { signedTx } = await staker.sign({
@@ -117,7 +128,8 @@ const { tx } = await staker.buildUnstakeTx({
   delegatorAddress,
   validatorShareAddress,
   amount: '500', // Amount in POL
-  maximumSharesToBurn: BigInt(500e18) // Maximum shares willing to burn (slippage protection)
+  slippageBps: 50 // 0.5% slippage tolerance (auto-calculates maximumSharesToBurn)
+  // Or use maximumSharesToBurn directly: maximumSharesToBurn: 501n * 10n ** 18n
 })
 
 const { signedTx } = await staker.sign({
@@ -203,17 +215,17 @@ console.log(status) // 'success', 'failure', or 'unknown'
 - **Ethereum L1 Based**: Polygon PoS staking operates via ValidatorShare contracts deployed on Ethereum mainnet (or Sepolia for testnet)
 - **POL Token Staking**: Stake the native POL token (formerly MATIC) to validators
 - **Human-Readable Amounts**: Pass token amounts as strings (e.g., '1.5'), conversion to wei is handled automatically
-- **Slippage Protection**: Stake and unstake operations support min/max share parameters
-- **Query Methods**: Read stake balances, rewards, allowances, unbond status, and epoch information
+- **Slippage Protection**: Stake and unstake operations support `slippageBps` (basis points) for automatic slippage calculation, or manual `minSharesToMint`/`maximumSharesToBurn` parameters
+- **Query Methods**: Read stake balances, rewards, allowances, unbond status (with POL amount and withdrawability), and epoch information
 - **Rewards Management**: Claim rewards to wallet or compound them back into your delegation
 
 ## Important Notes
 
 - **Token Approval**: You must approve the StakeManager contract to spend POL tokens before staking. Use `buildApproveTx()` to create the approval transaction.
 - **Unbonding Period**: After unstaking, there is an unbonding period of ~80 epochs (approximately 3-4 days) before tokens can be withdrawn.
-- **Unbond Nonces**: Each unstake operation creates a separate unbond request with an incrementing nonce. Withdrawals must be done per-nonce. Claimed unbonds are deleted, but the nonce counter never decrements.
+- **Unbond Nonces**: Each unstake operation creates a separate unbond request with an incrementing nonce. Withdrawals must be done per-nonce. Claimed unbonds are deleted, but the nonce counter never decrements. Use `getUnbonds()` to efficiently fetch multiple unbond requests in a single RPC call.
 - **Referrer Tracking**: Transaction builders that support referrer tracking (stake, unstake, claim rewards, compound) append a tracking marker to the transaction calldata. By default, `sdk-chorusone-staking` is used as the referrer. You can provide a custom referrer via the `referrer` parameter.
-- **Exchange Rate**: The exchange rate between shares and POL may fluctuate. Use the `minSharesToMint` and `maximumSharesToBurn` parameters for slippage protection.
+- **Exchange Rate**: The exchange rate between shares and POL may fluctuate. Use `slippageBps` for automatic slippage protection, or specify `minSharesToMint`/`maximumSharesToBurn` directly. Foundation validators (ID < 8) use different precision than others.
 - **Validator Share Contracts**: Each validator has their own ValidatorShare contract address. You must specify the correct contract address for the validator you want to delegate to.
 
 ## License

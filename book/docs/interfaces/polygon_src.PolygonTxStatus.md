@@ -1,9 +1,11 @@
+[polygon/src](../modules/polygon_src.md).PolygonTxStatus
+
 ## Table of contents
 
 ### Properties
 
-- [status](PolygonTxStatus.md#status)
-- [receipt](PolygonTxStatus.md#receipt)
+- [status](polygon_src.PolygonTxStatus.md#status)
+- [receipt](polygon_src.PolygonTxStatus.md#receipt)
 
 ## Properties
 
