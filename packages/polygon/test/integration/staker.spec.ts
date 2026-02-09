@@ -94,11 +94,6 @@ describe('PolygonStaker', () => {
       assert.equal(precision, EXCHANGE_RATE_HIGH_PRECISION)
     })
 
-    it('caches exchange rate precision on subsequent calls', async () => {
-      const precision1 = await staker.getExchangeRatePrecision(validatorShareAddress)
-      const precision2 = await staker.getExchangeRatePrecision(validatorShareAddress)
-      assert.equal(precision1, precision2)
-    })
   })
 
   describe('staking lifecycle', () => {

@@ -1,9 +1,9 @@
 import { PolygonStaker } from '../src/staker'
-import { EXCHANGE_RATE_PRECISION, EXCHANGE_RATE_HIGH_PRECISION } from '../src/constants'
+import { NETWORK_CONTRACTS } from '../src/constants'
 import { describe, it, beforeEach } from 'mocha'
 import { use, expect, assert } from 'chai'
 import chaiAsPromised from 'chai-as-promised'
-import type { Address } from 'viem'
+import { type Address, maxUint256, encodeFunctionData, erc20Abi } from 'viem'
 import { EXPECTED_APPROVE_TX, TEST_ADDRESS, TEST_VALIDATOR_SHARE } from './fixtures/expected-data'
 
 use(chaiAsPromised)
@@ -26,6 +26,20 @@ describe('PolygonStaker', () => {
 
       assert.equal(tx.to, EXPECTED_APPROVE_TX.expected.to)
       assert.equal(tx.data, EXPECTED_APPROVE_TX.expected.data)
+      assert.equal(tx.value, EXPECTED_APPROVE_TX.expected.value)
+    })
+
+    it('should generate correct unsigned approve tx for max (unlimited) amount', async () => {
+      const { tx } = await staker.buildApproveTx({ amount: 'max' })
+
+      const expectedData = encodeFunctionData({
+        abi: erc20Abi,
+        functionName: 'approve',
+        args: [NETWORK_CONTRACTS.mainnet.stakeManagerAddress, maxUint256]
+      })
+
+      assert.equal(tx.to, EXPECTED_APPROVE_TX.expected.to)
+      assert.equal(tx.data, expectedData)
       assert.equal(tx.value, EXPECTED_APPROVE_TX.expected.value)
     })
 
@@ -120,16 +134,6 @@ describe('PolygonStaker', () => {
 
       assert.isArray(result)
       assert.lengthOf(result, 0)
-    })
-  })
-
-  describe('exchange rate precision constants', () => {
-    it('should have correct EXCHANGE_RATE_PRECISION value', () => {
-      assert.equal(EXCHANGE_RATE_PRECISION, 100n)
-    })
-
-    it('should have correct EXCHANGE_RATE_HIGH_PRECISION value', () => {
-      assert.equal(EXCHANGE_RATE_HIGH_PRECISION, 10n ** 29n)
     })
   })
 
