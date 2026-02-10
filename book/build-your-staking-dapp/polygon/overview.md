@@ -78,7 +78,7 @@ const { tx } = await staker.buildStakeTx({
   delegatorAddress,
   validatorShareAddress,
   amount: '1', // 1 POL
-  minSharesToMint: 0n // Minimum shares to receive (slippage protection)
+  slippageBps: 50 // 0.5% slippage tolerance
 })
 ```
 
@@ -87,6 +87,14 @@ const { tx } = await staker.buildStakeTx({
 **Token Approval Required**
 
 Before staking, you must approve the StakeManager contract to spend your POL tokens. Use `buildApproveTx()` to create an approval transaction.
+
+{% endhint %}
+
+{% hint style="info" %}
+
+**Auto-Claim of Rewards**
+
+Both staking and unstaking operations automatically claim any pending rewards in the same transaction. The Polygon ValidatorShare contract internally calls `_withdrawAndTransferReward` before executing the stake or unstake. Your pending rewards are transferred to your wallet and the reward counter resets to 0.
 
 {% endhint %}
 
