@@ -40,6 +40,6 @@ export interface UnbondInfo {
   isWithdrawable: boolean
   /** Shares amount pending unbonding */
   shares: bigint
-  /** Epoch number when the unbond becomes claimable */
+  /** Epoch when the unbond was created. */
   withdrawEpoch: bigint
 }

@@ -41,6 +41,8 @@ The `buildStakeTx` method allows you to create a transaction for staking (delega
 
 Staking tokens involves delegating them to a validator via their ValidatorShare contract, supporting the network's security, and in return, you earn rewards.
 
+> **Note:** Staking automatically claims any pending rewards in the same transaction. The ValidatorShare contract calls `_withdrawAndTransferReward` before executing the stake, so pending rewards are transferred to your wallet and the reward counter resets to 0.
+
 ### How to Use
 
 To build a staking transaction, you will need to specify:
@@ -50,6 +52,7 @@ To build a staking transaction, you will need to specify:
 - **amount**: The amount to stake in POL
 - **slippageBps**: (Optional) Slippage tolerance in basis points (e.g., 50 = 0.5%). Used to calculate minSharesToMint automatically.
 - **minSharesToMint**: (Optional) Minimum validator shares to receive for slippage protection. Use this OR slippageBps, not both.
+- **referrer**: (Optional) Custom referrer string for tracking. Defaults to `'sdk-chorusone-staking'`.
 
 ### Example
 
@@ -87,6 +90,8 @@ The `buildUnstakeTx` method creates a transaction to unstake POL tokens from a v
 
 After unstaking, there is an unbonding period of approximately 80 checkpoints (around 3-4 days) before the tokens can be withdrawn.
 
+> **Note:** Unstaking automatically claims any pending rewards in the same transaction. The ValidatorShare contract calls `_withdrawAndTransferReward` before executing the unstake, so pending rewards are transferred to your wallet and the reward counter resets to 0.
+
 ### How to Use
 
 To build an unstaking transaction, you need to specify:
@@ -96,6 +101,7 @@ To build an unstaking transaction, you need to specify:
 - **amount**: The amount of POL to unstake
 - **slippageBps**: (Optional) Slippage tolerance in basis points (e.g., 50 = 0.5%). Used to calculate maximumSharesToBurn automatically.
 - **maximumSharesToBurn**: (Optional) Maximum validator shares willing to burn for slippage protection. Use this OR slippageBps, not both.
+- **referrer**: (Optional) Custom referrer string for tracking. Defaults to `'sdk-chorusone-staking'`.
 
 ### Example
 
@@ -182,7 +188,11 @@ The rewards are sent directly to the delegator's wallet.
 
 ### How to Use
 
-To build a claim rewards transaction, you need to specify the delegator's address and the validator's ValidatorShare contract address.
+To build a claim rewards transaction, you need to specify:
+
+- **delegatorAddress**: The delegator's address that will receive the rewards
+- **validatorShareAddress**: The validator's ValidatorShare contract address
+- **referrer**: (Optional) Custom referrer string for tracking. Defaults to `'sdk-chorusone-staking'`.
 
 ### Example
 
@@ -207,7 +217,11 @@ This restakes your rewards back into the validator, increasing your delegation w
 
 ### How to Use
 
-To build a compound transaction, you need to specify the delegator's address and the validator's ValidatorShare contract address.
+To build a compound transaction, you need to specify:
+
+- **delegatorAddress**: The delegator's address
+- **validatorShareAddress**: The validator's ValidatorShare contract address
+- **referrer**: (Optional) Custom referrer string for tracking. Defaults to `'sdk-chorusone-staking'`.
 
 ### Example
 
@@ -321,7 +335,7 @@ Returns:
 - `amount`: The amount pending withdrawal in POL.
 - `isWithdrawable`: Whether the unbond can be withdrawn now.
 - `shares`: The shares amount pending withdrawal. Returns `0n` if the unbond has already been withdrawn or doesn't exist.
-- `withdrawEpoch`: The epoch when the unbond was created.
+- `withdrawEpoch`: The epoch when the unbond was created. The unbond becomes claimable at `withdrawEpoch + withdrawalDelay`.
 
 ### How to Use
 
@@ -458,6 +472,93 @@ console.log(`Current allowance: ${allowance} POL`)
 ```
 
 - [Read more in the API Reference](../../docs/classes/polygon_src.PolygonStaker.md#getallowance)
+
+---
+
+## getExchangeRatePrecision
+
+### Description
+
+The `getExchangeRatePrecision` method retrieves the exchange rate precision for a validator.
+
+Foundation validators (ID < 8) use a precision of `100`, while all other validators use `10^29`. This is relevant when performing manual share/amount calculations.
+
+### How to Use
+
+Provide the validator's ValidatorShare contract address.
+
+### Example
+
+```javascript
+const precision = await staker.getExchangeRatePrecision(
+  CHORUS_ONE_POLYGON_VALIDATORS.mainnet
+)
+
+console.log(`Exchange rate precision: ${precision}`)
+```
+
+- [Read more in the API Reference](../../docs/classes/polygon_src.PolygonStaker.md#getexchangerateprecision)
+
+---
+
+## sign
+
+### Description
+
+The `sign` method signs a transaction using the provided signer (e.g., Fireblocks, local mnemonic).
+
+### How to Use
+
+To sign a transaction, you need to specify:
+
+- **signer**: A signer instance (e.g., `FireblocksSigner`, `LocalSigner`)
+- **signerAddress**: The address of the signer
+- **tx**: The transaction to sign (from any `build*Tx` method)
+- **baseFeeMultiplier**: (Optional) Multiplier applied to the base fee per gas from the latest block to determine `maxFeePerGas`. Defaults to `1.2`.
+- **defaultPriorityFee**: (Optional) Overrides the `maxPriorityFeePerGas` estimated by the RPC, specified in ETH (e.g., `'0.000000001'` for 1 gwei).
+
+### Example
+
+```javascript
+const { signedTx } = await staker.sign({
+  signer,
+  signerAddress: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
+  tx,
+  baseFeeMultiplier: 1.5, // 1.5x base fee for faster inclusion
+  defaultPriorityFee: '0.000000002' // 2 gwei priority fee
+})
+```
+
+---
+
+## Exported Constants
+
+The `@chorus-one/polygon` package exports the following constants:
+
+| Constant | Description |
+| --- | --- |
+| `CHORUS_ONE_POLYGON_VALIDATORS` | Chorus One ValidatorShare contract addresses for mainnet and testnet |
+| `NETWORK_CONTRACTS` | StakeManager and staking token contract addresses per network |
+| `VALIDATOR_SHARE_ABI` | ABI for the ValidatorShare contract |
+| `STAKE_MANAGER_ABI` | ABI for the StakeManager contract |
+| `EXCHANGE_RATE_PRECISION` | Exchange rate precision for foundation validators (`100n`) |
+| `EXCHANGE_RATE_HIGH_PRECISION` | Exchange rate precision for non-foundation validators (`10n ** 29n`) |
+
+---
+
+## Exported Types
+
+The following TypeScript types are exported:
+
+| Type | Description |
+| --- | --- |
+| `PolygonNetworkConfig` | Configuration for initializing `PolygonStaker` (`network`, `rpcUrl`) |
+| `Transaction` | Transaction object returned by `build*Tx` methods (`to`, `data`, `value`) |
+| `PolygonTxStatus` | Transaction status from `getTxStatus` (`status`, `receipt`) |
+| `StakeInfo` | Staking info from `getStake` (`balance`, `shares`, `exchangeRate`) |
+| `UnbondInfo` | Unbond info from `getUnbond`/`getUnbonds` (`amount`, `isWithdrawable`, `shares`, `withdrawEpoch`) |
+| `PolygonNetworks` | Network type: `'mainnet'` or `'testnet'` |
+| `NetworkContracts` | Contract addresses type (`stakeManagerAddress`, `stakingTokenAddress`) |
 
 ---
 
