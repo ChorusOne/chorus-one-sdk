@@ -93,7 +93,6 @@ describe('PolygonStaker', () => {
       const precision = await staker.getExchangeRatePrecision(validatorShareAddress)
       assert.equal(precision, EXCHANGE_RATE_HIGH_PRECISION)
     })
-
   })
 
   describe('staking lifecycle', () => {
