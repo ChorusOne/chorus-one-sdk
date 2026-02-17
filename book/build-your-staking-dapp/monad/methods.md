@@ -335,3 +335,134 @@ const { epoch, inEpochDelayPeriod } = await staker.getEpoch()
 {% endhint %}
 
 - [Read more in the API Reference](../../docs/classes/monad_src.MonadStaker.md#getepoch)
+
+---
+
+## sign
+
+### Description
+
+The `sign` method signs a transaction using the provided signer (e.g., Fireblocks, local mnemonic).
+
+### How to Use
+
+To sign a transaction, you need to provide a signer instance, the signer's address, and the transaction object from any `build*Tx` method.
+
+### Parameters
+
+- **signer** (Signer): A signer instance (e.g., `FireblocksSigner`, `LocalSigner`)
+- **signerAddress** (Address): The address of the signer
+- **tx** (Transaction): The transaction to sign (from any `build*Tx` method)
+- **baseFeeMultiplier** (number, optional): Multiplier applied to the base fee per gas from the latest block to determine `maxFeePerGas`. Defaults to `1.2`.
+- **defaultPriorityFee** (string, optional): Overrides the `maxPriorityFeePerGas` estimated by the RPC.
+
+### Example
+
+```javascript
+const { signedTx } = await staker.sign({
+  signer,
+  signerAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+  tx
+})
+```
+
+- [Read more in the API Reference](../../docs/classes/monad_src.MonadStaker.md#sign)
+
+---
+
+## broadcast
+
+### Description
+
+The `broadcast` method broadcasts a signed transaction to the Monad network.
+
+### How to Use
+
+Pass the signed transaction hex string returned by the `sign` method.
+
+### Parameters
+
+- **signedTx** (Hex): The signed transaction to broadcast
+
+### Example
+
+```javascript
+const { txHash } = await staker.broadcast({ signedTx })
+
+console.log('Transaction hash:', txHash)
+```
+
+- [Read more in the API Reference](../../docs/classes/monad_src.MonadStaker.md#broadcast)
+
+---
+
+## getTxStatus
+
+### Description
+
+The `getTxStatus` method retrieves the status of a transaction using the transaction hash.
+
+### How to Use
+
+Provide the transaction hash received from the `broadcast` method.
+
+### Parameters
+
+- **txHash** (Hex): The transaction hash to query
+
+### Returns
+
+Returns the transaction status including:
+
+- **status** (string): Transaction status (`'success'`, `'reverted'`, or `'pending'`)
+- **receipt** (object): The full transaction receipt (when available)
+
+### Example
+
+```javascript
+const txStatus = await staker.getTxStatus({ txHash })
+
+console.log('Transaction status:', txStatus.status)
+```
+
+- [Read more in the API Reference](../../docs/classes/monad_src.MonadStaker.md#gettxstatus)
+
+---
+
+## getAddressDerivationFn
+
+### Description
+
+The `getAddressDerivationFn` is a **static** method used to derive an address from a public key. It is used for signer initialization with `FireblocksSigner` or `LocalSigner`.
+
+### How to Use
+
+Call the static method on the `MonadStaker` class and pass it to your signer's `addressDerivationFn` parameter.
+
+### Example
+
+```javascript
+import { MonadStaker } from '@chorus-one/monad'
+import { FireblocksSigner } from '@chorus-one/signer-fireblocks'
+
+const signer = new FireblocksSigner({
+  apiSecretKey: 'your-api-secret',
+  apiKey: 'your-api-key',
+  vaultName: 'your-vault',
+  assetId: 'ETH',
+  addressDerivationFn: MonadStaker.getAddressDerivationFn()
+})
+
+await signer.init()
+```
+
+- [Read more in the API Reference](../../docs/classes/monad_src.MonadStaker.md#getaddressderivationfn)
+
+---
+
+## Further Reading
+
+For more detailed information and additional methods, please refer to the official API reference:
+
+- [MonadStaker API Reference](../../docs/classes/monad_src.MonadStaker.md)
+- [Monad Staking Documentation](https://docs.monad.xyz/developer-essentials/staking/staking-precompile)

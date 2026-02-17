@@ -490,9 +490,7 @@ Provide the validator's ValidatorShare contract address.
 ### Example
 
 ```javascript
-const precision = await staker.getExchangeRatePrecision(
-  CHORUS_ONE_POLYGON_VALIDATORS.mainnet
-)
+const precision = await staker.getExchangeRatePrecision(CHORUS_ONE_POLYGON_VALIDATORS.mainnet)
 
 console.log(`Exchange rate precision: ${precision}`)
 ```
@@ -529,20 +527,22 @@ const { signedTx } = await staker.sign({
 })
 ```
 
+- [Read more in the API Reference](../../docs/classes/polygon_src.PolygonStaker.md#sign)
+
 ---
 
 ## Exported Constants
 
 The `@chorus-one/polygon` package exports the following constants:
 
-| Constant | Description |
-| --- | --- |
+| Constant                        | Description                                                          |
+| ------------------------------- | -------------------------------------------------------------------- |
 | `CHORUS_ONE_POLYGON_VALIDATORS` | Chorus One ValidatorShare contract addresses for mainnet and testnet |
-| `NETWORK_CONTRACTS` | StakeManager and staking token contract addresses per network |
-| `VALIDATOR_SHARE_ABI` | ABI for the ValidatorShare contract |
-| `STAKE_MANAGER_ABI` | ABI for the StakeManager contract |
-| `EXCHANGE_RATE_PRECISION` | Exchange rate precision for foundation validators (`100n`) |
-| `EXCHANGE_RATE_HIGH_PRECISION` | Exchange rate precision for non-foundation validators (`10n ** 29n`) |
+| `NETWORK_CONTRACTS`             | StakeManager and staking token contract addresses per network        |
+| `VALIDATOR_SHARE_ABI`           | ABI for the ValidatorShare contract                                  |
+| `STAKE_MANAGER_ABI`             | ABI for the StakeManager contract                                    |
+| `EXCHANGE_RATE_PRECISION`       | Exchange rate precision for foundation validators (`100n`)           |
+| `EXCHANGE_RATE_HIGH_PRECISION`  | Exchange rate precision for non-foundation validators (`10n ** 29n`) |
 
 ---
 
@@ -550,15 +550,15 @@ The `@chorus-one/polygon` package exports the following constants:
 
 The following TypeScript types are exported:
 
-| Type | Description |
-| --- | --- |
-| `PolygonNetworkConfig` | Configuration for initializing `PolygonStaker` (`network`, `rpcUrl`) |
-| `Transaction` | Transaction object returned by `build*Tx` methods (`to`, `data`, `value`) |
-| `PolygonTxStatus` | Transaction status from `getTxStatus` (`status`, `receipt`) |
-| `StakeInfo` | Staking info from `getStake` (`balance`, `shares`, `exchangeRate`) |
-| `UnbondInfo` | Unbond info from `getUnbond`/`getUnbonds` (`amount`, `isWithdrawable`, `shares`, `withdrawEpoch`) |
-| `PolygonNetworks` | Network type: `'mainnet'` or `'testnet'` |
-| `NetworkContracts` | Contract addresses type (`stakeManagerAddress`, `stakingTokenAddress`) |
+| Type                   | Description                                                                                       |
+| ---------------------- | ------------------------------------------------------------------------------------------------- |
+| `PolygonNetworkConfig` | Configuration for initializing `PolygonStaker` (`network`, `rpcUrl`)                              |
+| `Transaction`          | Transaction object returned by `build*Tx` methods (`to`, `data`, `value`)                         |
+| `PolygonTxStatus`      | Transaction status from `getTxStatus` (`status`, `receipt`)                                       |
+| `StakeInfo`            | Staking info from `getStake` (`balance`, `shares`, `exchangeRate`)                                |
+| `UnbondInfo`           | Unbond info from `getUnbond`/`getUnbonds` (`amount`, `isWithdrawable`, `shares`, `withdrawEpoch`) |
+| `PolygonNetworks`      | Network type: `'mainnet'` or `'testnet'`                                                          |
+| `NetworkContracts`     | Contract addresses type (`stakeManagerAddress`, `stakingTokenAddress`)                            |
 
 ---
 

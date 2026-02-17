@@ -66,14 +66,12 @@ import { MonadStaker } from '@chorus-one/monad'
 
 const staker = new MonadStaker({
   rpcUrl: 'https://testnet-rpc.monad.xyz'
-  // contractAddress: '0x0000000000000000000000000000000000001000' // Optional, defaults to precompile address
 })
 ```
 
 **Configuration Parameters**:
 
 - **rpcUrl**: The URL of the Monad network RPC endpoint. This is where the SDK will connect to interact with the network.
-- **contractAddress** (optional): The staking precompile contract address. Defaults to `0x0000000000000000000000000000000000001000`.
 
 ---
 
@@ -113,6 +111,69 @@ const tx = await staker.buildStakeTx({
 Unlike some other blockchains, Monad SDK returns **unsigned transaction objects** that are compatible with viem's `sendTransaction` method. You need to use your own wallet client to sign and broadcast transactions.
 
 {% endhint %}
+
+---
+
+## Signing the Transaction
+
+Once the transaction is built, you can sign that transaction using your own signing solution e.g.:
+
+```js
+const signedTx = await yourWalletClient.signTransaction(tx)
+```
+
+Additionally, you can use the Chorus One SDK to sign transactions using Fireblocks, mnemonic or other methods.
+
+For detailed information on setting up and configuring these options, refer to the [What is a Signer?](../../signers-explained/what-is-a-signer.md) section.
+
+{% tabs %}
+{% tab title="Using Fireblocks for Signing" %}
+By integrating Fireblocks, you can leverage its robust security features to sign transactions on the Monad network. To set up Fireblocks, provide the necessary API key, secret key, and vault ID:
+
+```javascript
+import { MonadStaker } from '@chorus-one/monad'
+import { FireblocksSigner } from '@chorus-one/signer-fireblocks'
+
+const signer = new FireblocksSigner({
+  apiSecretKey: 'your-api-secret-key',
+  apiKey: 'your-api-key',
+  vaultName: 'your-vault-name',
+  assetId: 'ETH',
+  addressDerivationFn: MonadStaker.getAddressDerivationFn()
+})
+
+await signer.init()
+
+const { signedTx } = await staker.sign({
+  signer,
+  signerAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+  tx
+})
+```
+
+For more information please refer to the [Signing with Fireblocks](../../signers-explained/fireblocks.md)
+{% endtab %}
+{% endtabs %}
+
+---
+
+## Broadcasting the Transaction
+
+After signing the transaction, you will need to broadcast it to the network. You can do this using the `broadcast` method:
+
+```javascript
+const { txHash } = await staker.broadcast({ signedTx })
+```
+
+And now you can track the transaction status:
+
+```javascript
+const { status, receipt } = await staker.getTxStatus({ txHash })
+
+console.log(status) // 'success'
+```
+
+---
 
 ## Next Steps
 

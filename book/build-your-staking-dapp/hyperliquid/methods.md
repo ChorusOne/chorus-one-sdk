@@ -49,7 +49,7 @@ Transfers from spot to staking are **instant**. Once confirmed, the balance imme
 
 **Further Reading**
 
-- [HyperliquidStaker API Reference](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/exchange-endpoint#deposit-into-staking)
+- [HyperliquidStaker API Reference](../../docs/classes/hyperliquid_src.HyperliquidStaker.md#buildspottostakingtx)
 
 ---
 
@@ -102,7 +102,7 @@ console.log('Withdrawal initiated, will complete in 7 days')
 
 **Further Reading**
 
-- [HyperliquidStaker API Reference](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/exchange-endpoint#withdraw-from-staking)
+- [HyperliquidStaker API Reference](../../docs/classes/hyperliquid_src.HyperliquidStaker.md#buildwithdrawfromstakingtx)
 
 ---
 
@@ -168,7 +168,7 @@ console.log('Staked amount:', delegation?.amount)
 
 **Further Reading**
 
-- [HyperliquidStaker API Reference](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/exchange-endpoint#delegate-or-undelegate-stake-from-validator)
+- [HyperliquidStaker API Reference](../../docs/classes/hyperliquid_src.HyperliquidStaker.md#buildstaketx)
 
 ---
 
@@ -256,7 +256,7 @@ await staker.broadcast({
 
 **Further Reading**
 
-- [HyperliquidStaker API Reference](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/exchange-endpoint#delegate-or-undelegate-stake-from-validator)
+- [HyperliquidStaker API Reference](../../docs/classes/hyperliquid_src.HyperliquidStaker.md#buildunstaketx)
 
 ---
 
@@ -309,7 +309,7 @@ This method provides a high-level overview of your staking position. To see indi
 
 **Further Reading**
 
-- [HyperliquidStaker API Reference](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint#query-a-users-staking-summary)
+- [HyperliquidStaker API Reference](../../docs/classes/hyperliquid_src.HyperliquidStaker.md#getstakingsummary)
 
 ---
 
@@ -367,7 +367,7 @@ console.log(`\nTotal Delegated: ${totalDelegated.toFixed(8)} HYPE`)
 
 **Further Reading**
 
-- [HyperliquidStaker API Reference](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint#query-a-users-staking-delegations)
+- [HyperliquidStaker API Reference](../../docs/classes/hyperliquid_src.HyperliquidStaker.md#getdelegations)
 
 ---
 
@@ -427,7 +427,7 @@ The `hold` field represents tokens locked in open trading orders. To calculate a
 
 **Further Reading**
 
-- [HyperliquidStaker API Reference](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/spot#retrieve-a-users-token-balances)
+- [HyperliquidStaker API Reference](../../docs/classes/hyperliquid_src.HyperliquidStaker.md#getspotbalances)
 
 ---
 
@@ -486,7 +486,7 @@ console.log(`\nTotal Rewards: ${totalRewards.toFixed(8)} HYPE`)
 
 **Further Reading**
 
-- [HyperliquidStaker API Reference](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint#query-a-users-staking-rewards)
+- [HyperliquidStaker API Reference](../../docs/classes/hyperliquid_src.HyperliquidStaker.md#getdelegatorrewards)
 
 ---
 
@@ -554,7 +554,7 @@ console.log('Recent events:', recentEvents)
 
 **Further Reading**
 
-- [HyperliquidStaker API Reference](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint#query-a-users-staking-history)
+- [HyperliquidStaker API Reference](../../docs/classes/hyperliquid_src.HyperliquidStaker.md#getdelegatorhistory)
 
 ---
 
@@ -634,7 +634,8 @@ Hyperliquid uses **EIP-712 typed data signing**, not standard Ethereum transacti
 
 **Further Reading**
 
-- [Signer Documentation](https://chorus-one.gitbook.io/sdk/signers-explained/what-is-a-signer)
+- [HyperliquidStaker API Reference](../../docs/classes/hyperliquid_src.HyperliquidStaker.md#sign)
+- [What is a Signer?](../../signers-explained/what-is-a-signer.md)
 
 ---
 
@@ -680,7 +681,7 @@ console.log('Transaction hash:', txHash)
 
 **Further Reading**
 
-- [HyperliquidStaker Exchange API Reference](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/exchange-endpoint)
+- [HyperliquidStaker API Reference](../../docs/classes/hyperliquid_src.HyperliquidStaker.md#broadcast)
 
 ---
 
@@ -740,4 +741,7 @@ try {
 
 **Further Reading**
 
-- [Hyperliquid Documentation](https://hyperliquid.gitbook.io/hyperliquid-docs)
+## Further Reading
+
+- [HyperliquidStaker API Reference](../../docs/classes/hyperliquid_src.HyperliquidStaker.md)
+- [Hyperliquid Staking Documentation](https://hyperliquid.gitbook.io/hyperliquid-docs/hypercore/staking)
