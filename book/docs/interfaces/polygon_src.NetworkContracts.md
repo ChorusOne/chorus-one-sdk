@@ -1,5 +1,3 @@
-[polygon/src](../modules/polygon_src.md).NetworkContracts
-
 ## Table of contents
 
 ### Properties

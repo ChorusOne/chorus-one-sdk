@@ -1,5 +1,3 @@
-[polygon/src](../modules/polygon_src.md).UnbondInfo
-
 ## Table of contents
 
 ### Properties
@@ -39,4 +37,4 @@ ___
 
 • **withdrawEpoch**: `bigint`
 
-Epoch number when the unbond becomes claimable
+Epoch when the unbond was created.

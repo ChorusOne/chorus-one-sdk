@@ -1,12 +1,10 @@
-[polygon/src](../modules/polygon_src.md).PolygonStaker
+# Table of contents
 
-## Table of contents
-
-### Constructors
+## Constructors
 
 - [constructor](polygon_src.PolygonStaker.md#constructor)
 
-### Methods
+## Methods
 
 - [getAddressDerivationFn](polygon_src.PolygonStaker.md#getaddressderivationfn)
 - [init](polygon_src.PolygonStaker.md#init)
@@ -29,29 +27,29 @@
 - [broadcast](polygon_src.PolygonStaker.md#broadcast)
 - [getTxStatus](polygon_src.PolygonStaker.md#gettxstatus)
 
-## Constructors
+# Constructors
 
-### constructor
+## constructor
 
 • **new PolygonStaker**(`params`): [`PolygonStaker`](polygon_src.PolygonStaker.md)
 
 Creates a PolygonStaker instance
 
-#### Parameters
+### Parameters
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `params` | [`PolygonNetworkConfig`](../interfaces/polygon_src.PolygonNetworkConfig.md) | Initialization configuration |
 
-#### Returns
+### Returns
 
 [`PolygonStaker`](polygon_src.PolygonStaker.md)
 
 An instance of PolygonStaker
 
-## Methods
+# Methods
 
-### getAddressDerivationFn
+## getAddressDerivationFn
 
 ▸ **getAddressDerivationFn**(): (`publicKey`: `Uint8Array`) => `Promise`\<`string`[]\>
 
@@ -59,7 +57,7 @@ This **static** method is used to derive an address from a public key.
 
 It can be used for signer initialization, e.g. `FireblocksSigner` or `LocalSigner`.
 
-#### Returns
+### Returns
 
 `fn`
 
@@ -67,23 +65,23 @@ Returns an array containing the derived address.
 
 ▸ (`publicKey`): `Promise`\<`string`[]\>
 
-##### Parameters
+#### Parameters
 
 | Name | Type |
 | :------ | :------ |
 | `publicKey` | `Uint8Array` |
 
-##### Returns
+#### Returns
 
 `Promise`\<`string`[]\>
 
 ___
 
-### init
+## init
 
 ▸ **init**(): `Promise`\<`void`\>
 
-#### Returns
+### Returns
 
 `Promise`\<`void`\>
 
@@ -93,7 +91,7 @@ No longer required. Kept for backward compatibility.
 
 ___
 
-### buildApproveTx
+## buildApproveTx
 
 ▸ **buildApproveTx**(`params`): `Promise`\<\{ `tx`: [`Transaction`](../interfaces/polygon_src.Transaction.md)  }\>
 
@@ -102,14 +100,14 @@ Builds a token approval transaction
 Approves the StakeManager contract to spend POL tokens on behalf of the delegator.
 This must be called before staking if the current allowance is insufficient.
 
-#### Parameters
+### Parameters
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `params` | `Object` | Parameters for building the transaction |
 | `params.amount` | `string` | The amount to approve in POL (will be converted to wei internally). Pass "max" for unlimited approval. |
 
-#### Returns
+### Returns
 
 `Promise`\<\{ `tx`: [`Transaction`](../interfaces/polygon_src.Transaction.md)  }\>
 
@@ -117,7 +115,7 @@ Returns a promise that resolves to an approval transaction
 
 ___
 
-### buildStakeTx
+## buildStakeTx
 
 ▸ **buildStakeTx**(`params`): `Promise`\<\{ `tx`: [`Transaction`](../interfaces/polygon_src.Transaction.md)  }\>
 
@@ -126,7 +124,7 @@ Builds a staking (delegation) transaction
 Delegates POL tokens to a validator via their ValidatorShare contract.
 Requires prior token approval to the StakeManager contract.
 
-#### Parameters
+### Parameters
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
@@ -138,7 +136,7 @@ Requires prior token approval to the StakeManager contract.
 | `params.minSharesToMint?` | `bigint` | (Optional) Minimum validator shares to receive. Use this OR slippageBps, not both. |
 | `params.referrer?` | `string` | (Optional) Custom referrer string for tracking. If not provided, uses 'sdk-chorusone-staking'. |
 
-#### Returns
+### Returns
 
 `Promise`\<\{ `tx`: [`Transaction`](../interfaces/polygon_src.Transaction.md)  }\>
 
@@ -146,7 +144,7 @@ Returns a promise that resolves to a Polygon staking transaction
 
 ___
 
-### buildUnstakeTx
+## buildUnstakeTx
 
 ▸ **buildUnstakeTx**(`params`): `Promise`\<\{ `tx`: [`Transaction`](../interfaces/polygon_src.Transaction.md)  }\>
 
@@ -155,7 +153,7 @@ Builds an unstaking transaction
 Creates an unbond request to unstake POL tokens from a validator.
 After the unbonding period (~80 checkpoints, approximately 3-4 days), call buildWithdrawTx() to claim funds.
 
-#### Parameters
+### Parameters
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
@@ -167,7 +165,7 @@ After the unbonding period (~80 checkpoints, approximately 3-4 days), call build
 | `params.maximumSharesToBurn?` | `bigint` | (Optional) Maximum validator shares willing to burn. Use this OR slippageBps, not both. |
 | `params.referrer?` | `string` | (Optional) Custom referrer string for tracking. If not provided, uses 'sdk-chorusone-staking'. |
 
-#### Returns
+### Returns
 
 `Promise`\<\{ `tx`: [`Transaction`](../interfaces/polygon_src.Transaction.md)  }\>
 
@@ -175,7 +173,7 @@ Returns a promise that resolves to a Polygon unstaking transaction
 
 ___
 
-### buildWithdrawTx
+## buildWithdrawTx
 
 ▸ **buildWithdrawTx**(`params`): `Promise`\<\{ `tx`: [`Transaction`](../interfaces/polygon_src.Transaction.md)  }\>
 
@@ -188,7 +186,7 @@ Note: Each unstake creates a separate unbond with its own nonce (1, 2, 3, etc.).
 Withdrawals must be done per-nonce. To withdraw all pending unbonds, iterate
 through nonces from 1 to getUnbondNonce() and withdraw each eligible one.
 
-#### Parameters
+### Parameters
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
@@ -197,7 +195,7 @@ through nonces from 1 to getUnbondNonce() and withdraw each eligible one.
 | `params.validatorShareAddress` | \`0x$\{string}\` | The validator's ValidatorShare contract address |
 | `params.unbondNonce` | `bigint` | The specific unbond nonce to withdraw |
 
-#### Returns
+### Returns
 
 `Promise`\<\{ `tx`: [`Transaction`](../interfaces/polygon_src.Transaction.md)  }\>
 
@@ -205,7 +203,7 @@ Returns a promise that resolves to a Polygon withdrawal transaction
 
 ___
 
-### buildClaimRewardsTx
+## buildClaimRewardsTx
 
 ▸ **buildClaimRewardsTx**(`params`): `Promise`\<\{ `tx`: [`Transaction`](../interfaces/polygon_src.Transaction.md)  }\>
 
@@ -213,7 +211,7 @@ Builds a claim rewards transaction
 
 Claims accumulated delegation rewards and sends them to the delegator's wallet.
 
-#### Parameters
+### Parameters
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
@@ -222,7 +220,7 @@ Claims accumulated delegation rewards and sends them to the delegator's wallet.
 | `params.validatorShareAddress` | \`0x$\{string}\` | The validator's ValidatorShare contract address |
 | `params.referrer?` | `string` | (Optional) Custom referrer string for tracking. If not provided, uses 'sdk-chorusone-staking'. |
 
-#### Returns
+### Returns
 
 `Promise`\<\{ `tx`: [`Transaction`](../interfaces/polygon_src.Transaction.md)  }\>
 
@@ -230,7 +228,7 @@ Returns a promise that resolves to a Polygon claim rewards transaction
 
 ___
 
-### buildCompoundTx
+## buildCompoundTx
 
 ▸ **buildCompoundTx**(`params`): `Promise`\<\{ `tx`: [`Transaction`](../interfaces/polygon_src.Transaction.md)  }\>
 
@@ -238,7 +236,7 @@ Builds a compound (restake) rewards transaction
 
 Restakes accumulated rewards back into the validator, increasing delegation without new tokens.
 
-#### Parameters
+### Parameters
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
@@ -247,7 +245,7 @@ Restakes accumulated rewards back into the validator, increasing delegation with
 | `params.validatorShareAddress` | \`0x$\{string}\` | The validator's ValidatorShare contract address |
 | `params.referrer?` | `string` | (Optional) Custom referrer string for tracking. If not provided, uses 'sdk-chorusone-staking'. |
 
-#### Returns
+### Returns
 
 `Promise`\<\{ `tx`: [`Transaction`](../interfaces/polygon_src.Transaction.md)  }\>
 
@@ -255,13 +253,13 @@ Returns a promise that resolves to a Polygon compound transaction
 
 ___
 
-### getStake
+## getStake
 
 ▸ **getStake**(`params`): `Promise`\<[`StakeInfo`](../interfaces/polygon_src.StakeInfo.md)\>
 
 Retrieves the delegator's staking information for a specific validator
 
-#### Parameters
+### Parameters
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
@@ -269,7 +267,7 @@ Retrieves the delegator's staking information for a specific validator
 | `params.delegatorAddress` | \`0x$\{string}\` | Ethereum address of the delegator |
 | `params.validatorShareAddress` | \`0x$\{string}\` | The validator's ValidatorShare contract address |
 
-#### Returns
+### Returns
 
 `Promise`\<[`StakeInfo`](../interfaces/polygon_src.StakeInfo.md)\>
 
@@ -280,7 +278,7 @@ Promise resolving to stake information:
 
 ___
 
-### getUnbondNonce
+## getUnbondNonce
 
 ▸ **getUnbondNonce**(`params`): `Promise`\<`bigint`\>
 
@@ -291,7 +289,7 @@ Nonces start at 1 and increment with each unstake.
 Note: a nonce having existed does not mean it is still pending —
 claimed unbonds are deleted, but the counter is never decremented.
 
-#### Parameters
+### Parameters
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
@@ -299,7 +297,7 @@ claimed unbonds are deleted, but the counter is never decremented.
 | `params.delegatorAddress` | \`0x$\{string}\` | Ethereum address of the delegator |
 | `params.validatorShareAddress` | \`0x$\{string}\` | The validator's ValidatorShare contract address |
 
-#### Returns
+### Returns
 
 `Promise`\<`bigint`\>
 
@@ -307,7 +305,7 @@ Promise resolving to the latest unbond nonce (0n if no unstakes performed)
 
 ___
 
-### getUnbond
+## getUnbond
 
 ▸ **getUnbond**(`params`): `Promise`\<[`UnbondInfo`](../interfaces/polygon_src.UnbondInfo.md)\>
 
@@ -316,7 +314,7 @@ Retrieves unbond request information for a specific nonce
 Use this to check the status of individual unbond requests.
 For fetching multiple unbonds efficiently, use getUnbonds() instead.
 
-#### Parameters
+### Parameters
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
@@ -325,7 +323,7 @@ For fetching multiple unbonds efficiently, use getUnbonds() instead.
 | `params.validatorShareAddress` | \`0x$\{string}\` | The validator's ValidatorShare contract address |
 | `params.unbondNonce` | `bigint` | The specific unbond nonce to query (1, 2, 3, etc.) |
 
-#### Returns
+### Returns
 
 `Promise`\<[`UnbondInfo`](../interfaces/polygon_src.UnbondInfo.md)\>
 
@@ -337,7 +335,7 @@ Promise resolving to unbond information:
 
 ___
 
-### getUnbonds
+## getUnbonds
 
 ▸ **getUnbonds**(`params`): `Promise`\<[`UnbondInfo`](../interfaces/polygon_src.UnbondInfo.md)[]\>
 
@@ -346,7 +344,7 @@ Retrieves unbond request information for multiple nonces efficiently
 This method batches all contract reads into a single RPC call, making it
 much more efficient than calling getUnbond() multiple times.
 
-#### Parameters
+### Parameters
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
@@ -355,7 +353,7 @@ much more efficient than calling getUnbond() multiple times.
 | `params.validatorShareAddress` | \`0x$\{string}\` | The validator's ValidatorShare contract address |
 | `params.unbondNonces` | `bigint`[] | Array of unbond nonces to query (1, 2, 3, etc.) |
 
-#### Returns
+### Returns
 
 `Promise`\<[`UnbondInfo`](../interfaces/polygon_src.UnbondInfo.md)[]\>
 
@@ -363,13 +361,13 @@ Promise resolving to array of unbond information (same order as input nonces)
 
 ___
 
-### getLiquidRewards
+## getLiquidRewards
 
 ▸ **getLiquidRewards**(`params`): `Promise`\<`string`\>
 
 Retrieves pending liquid rewards for a delegator
 
-#### Parameters
+### Parameters
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
@@ -377,7 +375,7 @@ Retrieves pending liquid rewards for a delegator
 | `params.delegatorAddress` | \`0x$\{string}\` | Ethereum address of the delegator |
 | `params.validatorShareAddress` | \`0x$\{string}\` | The validator's ValidatorShare contract address |
 
-#### Returns
+### Returns
 
 `Promise`\<`string`\>
 
@@ -385,19 +383,19 @@ Promise resolving to the pending rewards in POL
 
 ___
 
-### getAllowance
+## getAllowance
 
 ▸ **getAllowance**(`ownerAddress`): `Promise`\<`string`\>
 
 Retrieves the current POL allowance for the StakeManager contract
 
-#### Parameters
+### Parameters
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `ownerAddress` | \`0x$\{string}\` | The token owner's address |
 
-#### Returns
+### Returns
 
 `Promise`\<`string`\>
 
@@ -405,13 +403,13 @@ Promise resolving to the current allowance in POL
 
 ___
 
-### getEpoch
+## getEpoch
 
 ▸ **getEpoch**(): `Promise`\<`bigint`\>
 
 Retrieves the current checkpoint epoch from the StakeManager
 
-#### Returns
+### Returns
 
 `Promise`\<`bigint`\>
 
@@ -419,7 +417,7 @@ Promise resolving to the current epoch number
 
 ___
 
-### getWithdrawalDelay
+## getWithdrawalDelay
 
 ▸ **getWithdrawalDelay**(): `Promise`\<`bigint`\>
 
@@ -428,7 +426,7 @@ Retrieves the withdrawal delay from the StakeManager
 The withdrawal delay is the number of epochs that must pass after an unbond
 request before the funds can be withdrawn (~80 checkpoints, approximately 3-4 days).
 
-#### Returns
+### Returns
 
 `Promise`\<`bigint`\>
 
@@ -436,7 +434,7 @@ Promise resolving to the withdrawal delay in epochs
 
 ___
 
-### getExchangeRatePrecision
+## getExchangeRatePrecision
 
 ▸ **getExchangeRatePrecision**(`validatorShareAddress`): `Promise`\<`bigint`\>
 
@@ -444,13 +442,13 @@ Retrieves the exchange rate precision for a validator
 
 Foundation validators (ID < 8) use precision of 100, others use 10^29.
 
-#### Parameters
+### Parameters
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `validatorShareAddress` | \`0x$\{string}\` | The validator's ValidatorShare contract address |
 
-#### Returns
+### Returns
 
 `Promise`\<`bigint`\>
 
@@ -458,13 +456,13 @@ Promise resolving to the precision constant
 
 ___
 
-### sign
+## sign
 
 ▸ **sign**(`params`): `Promise`\<\{ `signedTx`: \`0x$\{string}\`  }\>
 
 Signs a transaction using the provided signer.
 
-#### Parameters
+### Parameters
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
@@ -475,7 +473,7 @@ Signs a transaction using the provided signer.
 | `params.baseFeeMultiplier?` | `number` | (Optional) The multiplier for fees, which is used to manage fee fluctuations, is applied to the base fee per gas from the latest block to determine the final `maxFeePerGas`. The default value is 1.2 |
 | `params.defaultPriorityFee?` | `string` | (Optional) This overrides the `maxPriorityFeePerGas` estimated by the RPC |
 
-#### Returns
+### Returns
 
 `Promise`\<\{ `signedTx`: \`0x$\{string}\`  }\>
 
@@ -483,20 +481,20 @@ A promise that resolves to an object containing the signed transaction
 
 ___
 
-### broadcast
+## broadcast
 
 ▸ **broadcast**(`params`): `Promise`\<\{ `txHash`: \`0x$\{string}\`  }\>
 
 Broadcasts a signed transaction to the network.
 
-#### Parameters
+### Parameters
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `params` | `Object` | Parameters for the broadcast process |
 | `params.signedTx` | \`0x$\{string}\` | The signed transaction to broadcast |
 
-#### Returns
+### Returns
 
 `Promise`\<\{ `txHash`: \`0x$\{string}\`  }\>
 
@@ -504,20 +502,20 @@ A promise that resolves to the transaction hash
 
 ___
 
-### getTxStatus
+## getTxStatus
 
 ▸ **getTxStatus**(`params`): `Promise`\<[`PolygonTxStatus`](../interfaces/polygon_src.PolygonTxStatus.md)\>
 
 Retrieves the status of a transaction using the transaction hash.
 
-#### Parameters
+### Parameters
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `params` | `Object` | Parameters for the transaction status request |
 | `params.txHash` | \`0x$\{string}\` | The transaction hash to query |
 
-#### Returns
+### Returns
 
 `Promise`\<[`PolygonTxStatus`](../interfaces/polygon_src.PolygonTxStatus.md)\>
 

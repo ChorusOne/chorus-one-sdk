@@ -40,7 +40,7 @@ It also provides the ability to retrieve staking information and rewards for an 
 
 • **new EthereumStaker**(`params`): [`EthereumStaker`](ethereum_src.EthereumStaker.md)
 
-Creates a EthereumStaker instance.
+Creates an EthereumStaker instance.
 
 ### Parameters
 
