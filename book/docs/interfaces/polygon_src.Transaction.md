@@ -1,5 +1,3 @@
-[polygon/src](../modules/polygon_src.md).Transaction
-
 ## Table of contents
 
 ### Properties

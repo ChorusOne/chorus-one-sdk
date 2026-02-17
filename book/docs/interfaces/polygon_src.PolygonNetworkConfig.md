@@ -1,5 +1,3 @@
-[polygon/src](../modules/polygon_src.md).PolygonNetworkConfig
-
 ## Table of contents
 
 ### Properties
