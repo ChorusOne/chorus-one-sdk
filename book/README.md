@@ -657,6 +657,198 @@ await staker.close()
 ```
 
 {% endtab %}
+
+{% tab title="Polygon" %}
+
+```javascript
+// Configuration
+// -------------
+
+import { PolygonStaker, CHORUS_ONE_POLYGON_VALIDATORS } from '@chorus-one/polygon'
+
+const staker = new PolygonStaker({
+  network: 'mainnet',
+  rpcUrl: 'https://eth-mainnet.g.alchemy.com/v2/YOUR_API_KEY'
+})
+
+await staker.init()
+
+// Building the transaction
+// ------------------------
+
+const delegatorAddress = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045'
+
+// You can use the Chorus One validator address or specify your own
+const validatorShareAddress = CHORUS_ONE_POLYGON_VALIDATORS.mainnet
+
+const { tx } = await staker.buildStakeTx({
+  delegatorAddress,
+  validatorShareAddress,
+  amount: '1', // 1 POL
+  slippageBps: 50 // 0.5% slippage tolerance
+})
+
+// Signing the transaction with Fireblocks
+// ---------------------------------------
+
+import { FireblocksSigner } from '@chorus-one/signer-fireblocks'
+
+const signer = new FireblocksSigner({...})
+await signer.init()
+
+const { signedTx } = await staker.sign({
+  signer,
+  signerAddress: delegatorAddress,
+  tx
+})
+
+// Broadcasting the transaction
+// ----------------------------
+
+const { txHash } = await staker.broadcast({ signedTx })
+
+// Tracking the transaction
+// ------------------------
+
+const { status, receipt } = await staker.getTxStatus({ txHash })
+
+console.log(status) // 'success'
+```
+
+{% endtab %}
+
+{% tab title="Hyperliquid" %}
+
+```javascript
+// Configuration
+// -------------
+
+import { HyperliquidStaker, CHORUS_ONE_HYPERLIQUID_VALIDATOR } from '@chorus-one/hyperliquid'
+
+const staker = new HyperliquidStaker({
+  chain: 'Mainnet'
+})
+
+// Building the transaction
+// ------------------------
+
+const delegatorAddress = '0xYourAddress'
+
+// You can use the Chorus One validator address or specify your own
+const validatorAddress = CHORUS_ONE_HYPERLIQUID_VALIDATOR
+
+// Step 1: Transfer HYPE from spot to staking account
+const { tx: transferTx } = await staker.buildSpotToStakingTx({
+  amount: '100' // 100 HYPE
+})
+
+// Step 2: Delegate to validator
+const { tx: stakeTx } = await staker.buildStakeTx({
+  validatorAddress,
+  amount: '100' // 100 HYPE
+})
+
+// Signing the transaction with Fireblocks
+// ---------------------------------------
+
+import { FireblocksSigner } from '@chorus-one/signer-fireblocks'
+
+const signer = new FireblocksSigner({...})
+await signer.init()
+
+const { signedTx: signedTransfer } = await staker.sign({
+  signer,
+  signerAddress: delegatorAddress,
+  tx: transferTx
+})
+
+const { signedTx: signedStake } = await staker.sign({
+  signer,
+  signerAddress: delegatorAddress,
+  tx: stakeTx
+})
+
+// Broadcasting the transaction
+// ----------------------------
+
+const { txHash: transferHash } = await staker.broadcast({
+  signedTx: signedTransfer,
+  delegatorAddress
+})
+
+const { txHash: stakeHash } = await staker.broadcast({
+  signedTx: signedStake,
+  delegatorAddress
+})
+
+// Tracking the transaction
+// ------------------------
+
+// Hyperliquid does not support getTxStatus - use getDelegatorHistory instead
+await new Promise((resolve) => setTimeout(resolve, 1000))
+
+const history = await staker.getDelegatorHistory({
+  delegatorAddress
+})
+
+const recentEvents = history.slice(0, 5)
+console.log('Recent events:', recentEvents)
+```
+
+{% endtab %}
+
+{% tab title="Monad" %}
+
+```javascript
+// Configuration
+// -------------
+
+import { MonadStaker } from '@chorus-one/monad'
+
+const staker = new MonadStaker({
+  rpcUrl: 'https://testnet-rpc.monad.xyz'
+})
+
+await staker.init()
+
+// Building the transaction
+// ------------------------
+
+// Monad uses numeric validator IDs instead of addresses
+const validatorId = 1
+
+const tx = await staker.buildStakeTx({
+  validatorId,
+  amount: '1000' // 1000 MON
+})
+
+// Signing and broadcasting the transaction
+// -----------------------------------------
+
+// Monad returns viem-compatible unsigned transactions
+// Use a viem wallet client to sign and send
+import { createWalletClient, http } from 'viem'
+
+const walletClient = createWalletClient({...})
+
+const hash = await walletClient.sendTransaction(tx)
+
+console.log('Transaction hash:', hash)
+
+// Tracking the transaction
+// ------------------------
+
+// Monad does not support getTxStatus - use getDelegator instead
+const delegatorInfo = await staker.getDelegator({
+  validatorId,
+  delegatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb'
+})
+
+console.log('Active stake:', delegatorInfo.stake)
+console.log('Unclaimed rewards:', delegatorInfo.unclaimedRewards)
+```
+
+{% endtab %}
 {% endtabs %}
 
 ## Next Steps
