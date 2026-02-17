@@ -75,6 +75,7 @@
   - [AvalancheStaker](docs/classes/avalanche_src.AvalancheStaker.md)
   - [CosmosStaker](docs/classes/cosmos_src.CosmosStaker.md)
   - [EthereumStaker](docs/classes/ethereum_src.EthereumStaker.md)
+  - [HyperliquidStaker](docs/classes/hyperliquid_src.HyperliquidStaker.md)
   - [MonadStaker](docs/classes/monad_src.MonadStaker.md)
   - [NearStaker](docs/classes/near_src.NearStaker.md)
   - [PolygonStaker](docs/classes/polygon_src.PolygonStaker.md)

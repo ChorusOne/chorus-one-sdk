@@ -1,6 +1,6 @@
 ## Chorus One SDK
 
-The **Chorus One SDK** is an all-in-one toolkit for building staking dApps. It supports non-custodial staking on networks validated by Chorus One, including **Ethereum**, **Solana**, **TON**, **Avalanche**, **Cosmos**, **NEAR**, and **Polkadot**. With this SDK, you can build, sign, and broadcast transactions as well as retrieve staking information and rewards for user accounts.
+The **Chorus One SDK** is an all-in-one toolkit for building staking dApps. It supports non-custodial staking on networks validated by Chorus One, including **Ethereum**, **Solana**, **TON**, **Avalanche**, **Cosmos**, **NEAR**, **Polkadot**, **Polygon**, **Hyperliquid**, and **Monad**. With this SDK, you can build, sign, and broadcast transactions as well as retrieve staking information and rewards for user accounts.
 
 ## Why Choose the Chorus One SDK?
 
@@ -81,6 +81,9 @@ Using an API for staking can sometimes introduce concerns about transparency and
 - [**Cosmos**](build-your-staking-dapp/cosmos/overview.md) ([📦 npm package](https://www.npmjs.com/package/@chorus-one/cosmos))
 - [**NEAR**](build-your-staking-dapp/near/overview.md) ([📦 npm package](https://www.npmjs.com/package/@chorus-one/near))
 - [**Polkadot (Substrate)**](build-your-staking-dapp/substrate/overview.md) ([📦 npm package](https://www.npmjs.com/package/@chorus-one/substrate))
+- [**Polygon**](build-your-staking-dapp/polygon/overview.md) ([📦 npm package](https://www.npmjs.com/package/@chorus-one/polygon))
+- [**Hyperliquid**](build-your-staking-dapp/hyperliquid/overview.md) ([📦 npm package](https://www.npmjs.com/package/@chorus-one/hyperliquid))
+- [**Monad**](build-your-staking-dapp/monad/overview.md) ([📦 npm package](https://www.npmjs.com/package/@chorus-one/monad))
 
 ### Supported Signers (Custody Solutions)
 
@@ -115,6 +118,9 @@ npm install @chorus-one/avalanche --save
 npm install @chorus-one/cosmos --save
 npm install @chorus-one/near --save
 npm install @chorus-one/substrate --save # Polkadot and other Substrate chains
+npm install @chorus-one/polygon --save
+npm install @chorus-one/hyperliquid --save
+npm install @chorus-one/monad --save
 
 # Signers
 
@@ -141,6 +147,9 @@ yarn add @chorus-one/avalanche
 yarn add @chorus-one/cosmos
 yarn add @chorus-one/near
 yarn add @chorus-one/substrate # Polkadot and other Substrate chains
+yarn add @chorus-one/polygon
+yarn add @chorus-one/hyperliquid
+yarn add @chorus-one/monad
 
 # Signers
 
@@ -167,6 +176,9 @@ pnpm add @chorus-one/avalanche
 pnpm add @chorus-one/cosmos
 pnpm add @chorus-one/near
 pnpm add @chorus-one/substrate # Polkadot and other Substrate chains
+pnpm add @chorus-one/polygon
+pnpm add @chorus-one/hyperliquid
+pnpm add @chorus-one/monad
 
 # Signers
 
@@ -193,6 +205,9 @@ bun add @chorus-one/avalanche
 bun add @chorus-one/cosmos
 bun add @chorus-one/near
 bun add @chorus-one/substrate # Polkadot and other Substrate chains
+bun add @chorus-one/polygon
+bun add @chorus-one/hyperliquid
+bun add @chorus-one/monad
 
 # Signers
 
@@ -691,6 +706,21 @@ To help you get started with specific blockchain networks, please check out the 
       <td><strong>Cosmos</strong></td>
       <td><a href="build-your-staking-dapp/cosmos/overview.md">..</a></td>
       <td><a href="./assets/cosmos.png">cosmos</a></td>
+    </tr>
+    <tr>
+      <td><strong>Polygon</strong></td>
+      <td><a href="build-your-staking-dapp/polygon/overview.md">..</a></td>
+      <td><a href="./assets/polygon.png">polygon</a></td>
+    </tr>
+    <tr>
+      <td><strong>Hyperliquid</strong></td>
+      <td><a href="build-your-staking-dapp/hyperliquid/overview.md">..</a></td>
+      <td><a href="./assets/hyperliquid.png">hyperliquid</a></td>
+    </tr>
+    <tr>
+      <td><strong>Monad</strong></td>
+      <td><a href="build-your-staking-dapp/monad/overview.md">..</a></td>
+      <td><a href="./assets/monad.png">monad</a></td>
     </tr>
   </tbody>
 </table>

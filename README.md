@@ -5,7 +5,7 @@
 
 # Chorus One SDK
 
-Welcome to the **Chorus One SDK** monorepo! Here you'll find all the necessary tools and libraries to develop powerful staking dApps across many networks, including Ethereum, Solana TON, Avalanche, Cosmos, NEAR, and Polkadot. This SDK allows developers to build, sign, and broadcast transactions, and to access staking information and rewards for user accounts.
+Welcome to the **Chorus One SDK** monorepo! Here you'll find all the necessary tools and libraries to develop powerful staking dApps across many networks, including Ethereum, Solana, TON, Avalanche, Cosmos, NEAR, Polkadot, Polygon, Hyperliquid, and Monad. This SDK allows developers to build, sign, and broadcast transactions, and to access staking information and rewards for user accounts.
 
 ### Key Features
 
@@ -71,6 +71,9 @@ npm install @chorus-one/avalanche --save
 npm install @chorus-one/cosmos --save
 npm install @chorus-one/near --save
 npm install @chorus-one/substrate --save # Polkadot and other Substrate chains
+npm install @chorus-one/polygon --save
+npm install @chorus-one/hyperliquid --save
+npm install @chorus-one/monad --save
 
 # Signers
 
