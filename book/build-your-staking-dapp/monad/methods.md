@@ -29,17 +29,18 @@ To build a delegation transaction, you need to specify the validator ID and the 
 ### Example
 
 ```javascript
+import { CHORUS_ONE_MONAD_VALIDATORS } from '@chorus-one/monad'
+
+// You can use the Chorus One validator ID or specify your own
+const validatorId = CHORUS_ONE_MONAD_VALIDATORS.mainnet
+
 const { tx } = await staker.buildStakeTx({
-  validatorId: 1,
+  validatorId,
   amount: '1000' // 1000 MON
 })
-
-// Sign and send using viem wallet client
-const hash = await walletClient.sendTransaction(tx)
-console.log('Delegation transaction sent:', hash)
 ```
 
-In this example, we are delegating 1000 MON to validator ID 1. The MON tokens are sent with the transaction and will become active stake in the next epoch or the one after, depending on the current block position in the epoch.
+In this example, we are delegating 1000 MON to the Chorus One validator. The MON tokens are sent with the transaction and will become active stake in the next epoch or the one after, depending on the current block position in the epoch.
 
 - [Read more in the API Reference](../../docs/classes/monad_src.MonadStaker.md#buildstaketx)
 
@@ -76,18 +77,19 @@ To build an undelegation transaction, you need to provide:
 ### Example
 
 ```javascript
+import { CHORUS_ONE_MONAD_VALIDATORS } from '@chorus-one/monad'
+
+const validatorId = CHORUS_ONE_MONAD_VALIDATORS.mainnet
+
 const { tx } = await staker.buildUnstakeTx({
   delegatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
-  validatorId: 1,
+  validatorId,
   amount: '500', // 500 MON
   withdrawalId: 0 // Use ID 0 to track this withdrawal
 })
-
-const hash = await walletClient.sendTransaction(tx)
-console.log('Undelegation transaction sent:', hash)
 ```
 
-Here, we're undelegating 500 MON from validator 1 and tracking it with withdrawal ID 0.
+Here, we're undelegating 500 MON from the Chorus One validator and tracking it with withdrawal ID 0.
 
 {% hint style="warning" %}
 
@@ -120,9 +122,13 @@ To build a withdrawal transaction, you need to provide the same validator ID and
 ### Example
 
 ```javascript
+import { CHORUS_ONE_MONAD_VALIDATORS } from '@chorus-one/monad'
+
+const validatorId = CHORUS_ONE_MONAD_VALIDATORS.mainnet
+
 const { tx } = await staker.buildWithdrawTx({
   delegatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
-  validatorId: 1,
+  validatorId,
   withdrawalId: 0
 })
 ```
@@ -154,9 +160,13 @@ To build a compound transaction, provide your delegator address and the validato
 ### Example
 
 ```javascript
+import { CHORUS_ONE_MONAD_VALIDATORS } from '@chorus-one/monad'
+
+const validatorId = CHORUS_ONE_MONAD_VALIDATORS.mainnet
+
 const { tx } = await staker.buildCompoundTx({
   delegatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
-  validatorId: 1
+  validatorId
 })
 ```
 
@@ -190,9 +200,13 @@ To build a claim rewards transaction, provide your delegator address and the val
 ### Example
 
 ```javascript
+import { CHORUS_ONE_MONAD_VALIDATORS } from '@chorus-one/monad'
+
+const validatorId = CHORUS_ONE_MONAD_VALIDATORS.mainnet
+
 const { tx } = await staker.buildClaimRewardsTx({
   delegatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
-  validatorId: 1
+  validatorId
 })
 ```
 
@@ -240,8 +254,12 @@ Returns the delegator's `DelInfo` with the following fields:
 ### Example
 
 ```javascript
+import { CHORUS_ONE_MONAD_VALIDATORS } from '@chorus-one/monad'
+
+const validatorId = CHORUS_ONE_MONAD_VALIDATORS.mainnet
+
 const delegatorInfo = await staker.getDelegator({
-  validatorId: 1,
+  validatorId,
   delegatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb'
 })
 ```
@@ -285,8 +303,12 @@ Returns the pending `WithdrawalRequest` with:
 ### Example
 
 ```javascript
+import { CHORUS_ONE_MONAD_VALIDATORS } from '@chorus-one/monad'
+
+const validatorId = CHORUS_ONE_MONAD_VALIDATORS.mainnet
+
 const withdrawalRequest = await staker.getWithdrawalRequest({
-  validatorId: 1,
+  validatorId,
   delegatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
   withdrawalId: 0
 })

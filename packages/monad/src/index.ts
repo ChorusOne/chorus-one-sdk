@@ -11,7 +11,7 @@ export {
 } from './types.d'
 
 // Export constants
-export { MONAD_STAKING_CONTRACT_ADDRESS } from './constants'
+export { MONAD_STAKING_CONTRACT_ADDRESS, CHORUS_ONE_MONAD_VALIDATORS } from './constants'
 
 // Export utilities
 export { isValidValidatorId, isValidWithdrawalId } from './utils'

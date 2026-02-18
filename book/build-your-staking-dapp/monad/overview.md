@@ -65,7 +65,7 @@ First, create an instance of `MonadStaker` with the necessary configuration:
 import { MonadStaker } from '@chorus-one/monad'
 
 const staker = new MonadStaker({
-  rpcUrl: 'https://testnet-rpc.monad.xyz'
+  rpcUrl: 'https://rpc-mainnet.monadinfra.com'
 })
 ```
 
@@ -89,6 +89,18 @@ The `init` method establishes a connection with the configured RPC endpoint, fet
 
 ---
 
+## Getting the Validator ID provided by Chorus One
+
+The `@chorus-one/monad` module includes the `CHORUS_ONE_MONAD_VALIDATORS` constant, which contains the Chorus One validator IDs for building transactions.
+
+```javascript
+import { CHORUS_ONE_MONAD_VALIDATORS } from '@chorus-one/monad'
+
+const validatorId = CHORUS_ONE_MONAD_VALIDATORS.mainnet
+```
+
+---
+
 ## Building Transactions
 
 Once the staker is set up, you can start building transactions for staking operations.
@@ -100,17 +112,15 @@ The `MonadStaker` class provides methods to build transactions for delegating, u
 **Example of building a delegation transaction:**
 
 ```javascript
+import { CHORUS_ONE_MONAD_VALIDATORS } from '@chorus-one/monad'
+
+const validatorId = CHORUS_ONE_MONAD_VALIDATORS.mainnet
+
 const { tx } = await staker.buildStakeTx({
-  validatorId: 1,
+  validatorId,
   amount: '1000' // 1000 MON
 })
 ```
-
-{% hint style="info" %}
-
-Unlike some other blockchains, Monad SDK returns **unsigned transaction objects** that are compatible with viem's `sendTransaction` method. You need to use your own wallet client to sign and broadcast transactions.
-
-{% endhint %}
 
 ---
 

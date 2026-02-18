@@ -8,6 +8,14 @@ import type { Address } from 'viem'
  */
 export const MONAD_STAKING_CONTRACT_ADDRESS: Address = '0x0000000000000000000000000000000000001000'
 
+/**
+ * Chorus One validator IDs on Monad networks
+ */
+export const CHORUS_ONE_MONAD_VALIDATORS = {
+  mainnet: 12,
+  testnet: 86
+} as const
+
 export const MONAD_STAKING_ABI = [
   {
     type: 'function',
