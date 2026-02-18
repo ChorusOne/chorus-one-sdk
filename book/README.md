@@ -803,10 +803,10 @@ console.log('Recent events:', recentEvents)
 // Configuration
 // -------------
 
-import { MonadStaker } from '@chorus-one/monad'
+import { MonadStaker, CHORUS_ONE_MONAD_VALIDATORS } from '@chorus-one/monad'
 
 const staker = new MonadStaker({
-  rpcUrl: 'https://testnet-rpc.monad.xyz'
+  rpcUrl: 'https://rpc-mainnet.monadinfra.com'
 })
 
 await staker.init()
@@ -814,38 +814,41 @@ await staker.init()
 // Building the transaction
 // ------------------------
 
-// Monad uses numeric validator IDs instead of addresses
-const validatorId = 1
+const delegatorAddress = '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb'
 
-const tx = await staker.buildStakeTx({
+// You can use the Chorus One validator ID or specify your own
+const validatorId = CHORUS_ONE_MONAD_VALIDATORS.mainnet
+
+const { tx } = await staker.buildStakeTx({
   validatorId,
   amount: '1000' // 1000 MON
 })
 
-// Signing and broadcasting the transaction
-// -----------------------------------------
+// Signing the transaction with Fireblocks
+// ---------------------------------------
 
-// Monad returns viem-compatible unsigned transactions
-// Use a viem wallet client to sign and send
-import { createWalletClient, http } from 'viem'
+import { FireblocksSigner } from '@chorus-one/signer-fireblocks'
 
-const walletClient = createWalletClient({...})
+const signer = new FireblocksSigner({...})
+await signer.init()
 
-const hash = await walletClient.sendTransaction(tx)
+const { signedTx } = await staker.sign({
+  signer,
+  signerAddress: delegatorAddress,
+  tx
+})
 
-console.log('Transaction hash:', hash)
+// Broadcasting the transaction
+// ----------------------------
+
+const { txHash } = await staker.broadcast({ signedTx })
 
 // Tracking the transaction
 // ------------------------
 
-// Monad does not support getTxStatus - use getDelegator instead
-const delegatorInfo = await staker.getDelegator({
-  validatorId,
-  delegatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb'
-})
+const { status, receipt } = await staker.getTxStatus({ txHash })
 
-console.log('Active stake:', delegatorInfo.stake)
-console.log('Unclaimed rewards:', delegatorInfo.unclaimedRewards)
+console.log(status) // 'success'
 ```
 
 {% endtab %}
