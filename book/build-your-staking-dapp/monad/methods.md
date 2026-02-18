@@ -82,7 +82,7 @@ import { CHORUS_ONE_MONAD_VALIDATORS } from '@chorus-one/monad'
 const validatorId = CHORUS_ONE_MONAD_VALIDATORS.mainnet
 
 const { tx } = await staker.buildUnstakeTx({
-  delegatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+  delegatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb2',
   validatorId,
   amount: '500', // 500 MON
   withdrawalId: 0 // Use ID 0 to track this withdrawal
@@ -127,7 +127,7 @@ import { CHORUS_ONE_MONAD_VALIDATORS } from '@chorus-one/monad'
 const validatorId = CHORUS_ONE_MONAD_VALIDATORS.mainnet
 
 const { tx } = await staker.buildWithdrawTx({
-  delegatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+  delegatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb2',
   validatorId,
   withdrawalId: 0
 })
@@ -165,7 +165,7 @@ import { CHORUS_ONE_MONAD_VALIDATORS } from '@chorus-one/monad'
 const validatorId = CHORUS_ONE_MONAD_VALIDATORS.mainnet
 
 const { tx } = await staker.buildCompoundTx({
-  delegatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+  delegatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb2',
   validatorId
 })
 ```
@@ -205,7 +205,7 @@ import { CHORUS_ONE_MONAD_VALIDATORS } from '@chorus-one/monad'
 const validatorId = CHORUS_ONE_MONAD_VALIDATORS.mainnet
 
 const { tx } = await staker.buildClaimRewardsTx({
-  delegatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+  delegatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb2',
   validatorId
 })
 ```
@@ -260,7 +260,7 @@ const validatorId = CHORUS_ONE_MONAD_VALIDATORS.mainnet
 
 const delegatorInfo = await staker.getDelegator({
   validatorId,
-  delegatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb'
+  delegatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb2'
 })
 ```
 
@@ -309,7 +309,7 @@ const validatorId = CHORUS_ONE_MONAD_VALIDATORS.mainnet
 
 const withdrawalRequest = await staker.getWithdrawalRequest({
   validatorId,
-  delegatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+  delegatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb2',
   withdrawalId: 0
 })
 ```
@@ -383,7 +383,7 @@ To sign a transaction, you need to provide a signer instance, the signer's addre
 ```javascript
 const { signedTx } = await staker.sign({
   signer,
-  signerAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+  signerAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb2',
   tx
 })
 ```

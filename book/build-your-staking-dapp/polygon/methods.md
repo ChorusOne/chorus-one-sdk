@@ -531,6 +531,65 @@ const { signedTx } = await staker.sign({
 
 ---
 
+## broadcast
+
+### Description
+
+The `broadcast` method broadcasts a signed transaction to the Polygon network.
+
+### How to Use
+
+Pass the signed transaction hex string returned by the `sign` method.
+
+### Parameters
+
+- **signedTx** (Hex): The signed transaction to broadcast
+
+### Example
+
+```javascript
+const { txHash } = await staker.broadcast({ signedTx })
+
+console.log('Transaction hash:', txHash)
+```
+
+- [Read more in the API Reference](../../docs/classes/polygon_src.PolygonStaker.md#broadcast)
+
+---
+
+## getTxStatus
+
+### Description
+
+The `getTxStatus` method retrieves the status of a transaction using the transaction hash.
+
+### How to Use
+
+Provide the transaction hash received from the `broadcast` method.
+
+### Parameters
+
+- **txHash** (Hex): The transaction hash to query
+
+### Returns
+
+Returns the transaction status including:
+
+- **status** (string): Transaction status (`'success'`, `'failure'`, or `'unknown'`)
+- **receipt** (object): The full transaction receipt (when available)
+
+### Example
+
+```javascript
+const txStatus = await staker.getTxStatus({ txHash })
+
+console.log('Transaction status:', txStatus.status)
+```
+
+- [Read more in the API Reference](../../docs/classes/polygon_src.PolygonStaker.md#gettxstatus)
+
+---
+
 ## Exported Constants
 
 The `@chorus-one/polygon` package exports the following constants:

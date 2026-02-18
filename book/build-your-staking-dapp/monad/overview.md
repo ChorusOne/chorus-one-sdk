@@ -156,7 +156,7 @@ await signer.init()
 
 const { signedTx } = await staker.sign({
   signer,
-  signerAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+  signerAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb2',
   tx
 })
 ```

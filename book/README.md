@@ -814,7 +814,7 @@ await staker.init()
 // Building the transaction
 // ------------------------
 
-const delegatorAddress = '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb'
+const delegatorAddress = '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb2'
 
 // You can use the Chorus One validator ID or specify your own
 const validatorId = CHORUS_ONE_MONAD_VALIDATORS.mainnet
