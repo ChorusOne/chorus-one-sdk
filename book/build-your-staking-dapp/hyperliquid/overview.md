@@ -284,7 +284,7 @@ console.log('Withdrawal initiated - will complete in 7 days')
 ## Next Steps
 
 - Explore detailed method documentation in [Methods](methods.md)
-- Review the [HyperliquidStaker API Reference](../../docs/classes/hyperliquid_src.HyperliquidStaker.md)
+- Review the [HyperliquidStaker API Reference](https://chorus-one.gitbook.io/sdk/docs/classes/hyperliquid_src.HyperliquidStaker)
 - Check out the example applications in the SDK repository
 
 ## Further Reading
