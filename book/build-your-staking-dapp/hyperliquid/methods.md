@@ -634,7 +634,7 @@ Hyperliquid uses **EIP-712 typed data signing**, not standard Ethereum transacti
 
 **Further Reading**
 
-- [Signer Documentation](https://chorus-one.gitbook.io/sdk/signers-explained/what-is-a-signer)
+- [Signer Documentation](../../signers-explained/what-is-a-signer.md)
 
 ---
 
