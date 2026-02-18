@@ -29,7 +29,7 @@ To build a delegation transaction, you need to specify the validator ID and the 
 ### Example
 
 ```javascript
-const tx = await staker.buildStakeTx({
+const { tx } = await staker.buildStakeTx({
   validatorId: 1,
   amount: '1000' // 1000 MON
 })
@@ -76,7 +76,7 @@ To build an undelegation transaction, you need to provide:
 ### Example
 
 ```javascript
-const tx = await staker.buildUnstakeTx({
+const { tx } = await staker.buildUnstakeTx({
   delegatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
   validatorId: 1,
   amount: '500', // 500 MON
@@ -120,7 +120,7 @@ To build a withdrawal transaction, you need to provide the same validator ID and
 ### Example
 
 ```javascript
-const tx = await staker.buildWithdrawTx({
+const { tx } = await staker.buildWithdrawTx({
   delegatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
   validatorId: 1,
   withdrawalId: 0
@@ -154,7 +154,7 @@ To build a compound transaction, provide your delegator address and the validato
 ### Example
 
 ```javascript
-const tx = await staker.buildCompoundTx({
+const { tx } = await staker.buildCompoundTx({
   delegatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
   validatorId: 1
 })
@@ -190,7 +190,7 @@ To build a claim rewards transaction, provide your delegator address and the val
 ### Example
 
 ```javascript
-const tx = await staker.buildClaimRewardsTx({
+const { tx } = await staker.buildClaimRewardsTx({
   delegatorAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
   validatorId: 1
 })
@@ -414,7 +414,7 @@ Provide the transaction hash received from the `broadcast` method.
 
 Returns the transaction status including:
 
-- **status** (string): Transaction status (`'success'`, `'reverted'`, or `'pending'`)
+- **status** (string): Transaction status (`'success'`, `'failure'`, or `'unknown'`)
 - **receipt** (object): The full transaction receipt (when available)
 
 ### Example
