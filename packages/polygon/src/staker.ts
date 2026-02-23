@@ -140,9 +140,6 @@ export class PolygonStaker {
    * Delegates POL tokens to a validator via their ValidatorShare contract.
    * Requires prior token approval to the StakeManager contract.
    *
-   * **Slippage requirement:** Exactly one of `slippageBps` or `minSharesToMint` must be provided.
-   * There is no default value. Providing neither or both will throw an error.
-   *
    * @param params - Parameters for building the transaction
    * @param params.delegatorAddress - The delegator's Ethereum address
    * @param params.validatorShareAddress - The validator's ValidatorShare contract address
@@ -216,9 +213,6 @@ export class PolygonStaker {
    *
    * Creates an unbond request to unstake POL tokens from a validator.
    * After the unbonding period (~80 checkpoints, approximately 3-4 days), call buildWithdrawTx() to claim funds.
-   *
-   * **Slippage requirement:** Exactly one of `slippageBps` or `maximumSharesToBurn` must be provided.
-   * There is no default value. Providing neither or both will throw an error.
    *
    * @param params - Parameters for building the transaction
    * @param params.delegatorAddress - The delegator's address
