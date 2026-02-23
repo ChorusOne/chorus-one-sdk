@@ -124,9 +124,6 @@ Builds a staking (delegation) transaction
 Delegates POL tokens to a validator via their ValidatorShare contract.
 Requires prior token approval to the StakeManager contract.
 
-**Slippage requirement:** Exactly one of `slippageBps` or `minSharesToMint` must be provided.
-There is no default value. Providing neither or both will throw an error.
-
 ### Parameters
 
 | Name | Type | Description |
@@ -155,9 +152,6 @@ Builds an unstaking transaction
 
 Creates an unbond request to unstake POL tokens from a validator.
 After the unbonding period (~80 checkpoints, approximately 3-4 days), call buildWithdrawTx() to claim funds.
-
-**Slippage requirement:** Exactly one of `slippageBps` or `maximumSharesToBurn` must be provided.
-There is no default value. Providing neither or both will throw an error.
 
 ### Parameters
 
