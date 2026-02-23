@@ -140,12 +140,15 @@ export class PolygonStaker {
    * Delegates POL tokens to a validator via their ValidatorShare contract.
    * Requires prior token approval to the StakeManager contract.
    *
+   * **Slippage requirement:** Exactly one of `slippageBps` or `minSharesToMint` must be provided.
+   * There is no default value. Providing neither or both will throw an error.
+   *
    * @param params - Parameters for building the transaction
    * @param params.delegatorAddress - The delegator's Ethereum address
    * @param params.validatorShareAddress - The validator's ValidatorShare contract address
    * @param params.amount - The amount to stake in POL
-   * @param params.slippageBps - (Optional) Slippage tolerance in basis points (e.g., 50 = 0.5%). Used to calculate minSharesToMint.
-   * @param params.minSharesToMint - (Optional) Minimum validator shares to receive. Use this OR slippageBps, not both.
+   * @param params.slippageBps - Slippage tolerance in basis points (e.g., 50 = 0.5%). Used to calculate minSharesToMint. Exactly one of `slippageBps` or `minSharesToMint` must be provided (not both, no default).
+   * @param params.minSharesToMint - Minimum validator shares to receive. Exactly one of `slippageBps` or `minSharesToMint` must be provided (not both, no default).
    * @param params.referrer - (Optional) Custom referrer string for tracking. If not provided, uses 'sdk-chorusone-staking'.
    *
    * @returns Returns a promise that resolves to a Polygon staking transaction
@@ -214,12 +217,15 @@ export class PolygonStaker {
    * Creates an unbond request to unstake POL tokens from a validator.
    * After the unbonding period (~80 checkpoints, approximately 3-4 days), call buildWithdrawTx() to claim funds.
    *
+   * **Slippage requirement:** Exactly one of `slippageBps` or `maximumSharesToBurn` must be provided.
+   * There is no default value. Providing neither or both will throw an error.
+   *
    * @param params - Parameters for building the transaction
    * @param params.delegatorAddress - The delegator's address
    * @param params.validatorShareAddress - The validator's ValidatorShare contract address
    * @param params.amount - The amount to unstake in POL (will be converted to wei internally)
-   * @param params.slippageBps - (Optional) Slippage tolerance in basis points (e.g., 50 = 0.5%). Used to calculate maximumSharesToBurn.
-   * @param params.maximumSharesToBurn - (Optional) Maximum validator shares willing to burn. Use this OR slippageBps, not both.
+   * @param params.slippageBps - Slippage tolerance in basis points (e.g., 50 = 0.5%). Used to calculate maximumSharesToBurn. Exactly one of `slippageBps` or `maximumSharesToBurn` must be provided (not both, no default).
+   * @param params.maximumSharesToBurn - Maximum validator shares willing to burn. Exactly one of `slippageBps` or `maximumSharesToBurn` must be provided (not both, no default).
    * @param params.referrer - (Optional) Custom referrer string for tracking. If not provided, uses 'sdk-chorusone-staking'.
    *
    * @returns Returns a promise that resolves to a Polygon unstaking transaction

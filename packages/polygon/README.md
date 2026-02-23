@@ -99,7 +99,9 @@ const { txHash } = await staker.broadcast({ signedTx })
 
 ### Stake (Delegate) to Validator
 
-Delegate POL tokens to a validator via their ValidatorShare contract:
+Delegate POL tokens to a validator via their ValidatorShare contract.
+
+You must provide exactly one of `slippageBps` or `minSharesToMint` (not both). There is no default — omitting both will throw an error.
 
 ```javascript
 const { tx } = await staker.buildStakeTx({
@@ -121,7 +123,9 @@ const { txHash } = await staker.broadcast({ signedTx })
 
 ### Unstake (Unbond) from Validator
 
-Create an unbond request to unstake POL tokens. After the unbonding period (~80 epochs, approximately 3-4 days), call withdraw to claim funds:
+Create an unbond request to unstake POL tokens. After the unbonding period (~80 epochs, approximately 3-4 days), call withdraw to claim funds.
+
+You must provide exactly one of `slippageBps` or `maximumSharesToBurn` (not both). There is no default — omitting both will throw an error.
 
 ```javascript
 const { tx } = await staker.buildUnstakeTx({
@@ -215,7 +219,7 @@ console.log(status) // 'success', 'failure', or 'unknown'
 - **Ethereum L1 Based**: Polygon PoS staking operates via ValidatorShare contracts deployed on Ethereum mainnet (or Sepolia for testnet)
 - **POL Token Staking**: Stake the native POL token (formerly MATIC) to validators
 - **Human-Readable Amounts**: Pass token amounts as strings (e.g., '1.5'), conversion to wei is handled automatically
-- **Slippage Protection**: Stake and unstake operations support `slippageBps` (basis points) for automatic slippage calculation, or manual `minSharesToMint`/`maximumSharesToBurn` parameters
+- **Slippage Protection**: Stake and unstake operations require either `slippageBps` (basis points) for automatic slippage calculation, or manual `minSharesToMint`/`maximumSharesToBurn` parameters. Exactly one must be provided — there is no default.
 - **Query Methods**: Read stake balances, rewards, allowances, unbond status (with POL amount and withdrawability), and epoch information
 - **Rewards Management**: Claim rewards to wallet or compound them back into your delegation
 

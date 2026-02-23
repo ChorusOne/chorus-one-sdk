@@ -50,8 +50,11 @@ To build a staking transaction, you will need to specify:
 - **delegatorAddress**: The delegator's Ethereum address
 - **validatorShareAddress**: The validator's ValidatorShare contract address
 - **amount**: The amount to stake in POL
-- **slippageBps**: (Optional) Slippage tolerance in basis points (e.g., 50 = 0.5%). Used to calculate minSharesToMint automatically.
-- **minSharesToMint**: (Optional) Minimum validator shares to receive for slippage protection. Use this OR slippageBps, not both.
+- **slippageBps**: Slippage tolerance in basis points (e.g., 50 = 0.5%). Used to calculate minSharesToMint automatically. Exactly one of `slippageBps` or `minSharesToMint` must be provided (not both, no default).
+- **minSharesToMint**: Minimum validator shares to receive for slippage protection. Exactly one of `slippageBps` or `minSharesToMint` must be provided (not both, no default).
+
+> **Why is slippage required?** Polygon uses a share-based delegation model where the exchange rate between POL and validator shares fluctuates. The slippage parameter protects against unfavorable rate changes between transaction submission and execution. This is a requirement of the ValidatorShare contract itself.
+
 - **referrer**: (Optional) Custom referrer string for tracking. Defaults to `'sdk-chorusone-staking'`.
 
 ### Example
@@ -99,8 +102,11 @@ To build an unstaking transaction, you need to specify:
 - **delegatorAddress**: The address of the delegator
 - **validatorShareAddress**: The validator's ValidatorShare contract address
 - **amount**: The amount of POL to unstake
-- **slippageBps**: (Optional) Slippage tolerance in basis points (e.g., 50 = 0.5%). Used to calculate maximumSharesToBurn automatically.
-- **maximumSharesToBurn**: (Optional) Maximum validator shares willing to burn for slippage protection. Use this OR slippageBps, not both.
+- **slippageBps**: Slippage tolerance in basis points (e.g., 50 = 0.5%). Used to calculate maximumSharesToBurn automatically. Exactly one of `slippageBps` or `maximumSharesToBurn` must be provided (not both, no default).
+- **maximumSharesToBurn**: Maximum validator shares willing to burn for slippage protection. Exactly one of `slippageBps` or `maximumSharesToBurn` must be provided (not both, no default).
+
+> **Why is slippage required?** Polygon uses a share-based delegation model where the exchange rate between POL and validator shares fluctuates. The slippage parameter protects against unfavorable rate changes between transaction submission and execution. This is a requirement of the ValidatorShare contract itself.
+
 - **referrer**: (Optional) Custom referrer string for tracking. Defaults to `'sdk-chorusone-staking'`.
 
 ### Example

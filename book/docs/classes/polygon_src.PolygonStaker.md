@@ -124,6 +124,9 @@ Builds a staking (delegation) transaction
 Delegates POL tokens to a validator via their ValidatorShare contract.
 Requires prior token approval to the StakeManager contract.
 
+**Slippage requirement:** Exactly one of `slippageBps` or `minSharesToMint` must be provided.
+There is no default value. Providing neither or both will throw an error.
+
 ### Parameters
 
 | Name | Type | Description |
@@ -132,8 +135,8 @@ Requires prior token approval to the StakeManager contract.
 | `params.delegatorAddress` | \`0x$\{string}\` | The delegator's Ethereum address |
 | `params.validatorShareAddress` | \`0x$\{string}\` | The validator's ValidatorShare contract address |
 | `params.amount` | `string` | The amount to stake in POL |
-| `params.slippageBps?` | `number` | (Optional) Slippage tolerance in basis points (e.g., 50 = 0.5%). Used to calculate minSharesToMint. |
-| `params.minSharesToMint?` | `bigint` | (Optional) Minimum validator shares to receive. Use this OR slippageBps, not both. |
+| `params.slippageBps?` | `number` | Slippage tolerance in basis points (e.g., 50 = 0.5%). Used to calculate minSharesToMint. Exactly one of `slippageBps` or `minSharesToMint` must be provided (not both, no default). |
+| `params.minSharesToMint?` | `bigint` | Minimum validator shares to receive. Exactly one of `slippageBps` or `minSharesToMint` must be provided (not both, no default). |
 | `params.referrer?` | `string` | (Optional) Custom referrer string for tracking. If not provided, uses 'sdk-chorusone-staking'. |
 
 ### Returns
@@ -153,6 +156,9 @@ Builds an unstaking transaction
 Creates an unbond request to unstake POL tokens from a validator.
 After the unbonding period (~80 checkpoints, approximately 3-4 days), call buildWithdrawTx() to claim funds.
 
+**Slippage requirement:** Exactly one of `slippageBps` or `maximumSharesToBurn` must be provided.
+There is no default value. Providing neither or both will throw an error.
+
 ### Parameters
 
 | Name | Type | Description |
@@ -161,8 +167,8 @@ After the unbonding period (~80 checkpoints, approximately 3-4 days), call build
 | `params.delegatorAddress` | \`0x$\{string}\` | The delegator's address |
 | `params.validatorShareAddress` | \`0x$\{string}\` | The validator's ValidatorShare contract address |
 | `params.amount` | `string` | The amount to unstake in POL (will be converted to wei internally) |
-| `params.slippageBps?` | `number` | (Optional) Slippage tolerance in basis points (e.g., 50 = 0.5%). Used to calculate maximumSharesToBurn. |
-| `params.maximumSharesToBurn?` | `bigint` | (Optional) Maximum validator shares willing to burn. Use this OR slippageBps, not both. |
+| `params.slippageBps?` | `number` | Slippage tolerance in basis points (e.g., 50 = 0.5%). Used to calculate maximumSharesToBurn. Exactly one of `slippageBps` or `maximumSharesToBurn` must be provided (not both, no default). |
+| `params.maximumSharesToBurn?` | `bigint` | Maximum validator shares willing to burn. Exactly one of `slippageBps` or `maximumSharesToBurn` must be provided (not both, no default). |
 | `params.referrer?` | `string` | (Optional) Custom referrer string for tracking. If not provided, uses 'sdk-chorusone-staking'. |
 
 ### Returns
