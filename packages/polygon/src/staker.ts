@@ -16,7 +16,7 @@ import {
   type Chain
 } from 'viem'
 import { mainnet, sepolia } from 'viem/chains'
-import { secp256k1 } from '@noble/curves/secp256k1.js'
+import { secp256k1 } from '@noble/curves/secp256k1'
 import type { Signer } from '@chorus-one/signer'
 import type { Transaction, PolygonNetworkConfig, PolygonTxStatus, StakeInfo, UnbondInfo } from './types'
 import { appendReferrerTracking } from './referrer'
@@ -75,7 +75,8 @@ export class PolygonStaker {
   static getAddressDerivationFn =
     () =>
     async (publicKey: Uint8Array): Promise<Array<string>> => {
-      const pkUncompressed = secp256k1.Point.fromBytes(publicKey).toBytes(false)
+      const point = secp256k1.Point.fromHex(publicKey)
+      const pkUncompressed = point.toBytes(false)
       const hash = keccak256(pkUncompressed.subarray(1))
       const ethAddress = hash.slice(-40)
       return [ethAddress]
