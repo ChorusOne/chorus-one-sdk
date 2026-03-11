@@ -38,7 +38,7 @@
   "type": "module",
   "dependencies": {
     "@chorus-one/signer": "^1.0.0",
-    "@noble/curves": "^2.0.1",
+    "@noble/curves": "^1.9.2",
     "viem": "^2.28.0"
   },
   "devDependencies": {
