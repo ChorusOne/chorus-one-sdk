@@ -2,7 +2,7 @@
   "networks": {
     "ethereum": {
       "name": "ethereum",
-      "url": "https://ethereum-rpc.publicnode.com",
+      "url": "https://eth.drpc.org",
       "addresses": {
         "osEthToken": "0xf1C9acDc66974dFB6dEcB12aA385b9cD01190E38"
       }
