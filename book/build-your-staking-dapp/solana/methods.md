@@ -80,7 +80,7 @@ const { tx } = await staker.buildWithdrawStakeTx({
 
 Here, we are withdrawing all SOL from a stake account to the wallet owner's address.
 
-To withdraw a specifc amount pass the `amount` arugment.
+To withdraw a specific amount pass the `amount` argument.
 
 - [Read more in the API Reference](../../docs/classes/solana_src.SolanaStaker.md#buildwithdrawstaketx)
 
@@ -137,11 +137,11 @@ Here, we are merging a source account stake into a different destination account
 
 ---
 
-## buildSplitStakesTx
+## buildSplitStakeTx
 
 ### Description
 
-The `buildSplitStakesTx` method allows you to split one stake account into two separate accounts.
+The `buildSplitStakeTx` method allows you to split one stake account into two separate accounts.
 
 ### How to Use
 
@@ -150,7 +150,7 @@ To build a split stake transaction, you will need to provide the owner's address
 ### Example
 
 ```javascript
-const { tx } = await staker.buildSplitStakesTx({
+const { tx } = await staker.buildSplitStakeTx({
   ownerAddress: '3Ps2hwsgGMSuqxAwjcGJHiEpMsSTZcxrCGprHgxWkfma',
   stakeAccountAddress: 'HJRL5PTpvwxmt796M7xDavRbPkjN28iGPVBkJn9y6rYE',
   amount: '1' // 1 SOL
@@ -159,7 +159,7 @@ const { tx } = await staker.buildSplitStakesTx({
 
 Here, we are substracting 1 SOL from the source stake account and transferring into a newly created stake account.
 
-- [Read more in the API Reference](../../docs/classes/solana_src.SolanaStaker.md#buildsplitstakestx)
+- [Read more in the API Reference](../../docs/classes/solana_src.SolanaStaker.md#buildsplitstaketx)
 
 ---
 
@@ -173,9 +173,9 @@ The `getStake` method retrieves the staking information from a delegator.
 
 ### How to Use
 
-To get staking information, you need to provide the delegator's address (your wallet), and optionally the validator's address. If the validator's address is not provided, the method returns rewards from all validators.
+To get staking information, you need to provide the owner's address (your wallet), and optionally the validator's address. If the validator's address is not provided, the method returns balance from all validators.
 
-You can also specify the status of the staker. Default is 'active'.
+You can also specify the state of the stake accounts. Default is 'delegated'.
 
 ### Example
 
@@ -183,13 +183,13 @@ You can also specify the status of the staker. Default is 'active'.
 import { CHORUS_ONE_SOLANA_VALIDATOR } from '@chorus-one/solana'
 
 const { balance } = await staker.getStake({
-  delegatorAddress: '3Ps2hwsgGMSuqxAwjcGJHiEpMsSTZcxrCGprHgxWkfma'
+  ownerAddress: '3Ps2hwsgGMSuqxAwjcGJHiEpMsSTZcxrCGprHgxWkfma',
   validatorAddress: CHORUS_ONE_SOLANA_VALIDATOR
 })
 console.log(`Staked balance: ${balance}`)
 ```
 
-In this example, we're retrieving the staked balance for a given delegator and validator.
+In this example, we're retrieving the staked balance for a given owner and validator.
 
 - [Read more in the API Reference](../../docs/classes/solana_src.SolanaStaker.md#getstake)
 

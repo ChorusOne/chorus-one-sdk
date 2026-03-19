@@ -68,7 +68,7 @@ The `SolanaStaker` class provides methods to build transactions for staking, uns
 
 ```javascript
 const { tx, stakeAccountAddress } = await staker.buildStakeTx({
-  delegatorAddress: '3Ps2hwsgGMSuqxAwjcGJHiEpMsSTZcxrCGprHgxWkfma',
+  ownerAddress: '3Ps2hwsgGMSuqxAwjcGJHiEpMsSTZcxrCGprHgxWkfma',
   validatorAddress: 'Chorus6Kis8tFHA7AowrPMcRJk3LbApHTYpgSNXzY5KE',
   amount: '1' // 1 SOL
 })

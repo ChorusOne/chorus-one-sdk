@@ -21,10 +21,12 @@ Here is a basic example of how to configure and initialize the LocalSigner:
 ```javascript
 import { SolanaStaker } from '@chorus-one/solana';
 import { LocalSigner } from '@chorus-one/signer-local';
+import { KeyType } from '@chorus-one/signer';
 
 const signer = new LocalSigner({
   mnemonic: 'your-mnemonic-phrase',
-  accounts: [{ hdPath: 'your-hd-path' }]
+  accounts: [{ hdPath: 'your-hd-path' }],
+  keyType: KeyType.ED25519,
   addressDerivationFn: SolanaStaker.getAddressDerivationFn()
 });
 
