@@ -13,7 +13,7 @@ Let's look at what these two key concepts are below:
 - **addressDerivationFn**: A function that derives the address from the public key, implementing the `AddressDerivationFn` type and provided by Staker classes as static methods, e.g. `SolanaStaker.getAddressDerivationFn`, `NearStaker.getAddressDerivationFn`, etc.
 
 ```typescript
-type AddressDerivationFn = (publicKey: Uint8Array, hdPath: string) => Array<string>
+type AddressDerivationFn = (publicKey: Uint8Array, hdPath: string) => Promise<Array<string>>
 ```
 
 {% hint style="info" %}
@@ -29,10 +29,12 @@ With your mnemonic and HD path ready, you can now configure and initialize the L
 ```javascript
 import { SolanaStaker } from '@chorus-one/solana'
 import { LocalSigner } from '@chorus-one/signer-local'
+import { KeyType } from '@chorus-one/signer'
 
 const signer = new LocalSigner({
   mnemonic: 'your-mnemonic-phrase',
   accounts: [{ hdPath: 'your-hd-path' }],
+  keyType: KeyType.ED25519,
   addressDerivationFn: SolanaStaker.getAddressDerivationFn()
 })
 

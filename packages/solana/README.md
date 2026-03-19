@@ -33,13 +33,13 @@ await staker.init()
 // Building the transaction
 // ------------------------
 
-const delegatorAddress = '3Ps2hwsgGMSuqxAwjcGJHiEpMsSTZcxrCGprHgxWkfma'
+const ownerAddress = '3Ps2hwsgGMSuqxAwjcGJHiEpMsSTZcxrCGprHgxWkfma'
 
 // You can use the Chorus One validator address or specify your own
 const validatorAddress = CHORUS_ONE_SOLANA_VALIDATOR
 
 const { tx } = await staker.buildStakeTx({
-  delegatorAddress,
+  ownerAddress,
   validatorAddress,
   amount: '1' // 1 SOL
 })
@@ -54,7 +54,7 @@ await signer.init()
 
 const { signedTx } = await staker.sign({
   signer,
-  signerAddress: delegatorAddress,
+  signerAddress: ownerAddress,
   tx
 })
 
