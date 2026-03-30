@@ -15,6 +15,14 @@ export interface Transaction {
   data: Hex
   /** The amount of ETH (in wei) to be sent with the transaction */
   value?: bigint
+  /**
+   * The chain ID where the transaction must be broadcast.
+   *
+   * Polygon staking contracts live on Ethereum L1, not on the Polygon chain itself:
+   * - mainnet: `1` (Ethereum Mainnet)
+   * - testnet: `11155111` (Sepolia)
+   */
+  chainId: number
 }
 
 export interface PolygonTxStatus {

@@ -27,6 +27,7 @@ describe('PolygonStaker', () => {
       assert.equal(tx.to, EXPECTED_APPROVE_TX.expected.to)
       assert.equal(tx.data, EXPECTED_APPROVE_TX.expected.data)
       assert.equal(tx.value, EXPECTED_APPROVE_TX.expected.value)
+      assert.equal(tx.chainId, EXPECTED_APPROVE_TX.expected.chainId)
     })
 
     it('should generate correct unsigned approve tx for max (unlimited) amount', async () => {
@@ -47,6 +48,22 @@ describe('PolygonStaker', () => {
       await expect(staker.buildApproveTx({ amount: '0' })).to.be.rejectedWith('Amount must be greater than 0')
       await expect(staker.buildApproveTx({ amount: '' })).to.be.rejectedWith('Amount cannot be empty')
       await expect(staker.buildApproveTx({ amount: 'invalid' })).to.be.rejectedWith('Amount must be a valid number')
+    })
+  })
+
+  describe('chainId', () => {
+    it('should return mainnet chainId (1) for mainnet network', async () => {
+      const { tx } = await staker.buildApproveTx({ amount: '100' })
+      assert.equal(tx.chainId, 1)
+    })
+
+    it('should return sepolia chainId (11155111) for testnet network', async () => {
+      const testnetStaker = new PolygonStaker({
+        network: 'testnet',
+        rpcUrl: 'https://ethereum-sepolia-rpc.publicnode.com'
+      })
+      const { tx } = await testnetStaker.buildApproveTx({ amount: '100' })
+      assert.equal(tx.chainId, 11155111)
     })
   })
 

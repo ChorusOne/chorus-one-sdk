@@ -216,7 +216,7 @@ console.log(status) // 'success', 'failure', or 'unknown'
 
 ## Key Features
 
-- **Ethereum L1 Based**: Polygon PoS staking operates via ValidatorShare contracts deployed on Ethereum mainnet (or Sepolia for testnet)
+- **Ethereum L1 Based**: Polygon PoS staking operates via ValidatorShare contracts deployed on Ethereum mainnet (or Sepolia for testnet). Every transaction includes a `chainId` field so you know exactly which chain to broadcast on (`1` for mainnet, `11155111` for Sepolia).
 - **POL Token Staking**: Stake the native POL token (formerly MATIC) to validators
 - **Human-Readable Amounts**: Pass token amounts as strings (e.g., '1.5'), conversion to wei is handled automatically
 - **Slippage Protection**: Stake and unstake operations require either `slippageBps` (basis points) for automatic slippage calculation, or manual `minSharesToMint`/`maximumSharesToBurn` parameters. Exactly one must be provided — there is no default.
@@ -231,6 +231,19 @@ console.log(status) // 'success', 'failure', or 'unknown'
 - **Referrer Tracking**: Transaction builders that support referrer tracking (stake, unstake, claim rewards, compound) append a tracking marker to the transaction calldata. By default, `sdk-chorusone-staking` is used as the referrer. You can provide a custom referrer via the `referrer` parameter.
 - **Exchange Rate**: The exchange rate between shares and POL may fluctuate. Use `slippageBps` for automatic slippage protection, or specify `minSharesToMint`/`maximumSharesToBurn` directly. Foundation validators (ID < 8) use different precision than others.
 - **Validator Share Contracts**: Each validator has their own ValidatorShare contract address. You must specify the correct contract address for the validator you want to delegate to.
+- **Testnet Validators**: Testnet validators on Sepolia may be locked or inactive. To list all active ValidatorShare addresses, use [Foundry's](https://book.getfoundry.sh/) `cast`:
+
+  ```bash
+  export ETH_RPC_URL="https://ethereum-sepolia-rpc.publicnode.com"
+  SM="0x4AE8f648B1Ec892B6cc68C89cc088583964d08bE"
+  count=$(cast call $SM "NFTCounter()(uint256)")
+  for id in $(seq 1 $((count - 1))); do
+    raw=$(cast call $SM "validators(uint256)(uint256,uint256,uint256,uint256,uint256,address,address,uint8,uint256,uint256,uint256,uint256,uint256)" $id 2>/dev/null)
+    contract=$(echo "$raw" | sed -n 7p)
+    st=$(echo "$raw" | sed -n 8p)
+    [ "$st" = "1" ] && echo $contract
+  done
+  ```
 
 ## License
 

@@ -26,6 +26,7 @@ import {
   NETWORK_CONTRACTS,
   EXCHANGE_RATE_PRECISION,
   EXCHANGE_RATE_HIGH_PRECISION,
+  VALIDATOR_STATUS,
   type PolygonNetworks,
   type NetworkContracts
 } from './constants'
@@ -130,7 +131,8 @@ export class PolygonStaker {
       tx: {
         to: this.contracts.stakingTokenAddress,
         data,
-        value: 0n
+        value: 0n,
+        chainId: this.chain.id
       }
     }
   }
@@ -174,7 +176,10 @@ export class PolygonStaker {
 
     const amountWei = this.parseAmount(amount)
 
-    const allowance = await this.getAllowance(delegatorAddress)
+    const [allowance] = await Promise.all([
+      this.getAllowance(delegatorAddress),
+      this.assertValidatorActive(validatorShareAddress)
+    ])
     if (parseEther(allowance) < amountWei) {
       throw new Error(
         `Insufficient POL allowance. Current: ${allowance}, Required: ${amount}. Call buildApproveTx() first.`
@@ -204,7 +209,8 @@ export class PolygonStaker {
       tx: {
         to: validatorShareAddress,
         data: appendReferrerTracking(calldata, referrer),
-        value: 0n
+        value: 0n,
+        chainId: this.chain.id
       }
     }
   }
@@ -273,7 +279,8 @@ export class PolygonStaker {
       tx: {
         to: validatorShareAddress,
         data: appendReferrerTracking(calldata, referrer),
-        value: 0n
+        value: 0n,
+        chainId: this.chain.id
       }
     }
   }
@@ -331,7 +338,8 @@ export class PolygonStaker {
       tx: {
         to: validatorShareAddress,
         data,
-        value: 0n
+        value: 0n,
+        chainId: this.chain.id
       }
     }
   }
@@ -376,7 +384,8 @@ export class PolygonStaker {
       tx: {
         to: validatorShareAddress,
         data: appendReferrerTracking(calldata, referrer),
-        value: 0n
+        value: 0n,
+        chainId: this.chain.id
       }
     }
   }
@@ -407,7 +416,10 @@ export class PolygonStaker {
       throw new Error(`Invalid validator share address: ${validatorShareAddress}`)
     }
 
-    const rewards = await this.getLiquidRewards({ delegatorAddress, validatorShareAddress })
+    const [rewards] = await Promise.all([
+      this.getLiquidRewards({ delegatorAddress, validatorShareAddress }),
+      this.assertValidatorActive(validatorShareAddress)
+    ])
     if (parseEther(rewards) === 0n) {
       throw new Error('No rewards available to compound')
     }
@@ -421,7 +433,8 @@ export class PolygonStaker {
       tx: {
         to: validatorShareAddress,
         data: appendReferrerTracking(calldata, referrer),
-        value: 0n
+        value: 0n,
+        chainId: this.chain.id
       }
     }
   }
@@ -852,6 +865,31 @@ export class PolygonStaker {
         status: 'unknown',
         receipt: null
       }
+    }
+  }
+
+  private async assertValidatorActive (validatorShareAddress: Address): Promise<void> {
+    const validatorId = await this.publicClient.readContract({
+      address: validatorShareAddress,
+      abi: VALIDATOR_SHARE_ABI,
+      functionName: 'validatorId'
+    })
+
+    const validator = await this.publicClient.readContract({
+      address: this.contracts.stakeManagerAddress,
+      abi: STAKE_MANAGER_ABI,
+      functionName: 'validators',
+      args: [validatorId]
+    })
+
+    const status = Number(validator[7])
+    if (status !== 1) {
+      const statusName = VALIDATOR_STATUS[status as keyof typeof VALIDATOR_STATUS] ?? 'Unknown'
+      throw new Error(
+        `Validator is not active (status: ${statusName}). ` +
+          'The validator may be locked, inactive, or unstaked. ' +
+          'See the @chorus-one/polygon README for how to list active validators on testnet.'
+      )
     }
   }
 

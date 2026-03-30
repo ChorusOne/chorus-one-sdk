@@ -12,6 +12,7 @@ export const EXPECTED_APPROVE_TX = {
     to: stakingTokenAddress as Address,
     // approve(address spender, uint256 amount) with spender = stakeManagerAddress (0x5e3e...), amount = 100e18
     data: '0x095ea7b30000000000000000000000005e3ef299fddf15eaa0432e6e66473ace8c13d9080000000000000000000000000000000000000000000000056bc75e2d63100000' as Hex,
-    value: 0n
+    value: 0n,
+    chainId: 1
   }
 }
