@@ -93,6 +93,34 @@ describe('PolygonStaker', () => {
       const precision = await staker.getExchangeRatePrecision(validatorShareAddress)
       assert.equal(precision, EXCHANGE_RATE_HIGH_PRECISION)
     })
+
+    it('rejects staking to an unstaked validator', async () => {
+      const unstakedValidator = '0xd245710936382e5ED099d4F8D9AAE64e67e30EF3' as Address
+      await expect(
+        staker.buildStakeTx({
+          delegatorAddress: WHALE_DELEGATOR,
+          validatorShareAddress: unstakedValidator,
+          amount: '100',
+          minSharesToMint: 0n
+        })
+      ).to.be.rejectedWith('Validator is not active (status: Unstaked)')
+    })
+
+    it('allows staking to an active validator', async () => {
+      // Should not throw — the default validatorShareAddress is active
+      const allowance = await staker.getAllowance(WHALE_DELEGATOR)
+      // Will fail on allowance, not on validator status
+      if (parseEther(allowance) === 0n) {
+        await expect(
+          staker.buildStakeTx({
+            delegatorAddress: WHALE_DELEGATOR,
+            validatorShareAddress,
+            amount: '100',
+            minSharesToMint: 0n
+          })
+        ).to.be.rejectedWith('Insufficient POL allowance')
+      }
+    })
   })
 
   describe('staking lifecycle', () => {

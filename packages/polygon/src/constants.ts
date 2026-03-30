@@ -22,7 +22,9 @@ export const NETWORK_CONTRACTS: Record<PolygonNetworks, NetworkContracts> = {
 
 /** Chorus One Polygon ValidatorShare contract addresses */
 // Reference mainnet: https://staking.polygon.technology/validators/106
-// Reference testnet (Random Validator): https://staking.polygon.technology/validators/31
+// Reference testnet: https://staking.polygon.technology/validators/31
+// Note: Testnet validators may be locked. To list active validators, query the StakeManager
+// contract on Sepolia: https://sepolia.etherscan.io/address/0x4AE8f648B1Ec892B6cc68C89cc088583964d08bE
 export const CHORUS_ONE_POLYGON_VALIDATORS = {
   mainnet: '0xD9E6987D77bf2c6d0647b8181fd68A259f838C36' as Address,
   testnet: '0xe50f5ad9b885675fd11d8204eb01c83a8a32a91d' as Address
@@ -147,5 +149,33 @@ export const STAKE_MANAGER_ABI = [
     inputs: [],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     stateMutability: 'view'
+  },
+  {
+    type: 'function',
+    name: 'validators',
+    inputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    outputs: [
+      { name: 'amount', type: 'uint256' },
+      { name: 'reward', type: 'uint256' },
+      { name: 'activationEpoch', type: 'uint256' },
+      { name: 'deactivationEpoch', type: 'uint256' },
+      { name: 'jailTime', type: 'uint256' },
+      { name: 'signer', type: 'address' },
+      { name: 'contractAddress', type: 'address' },
+      { name: 'status', type: 'uint256' },
+      { name: 'commissionRate', type: 'uint256' },
+      { name: 'lastCommissionUpdate', type: 'uint256' },
+      { name: 'delegatorsReward', type: 'uint256' },
+      { name: 'delegatedAmount', type: 'uint256' },
+      { name: 'initialRewardPerStake', type: 'uint256' }
+    ],
+    stateMutability: 'view'
   }
 ] as const
+
+export const VALIDATOR_STATUS = {
+  0: 'Inactive',
+  1: 'Active',
+  2: 'Locked',
+  3: 'Unstaked'
+} as const
