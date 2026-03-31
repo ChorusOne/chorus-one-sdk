@@ -5,7 +5,7 @@ import { VaultABI } from '../contracts/vaultAbi'
 import { Transaction } from '../types/transaction'
 import { getHarvestParams } from '../utils/getHarvestParams'
 
-export async function buildUnstakeTx(request: {
+export async function buildUnstakeTx (request: {
   connector: StakewiseConnector
   userAccount: Hex
   vault: Hex
