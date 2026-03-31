@@ -1,8 +1,13 @@
 import { Hex } from 'viem'
 import { StakewiseConnector } from '../connector'
 
-export const getUnstakeQueue = async (params: { connector: StakewiseConnector; userAccount: Hex; vault: Hex }) => {
-  const { connector, vault, userAccount } = params
+export const getUnstakeQueue = async (params: {
+  connector: StakewiseConnector
+  userAccount: Hex
+  vault: Hex
+  isClaimed?: boolean
+}) => {
+  const { connector, vault, userAccount, isClaimed } = params
   const queueData = await connector.graphqlRequest({
     type: 'graph',
     op: 'exitQueue',
@@ -13,7 +18,6 @@ export const getUnstakeQueue = async (params: { connector: StakewiseConnector; u
                 isClaimed
                 timestamp
                 totalAssets
-                isClaimed
                 isClaimable
                 exitedAssets
                 isV2Position
@@ -26,7 +30,8 @@ export const getUnstakeQueue = async (params: { connector: StakewiseConnector; u
     variables: {
       where: {
         vault: vault.toLowerCase(),
-        receiver: userAccount.toLowerCase()
+        receiver: userAccount.toLowerCase(),
+        ...(isClaimed !== undefined && { isClaimed })
       }
     }
   })

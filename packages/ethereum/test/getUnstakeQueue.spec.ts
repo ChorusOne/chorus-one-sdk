@@ -40,4 +40,25 @@ describe('EthereumStaker.getUnstakeQueue', () => {
       withdrawalTimestamp: 0
     })
   })
+
+  it('returns the same results with isClaimed: false filter', async function () {
+    disableHoodi.bind(this)()
+
+    const queueWithoutFilter = await staker.getUnstakeQueue({
+      validatorAddress,
+      delegatorAddress
+    })
+
+    const queueWithFilter = await staker.getUnstakeQueue({
+      validatorAddress,
+      delegatorAddress,
+      isClaimed: false
+    })
+
+    // Both should return the same results since the public API already
+    // filters out claimed items client-side. The isClaimed: false filter
+    // just moves that filtering to the subgraph query level.
+    assert.deepEqual(queueWithFilter, queueWithoutFilter)
+    assert.isAbove(queueWithFilter.length, 0, 'should have at least one unclaimed item')
+  })
 })
