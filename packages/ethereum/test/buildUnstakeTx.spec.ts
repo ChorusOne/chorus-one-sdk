@@ -1,8 +1,11 @@
 import { EthereumStaker } from '@chorus-one/ethereum'
-import { Hex, PublicClient, WalletClient, erc20Abi, formatEther, parseEther } from 'viem'
+import { Hex, PublicClient, WalletClient, decodeFunctionData, erc20Abi, formatEther, parseEther } from 'viem'
 import { mint, prepareTests, stake } from './lib/utils'
 import { assert } from 'chai'
 import { restoreToInitialState } from './setup'
+import { VaultABI } from '../src/lib/contracts/vaultAbi'
+import { buildUnstakeTx } from '../src/lib/methods/buildUnstakeTx'
+import { StakewiseConnector } from '../src/lib/connector'
 
 const amountToStake = parseEther('5')
 const amountToUnstake = parseEther('4')
@@ -79,32 +82,51 @@ describe('EthereumStaker.buildUnstakeTx', () => {
     )
   })
 
-  it('builds an unstaking tx that handles harvest when needed', async () => {
-    // This test exercises the harvest-aware unstake path.
-    // buildUnstakeTx checks canHarvest() and if true, bundles
-    // updateState + enterExitQueue via multicall.
-    // On the fork, whichever path is active (harvest or plain) should succeed.
-    const { tx } = await staker.buildUnstakeTx({
-      delegatorAddress,
-      validatorAddress,
-      amount: formatEther(amountToUnstake)
+  it('encodes multicall(updateState, enterExitQueue) when canHarvest is true', async () => {
+    const connector = new StakewiseConnector('ethereum', 'http://127.0.0.1:8545')
+    const originalReadContract = connector.eth.readContract.bind(connector.eth)
+
+    // Mock readContract to force canHarvest to return true
+    connector.eth.readContract = (async (args: any) => {
+      if (args.functionName === 'canHarvest') return true
+      return originalReadContract(args)
+    }) as typeof connector.eth.readContract
+
+    const tx = await buildUnstakeTx({
+      connector,
+      userAccount: delegatorAddress,
+      vault: validatorAddress,
+      amount: amountToUnstake
     })
 
-    // Verify the tx data is non-empty (transaction was built)
-    assert.isNotEmpty(tx.data)
-    assert.equal(tx.to.toLowerCase(), validatorAddress.toLowerCase())
+    const decoded = decodeFunctionData({ abi: VaultABI, data: tx.data })
+    assert.equal(decoded.functionName, 'multicall')
 
-    const request = await walletClient.prepareTransactionRequest({
-      ...tx,
-      chain: undefined
-    })
-    const hash = await walletClient.sendTransaction({
-      ...request,
-      account: delegatorAddress
+    const calls = decoded.args[0] as Hex[]
+    assert.equal(calls.length, 2)
+    assert.equal(decodeFunctionData({ abi: VaultABI, data: calls[0] }).functionName, 'updateState')
+    assert.equal(decodeFunctionData({ abi: VaultABI, data: calls[1] }).functionName, 'enterExitQueue')
+  })
+
+  it('encodes plain enterExitQueue when canHarvest is false', async () => {
+    const connector = new StakewiseConnector('ethereum', 'http://127.0.0.1:8545')
+    const originalReadContract = connector.eth.readContract.bind(connector.eth)
+
+    // Mock readContract to force canHarvest to return false
+    connector.eth.readContract = (async (args: any) => {
+      if (args.functionName === 'canHarvest') return false
+      return originalReadContract(args)
+    }) as typeof connector.eth.readContract
+
+    const tx = await buildUnstakeTx({
+      connector,
+      userAccount: delegatorAddress,
+      vault: validatorAddress,
+      amount: amountToUnstake
     })
 
-    const receipt = await publicClient.waitForTransactionReceipt({ hash })
-    assert.equal(receipt.status, 'success')
+    const decoded = decodeFunctionData({ abi: VaultABI, data: tx.data })
+    assert.equal(decoded.functionName, 'enterExitQueue')
   })
 
   it('performs a full cycle of stake, mint, burn, and unstake max', async () => {
