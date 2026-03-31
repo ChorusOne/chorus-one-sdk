@@ -14,7 +14,8 @@ export async function buildWithdrawTx (request: {
   const queueItems = await getUnstakeQueue({
     connector,
     userAccount,
-    vault
+    vault,
+    isClaimed: false
   })
 
   if (positionTickets && positionTickets.length === 1) {
