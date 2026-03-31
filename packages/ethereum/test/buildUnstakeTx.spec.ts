@@ -3,6 +3,8 @@ import { Hex, PublicClient, WalletClient, decodeFunctionData, erc20Abi, formatEt
 import { mint, prepareTests, stake } from './lib/utils'
 import { assert } from 'chai'
 import { restoreToInitialState } from './setup'
+// Internal imports needed to test harvest encoding paths with a mocked connector.
+// The public API (EthereumStaker) doesn't expose connector-level control.
 import { VaultABI } from '../src/lib/contracts/vaultAbi'
 import { buildUnstakeTx } from '../src/lib/methods/buildUnstakeTx'
 import { StakewiseConnector } from '../src/lib/connector'

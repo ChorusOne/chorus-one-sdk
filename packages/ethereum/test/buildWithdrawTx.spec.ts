@@ -1,6 +1,6 @@
 import { Hex } from 'viem'
 import { assert } from 'chai'
-import { EthereumStaker } from '../dist/mjs'
+import { EthereumStaker } from '@chorus-one/ethereum'
 import { prepareTests } from './lib/utils'
 import { disableHoodi } from './lib/disableHoodi'
 import { restoreToInitialState } from './setup'
