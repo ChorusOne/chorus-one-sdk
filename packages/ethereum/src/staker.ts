@@ -84,7 +84,7 @@ export class EthereumStaker {
    *
    * @returns  An instance of EthereumStaker.
    */
-  constructor (params: { network: Networks; rpcUrl?: string; nativeStakingApiToken?: string }) {
+  constructor(params: { network: Networks; rpcUrl?: string; nativeStakingApiToken?: string }) {
     this.network = params.network
     this.rpcUrl = params.rpcUrl
 
@@ -100,7 +100,7 @@ export class EthereumStaker {
    *
    * @returns A promise which resolves once the EthereumStaker instance has been initialized.
    */
-  async init (): Promise<void> {}
+  async init(): Promise<void> {}
 
   /**
    * Builds a staking transaction.
@@ -115,7 +115,7 @@ export class EthereumStaker {
    *
    * @returns Returns a promise that resolves to an Ethereum staking transaction.
    */
-  async buildStakeTx (params: {
+  async buildStakeTx(params: {
     delegatorAddress: Hex
     validatorAddress: Hex
     amount: string // ETH assets
@@ -147,7 +147,7 @@ export class EthereumStaker {
    *
    * @returns Returns a promise that resolves to an Ethereum unstaking transaction.
    */
-  async buildUnstakeTx (params: {
+  async buildUnstakeTx(params: {
     delegatorAddress: Hex
     validatorAddress: Hex
     amount: string // ETH assets
@@ -178,7 +178,7 @@ export class EthereumStaker {
    *
    * @returns Returns a promise that resolves to an Ethereum withdrawal transaction.
    */
-  async buildWithdrawTx (params: {
+  async buildWithdrawTx(params: {
     delegatorAddress: Hex
     validatorAddress: Hex
     positionTickets?: string[]
@@ -206,7 +206,7 @@ export class EthereumStaker {
    *
    * @returns Returns a promise that resolves to an Ethereum mint transaction.
    */
-  async buildMintTx (params: {
+  async buildMintTx(params: {
     delegatorAddress: Hex
     validatorAddress: Hex
     amount: string // osETH shares
@@ -233,7 +233,7 @@ export class EthereumStaker {
    *
    * @returns Returns a promise that resolves to an Ethereum burn transaction.
    */
-  async buildBurnTx (params: {
+  async buildBurnTx(params: {
     delegatorAddress: Hex
     validatorAddress: Hex
     amount: string // osETH shares
@@ -256,7 +256,7 @@ export class EthereumStaker {
    *
    * @returns Returns a promise that resolves to the staking information for the specified vault.
    */
-  async getVault ({ validatorAddress }: { validatorAddress: Hex }) {
+  async getVault({ validatorAddress }: { validatorAddress: Hex }) {
     const vault = await getVault({
       connector: this.connector,
       vault: validatorAddress
@@ -276,7 +276,7 @@ export class EthereumStaker {
    *
    * @returns Returns a promise that resolves to the staking information for the delegator.
    */
-  async getStake (params: { delegatorAddress: Hex; validatorAddress: Hex }) {
+  async getStake(params: { delegatorAddress: Hex; validatorAddress: Hex }) {
     const stake = await getStake({
       connector: this.connector,
       userAccount: params.delegatorAddress,
@@ -303,7 +303,7 @@ export class EthereumStaker {
    *
    * @returns Returns a promise that resolves to the rewards data for the specified delegator.
    */
-  async getRewardsHistory (params: {
+  async getRewardsHistory(params: {
     startTime: number
     endTime: number
     delegatorAddress: Hex
@@ -337,7 +337,7 @@ export class EthereumStaker {
    *
    * @returns Returns a promise that resolves to the transaction history for the specified delegator.
    */
-  async getTxHistory (params: { delegatorAddress: Hex; validatorAddress: Hex }) {
+  async getTxHistory(params: { delegatorAddress: Hex; validatorAddress: Hex }) {
     const txHistory = await getTxHistory({
       connector: this.connector,
       userAccount: params.delegatorAddress,
@@ -369,11 +369,12 @@ export class EthereumStaker {
    *
    * @returns Returns a promise that resolves to the unstake queue for the specified delegator.
    */
-  async getUnstakeQueue (params: { delegatorAddress: Hex; validatorAddress: Hex }) {
+  async getUnstakeQueue(params: { delegatorAddress: Hex; validatorAddress: Hex; isClaimed?: boolean }) {
     const queue = await getUnstakeQueue({
       connector: this.connector,
       userAccount: params.delegatorAddress,
-      vault: params.validatorAddress
+      vault: params.validatorAddress,
+      isClaimed: params.isClaimed
     })
 
     return queue
@@ -400,7 +401,7 @@ export class EthereumStaker {
    *
    * @returns Returns a promise that resolves to the mint information
    */
-  async getMint (params: { delegatorAddress: Hex; validatorAddress: Hex }) {
+  async getMint(params: { delegatorAddress: Hex; validatorAddress: Hex }) {
     const mint = await getMint({
       connector: this.connector,
       userAccount: params.delegatorAddress,
@@ -443,7 +444,7 @@ export class EthereumStaker {
    *
    * @returns Returns a promise that resolves to the mint health status('healthy' | 'risky' )
    */
-  async getMintHealth (params: { stakeAmount: string; mintAmount: string; validatorAddress: Hex }) {
+  async getMintHealth(params: { stakeAmount: string; mintAmount: string; validatorAddress: Hex }) {
     const health = await getMintHealth({
       connector: this.connector,
       mintedShares: this.parseEther(params.mintAmount),
@@ -471,7 +472,7 @@ export class EthereumStaker {
    *
    * @returns Returns a promise that resolves to the batch creation response.
    */
-  async createValidatorBatch (params: {
+  async createValidatorBatch(params: {
     batchId: string
     withdrawalAddress: Hex
     feeRecipientAddress: Hex
@@ -503,7 +504,7 @@ export class EthereumStaker {
    *
    * @returns Returns a promise that resolves to an array of validator batches.
    */
-  async listValidatorBatches (): Promise<ListBatchesResponse> {
+  async listValidatorBatches(): Promise<ListBatchesResponse> {
     if (!this.nativeStakingConnector) {
       throw new Error('Native staking is not enabled. Please provide nativeStakingApiToken in constructor.')
     }
@@ -522,7 +523,7 @@ export class EthereumStaker {
    *
    * @returns Returns a promise that resolves to the batch information.
    */
-  async getValidatorBatchStatus (params: { batchId: string }): Promise<BatchDetailsResponse> {
+  async getValidatorBatchStatus(params: { batchId: string }): Promise<BatchDetailsResponse> {
     if (!this.nativeStakingConnector) {
       throw new Error('Native staking is not enabled. Please provide nativeStakingApiToken in constructor.')
     }
@@ -540,7 +541,7 @@ export class EthereumStaker {
    *
    * @returns Returns a promise that resolves to an array of deposit data objects.
    */
-  async exportDepositData ({
+  async exportDepositData({
     batchData
   }: {
     batchData: BatchDetailsResponse
@@ -567,7 +568,7 @@ export class EthereumStaker {
    *
    * @returns Returns a promise that resolves to an array of deposit transactions.
    */
-  async buildDepositTx ({ batchData }: { batchData: BatchDetailsResponse }): Promise<{ transactions: Transaction[] }> {
+  async buildDepositTx({ batchData }: { batchData: BatchDetailsResponse }): Promise<{ transactions: Transaction[] }> {
     if (batchData.status !== 'ready') {
       return { transactions: [] }
     }
@@ -607,7 +608,7 @@ export class EthereumStaker {
   /**
    * Encodes the deposit function call for the Ethereum deposit contract.
    */
-  private encodeDepositFunction (params: {
+  private encodeDepositFunction(params: {
     pubkey: Hex
     withdrawalCredentials: Hex
     signature: Hex
@@ -632,7 +633,7 @@ export class EthereumStaker {
    *
    * @returns Returns a promise that resolves to a withdrawal transaction.
    */
-  async buildValidatorExitTx (params: { validatorPubkey: string; value?: bigint }): Promise<{ tx: Transaction }> {
+  async buildValidatorExitTx(params: { validatorPubkey: string; value?: bigint }): Promise<{ tx: Transaction }> {
     const config = getNetworkConfig(this.network)
 
     const tx = await buildValidatorExitTx({
@@ -656,7 +657,7 @@ export class EthereumStaker {
    *
    * @returns A promise that resolves to an object containing the signed transaction.
    */
-  async sign (params: {
+  async sign(params: {
     signer: Signer
     signerAddress: Hex
     tx: Transaction
@@ -721,7 +722,7 @@ export class EthereumStaker {
    *
    * @returns A promise that resolves to the final execution outcome of the broadcast transaction.
    */
-  async broadcast (params: { signedTx: Hex }): Promise<{ txHash: Hex }> {
+  async broadcast(params: { signedTx: Hex }): Promise<{ txHash: Hex }> {
     const { signedTx } = params
     const hash = await this.connector.eth.sendRawTransaction({ serializedTransaction: signedTx })
     return { txHash: hash }
@@ -735,7 +736,7 @@ export class EthereumStaker {
    *
    * @returns A promise that resolves to an object containing the transaction status.
    */
-  async getTxStatus (params: { txHash: Hex }): Promise<EthereumTxStatus> {
+  async getTxStatus(params: { txHash: Hex }): Promise<EthereumTxStatus> {
     const { txHash } = params
 
     try {
@@ -756,7 +757,7 @@ export class EthereumStaker {
     }
   }
 
-  private parseEther (amount: string): bigint {
+  private parseEther(amount: string): bigint {
     if (typeof amount === 'bigint')
       throw new Error(
         'Amount must be a string, denominated in ETH. e.g. "1.5" - 1.5 ETH. You can use `formatEther` to convert a `bigint` to a string'

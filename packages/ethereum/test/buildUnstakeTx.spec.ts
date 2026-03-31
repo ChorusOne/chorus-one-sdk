@@ -79,6 +79,34 @@ describe('EthereumStaker.buildUnstakeTx', () => {
     )
   })
 
+  it('builds an unstaking tx that handles harvest when needed', async () => {
+    // This test exercises the harvest-aware unstake path.
+    // buildUnstakeTx checks canHarvest() and if true, bundles
+    // updateState + enterExitQueue via multicall.
+    // On the fork, whichever path is active (harvest or plain) should succeed.
+    const { tx } = await staker.buildUnstakeTx({
+      delegatorAddress,
+      validatorAddress,
+      amount: formatEther(amountToUnstake)
+    })
+
+    // Verify the tx data is non-empty (transaction was built)
+    assert.isNotEmpty(tx.data)
+    assert.equal(tx.to.toLowerCase(), validatorAddress.toLowerCase())
+
+    const request = await walletClient.prepareTransactionRequest({
+      ...tx,
+      chain: undefined
+    })
+    const hash = await walletClient.sendTransaction({
+      ...request,
+      account: delegatorAddress
+    })
+
+    const receipt = await publicClient.waitForTransactionReceipt({ hash })
+    assert.equal(receipt.status, 'success')
+  })
+
   it('performs a full cycle of stake, mint, burn, and unstake max', async () => {
     const { maxMint } = await staker.getMint({
       delegatorAddress,
