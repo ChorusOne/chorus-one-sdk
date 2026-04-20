@@ -7,7 +7,10 @@ const config: HardhatUserConfig = {
     hardhat: {
       type: 'edr-simulated',
       forking: {
-        url: process.env.NETWORK === 'hoodi' ? networkConfig.networks.hoodi.url : networkConfig.networks.ethereum.url,
+        url:
+          process.env.NETWORK === 'hoodi'
+            ? networkConfig.networks.hoodi.url
+            : process.env.ETH_MAINNET_RPC_URL || networkConfig.networks.ethereum.url,
         enabled: true,
         blockNumber: 22217318
       },

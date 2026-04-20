@@ -21,5 +21,9 @@ jobs:
         run: npm run test
       - name: Run ethereum tests
         run: npm run test:ethereum
+        env:
+          ETH_MAINNET_RPC_URL: ${{ secrets.ETH_MAINNET_RPC_URL }}
       - name: Run polygon tests
         run: npm run test:polygon
+        env:
+          ETH_MAINNET_RPC_URL: ${{ secrets.ETH_MAINNET_RPC_URL }}
