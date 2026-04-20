@@ -8,7 +8,7 @@ const config: HardhatUserConfig = {
       type: 'edr-simulated',
       initialBaseFeePerGas: 0,
       forking: {
-        url: networkConfig.networks.ethereum.url,
+        url: process.env.ETH_MAINNET_RPC_URL || networkConfig.networks.ethereum.url,
         enabled: true,
         blockNumber: 24382010 // Fetched on 2026-02-04
       },
