@@ -1,7 +1,8 @@
+import 'dotenv/config'
 import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js'
 import { describe, it, before } from 'mocha'
 import { use, expect } from 'chai'
-import { chaiAsPromised } from 'chai-promised'
+import chaiAsPromised from 'chai-as-promised'
 import spies from 'chai-spies'
 import { SolanaTestStaker } from './testStaker'
 import { macroToDenomAmount, getDenomMultiplier } from '../../src/tx'
@@ -41,7 +42,7 @@ describe('SolanaStake - integration', () => {
     const allStakeAccountsBeforeCount = allStakeAccountsBefore.accounts.length
 
     // create and delegate a stake account
-    const stakeAccountAddress = await testStaker.createAndDelegateStake('0.003')
+    const stakeAccountAddress = await testStaker.createAndDelegateStake('1.05')
     const stakeAccountsAfterCreation = await testStaker.getStakeAccounts(null)
     const stakeAccountsAfterCreationCount = stakeAccountsAfterCreation.accounts.length
     expect(stakeAccountsAfterCreationCount).to.equal(allStakeAccountsBeforeCount + 1)
@@ -61,24 +62,24 @@ describe('SolanaStake - integration', () => {
     expect(stakeAccountsAfterWithdrawCount).to.equal(allStakeAccountsBeforeCount)
   }).timeout(60000)
   it('should stake and split the stake account', async () => {
-    const stakeAmount = 0.3
+    const stakeAmount = 2.1
     const stakeAccountAddress = await testStaker.createAndDelegateStake(stakeAmount.toString())
 
     // split the stake account
-    const { status, newStakeAccountAddress } = await testStaker.splitStake(stakeAccountAddress, '0.1')
+    const { status, newStakeAccountAddress } = await testStaker.splitStake(stakeAccountAddress, '1.05')
     expect(status).to.equal('success')
     const {
       accounts: [oldStakeAccount]
     } = await testStaker.getStakeAccounts(stakeAccountAddress)
     expect(oldStakeAccount.state).to.equal('delegated')
-    expect(oldStakeAccount.amount).to.be.equal(200000000)
+    expect(oldStakeAccount.amount).to.be.equal(1_050_000_000)
 
     // check the new stake account balance
     const {
       accounts: [newStakeAccount]
     } = await testStaker.getStakeAccounts(newStakeAccountAddress)
     expect(newStakeAccount.state).to.equal('delegated')
-    expect(newStakeAccount.amount).to.be.greaterThan(100000000) // we need to account for the rent exemption
+    expect(newStakeAccount.amount).to.be.greaterThan(1_000_000_000) // we need to account for the rent exemption
   }).timeout(60000)
 })
 
@@ -112,13 +113,13 @@ describe('Solana staker - partial unstake - happy path 🙂', () => {
       `🧹 Cleaning up before test: ${delegated.length} delegated, ${deactivating.length} deactivating, ${undelegated.length} undelegated, total: ${accounts.length}`
     )
     await testStaker.cleanupAllStakeAccounts()
-    // make sure there are no delegated stake accounts before the test
-    expect(delegated.length).to.equal(0)
-    console.log(`✅ Cleaned up all stake accounts before the test, found ${delegated.length} delegated accounts.`)
+    // (see precedent in the sad-path describe below — the pre-cleanup count assertion that
+    // used to live here was broken because `delegated` is captured before cleanup runs.)
+    console.log(`✅ Cleaned up all stake accounts before the test.`)
   })
   it('should unstake partial amount - one stake account', async () => {
-    // Stake a fixed amount in lamports
-    const stakeAmountLamports = 100_000_000 // 0.1 SOL
+    // Stake/unstake both ≥ 1 SOL on each side of the split (SIMD-0033 min delegation).
+    const stakeAmountLamports = 2_500_000_000
     const stakeAmountSol = stakeAmountLamports / LAMPORTS_PER_SOL
 
     const stakeAccountAddress = await testStaker.createAndDelegateStake(stakeAmountSol.toString())
@@ -128,8 +129,7 @@ describe('Solana staker - partial unstake - happy path 🙂', () => {
     expect(createdAccount).to.exist
     expect(createdAccount.state).to.equal('delegated')
 
-    // Unstake 5% (in lamports)
-    const unstakeLamports = Number((BigInt(stakeAmountLamports) * 5n) / 100n) // 5% of the stake amount)
+    const unstakeLamports = 1_200_000_000
     const unstakeSol = unstakeLamports / LAMPORTS_PER_SOL
     console.log(`🔻 Unstaking ${unstakeSol} SOL (${unstakeLamports} lamports)`)
 
@@ -151,9 +151,10 @@ describe('Solana staker - partial unstake - happy path 🙂', () => {
   }).timeout(60000)
   it('should split the smallest viable account when unstake amount is tiny', async () => {
     const denomMultiplier = getDenomMultiplier()
-    const smallLamports = macroToDenomAmount('0.01', denomMultiplier) // 0.1 SOL
-    const midLamports = macroToDenomAmount('0.05', denomMultiplier) // 0.5 SOL
-    const largeLamports = macroToDenomAmount('0.1', denomMultiplier) // 1.0 SOL
+    // Each stake ≥ 2 SOL so a split leaves ≥ 1 SOL on both sides (SIMD-0033).
+    const smallLamports = macroToDenomAmount('2.01', denomMultiplier)
+    const midLamports = macroToDenomAmount('2.05', denomMultiplier)
+    const largeLamports = macroToDenomAmount('2.1', denomMultiplier)
 
     const stakeAmounts = [smallLamports, midLamports, largeLamports]
     const stakeAccountsMap = new Map<string, number>()
@@ -165,8 +166,8 @@ describe('Solana staker - partial unstake - happy path 🙂', () => {
       console.log(`🟢 Staked ${solAmount} SOL → ${addr}`)
     }
 
-    // Unstake a small amount (0.05 SOL)
-    const unstakeLamports = macroToDenomAmount('0.005', denomMultiplier)
+    // 1 SOL is the smallest viable unstake post-SIMD-0033; splits the smallest account.
+    const unstakeLamports = macroToDenomAmount('1.0', denomMultiplier)
     const unstakeSol = unstakeLamports / LAMPORTS_PER_SOL
     console.log(`🔻 Unstaking ${unstakeLamports / LAMPORTS_PER_SOL} SOL`)
 
@@ -202,10 +203,9 @@ describe('Solana staker - partial unstake - happy path 🙂', () => {
   it('should fully unstake the exact matching mid account', async () => {
     const denomMultiplier = getDenomMultiplier()
 
-    // Stake amounts
-    const smallLamports = macroToDenomAmount('0.01', denomMultiplier) // 0.01 SOL
-    const midLamports = macroToDenomAmount('0.05', denomMultiplier) // 0.05 SOL
-    const largeLamports = macroToDenomAmount('0.1', denomMultiplier) // 0.1 SOL
+    const smallLamports = macroToDenomAmount('1.01', denomMultiplier)
+    const midLamports = macroToDenomAmount('1.05', denomMultiplier)
+    const largeLamports = macroToDenomAmount('1.1', denomMultiplier)
 
     const stakeAmounts = [smallLamports, midLamports, largeLamports]
     const stakeAccountsMap = new Map<string, number>()
@@ -217,7 +217,7 @@ describe('Solana staker - partial unstake - happy path 🙂', () => {
       console.log(`🟢 Staked ${solAmount} SOL → ${addr}`)
     }
 
-    // Unstake exactly the mid account amount (0.05 SOL)
+    // Unstake exactly the mid account amount → algorithm picks full unstake, no split.
     const unstakeSol = midLamports / LAMPORTS_PER_SOL
     console.log(`🔻 Unstaking exact mid account amount: ${unstakeSol} SOL`)
 
@@ -248,10 +248,10 @@ describe('Solana staker - partial unstake - happy path 🙂', () => {
     const denomMultiplier = getDenomMultiplier()
     expect(denomMultiplier).to.equal(BigInt(LAMPORTS_PER_SOL).toString())
 
-    // Set up stake accounts
-    const smallLamports = macroToDenomAmount('0.01', denomMultiplier)
-    const midLamports = macroToDenomAmount('0.05', denomMultiplier)
-    const largeLamports = macroToDenomAmount('0.1', denomMultiplier)
+    // Largest must be ≥ unstake + 1 SOL so split's source still satisfies min delegation.
+    const smallLamports = macroToDenomAmount('1.05', denomMultiplier)
+    const midLamports = macroToDenomAmount('1.1', denomMultiplier)
+    const largeLamports = macroToDenomAmount('3.0', denomMultiplier)
 
     const stakeAmounts = [smallLamports, midLamports, largeLamports]
     const stakeAccountsMap = new Map<string, number>()
@@ -263,8 +263,8 @@ describe('Solana staker - partial unstake - happy path 🙂', () => {
       console.log(`🟢 Staked ${solAmount} SOL → ${addr}`)
     }
 
-    // Request unstake of 0.075 SOL → should split from 0.1 account
-    const unstakeLamports = macroToDenomAmount('0.075', denomMultiplier)
+    // 1.5 SOL > each of small/mid, fits in large with 1.5 SOL remaining on both sides of the split.
+    const unstakeLamports = macroToDenomAmount('1.5', denomMultiplier)
     const unstakeSol = unstakeLamports / LAMPORTS_PER_SOL
     console.log(`🔻 Unstaking ${unstakeLamports} lamports (${unstakeSol} SOL)`)
 
@@ -294,10 +294,10 @@ describe('Solana staker - partial unstake - happy path 🙂', () => {
     const denomMultiplier = getDenomMultiplier()
 
     // Define 4 stake amounts
-    const lamportsA = macroToDenomAmount('0.01', denomMultiplier) // A
-    const lamportsB = macroToDenomAmount('0.03', denomMultiplier) // B
-    const lamportsC = macroToDenomAmount('0.05', denomMultiplier) // C
-    const lamportsD = macroToDenomAmount('0.1', denomMultiplier) // D
+    const lamportsA = macroToDenomAmount('1.01', denomMultiplier) // A
+    const lamportsB = macroToDenomAmount('1.03', denomMultiplier) // B
+    const lamportsC = macroToDenomAmount('1.05', denomMultiplier) // C
+    const lamportsD = macroToDenomAmount('1.1', denomMultiplier) // D
 
     const stakeAmounts = [lamportsA, lamportsB, lamportsC, lamportsD]
     const stakeAccountsMap = new Map<string, number>()
@@ -309,8 +309,8 @@ describe('Solana staker - partial unstake - happy path 🙂', () => {
       console.log(`🟢 Staked ${solAmount} SOL → ${addr}`)
     }
 
-    // Unstake 0.13 SOL — larger than any single account
-    const unstakeLamports = macroToDenomAmount('0.13', denomMultiplier)
+    // 2.13 = D (1.1) + B (1.03) exactly → both full-unstaked, no split needed.
+    const unstakeLamports = macroToDenomAmount('2.13', denomMultiplier)
     const unstakeSol = unstakeLamports / LAMPORTS_PER_SOL
     console.log(`🔻 Unstaking ${unstakeLamports} lamports (${unstakeSol} SOL)`)
 
@@ -384,12 +384,13 @@ describe('Solana staker - partial unstake - sad path 😢', () => {
       /No delegated stake account/
     )
   })
-  it('should throw if split would leave less than rent exemption', async () => {
-    // Smallest viable stake: just above rent exemption
+  // Unreachable post-SIMD-0033: min delegation (1 SOL) >> rent exemption (~0.0023 SOL),
+  // and the SDK now prefers full-unstake over an unsafe split.
+  it.skip('should throw if split would leave less than rent exemption', async () => {
     const rentExemptionLamports = await testStaker.getMinimumStakeRentExemption()
     console.log(`Minimum rent exemption: ${rentExemptionLamports} lamports `)
 
-    const barelyViableLamports = rentExemptionLamports + 100_000 // tiny amount above rent
+    const barelyViableLamports = rentExemptionLamports + 100_000
 
     const solAmount = barelyViableLamports / LAMPORTS_PER_SOL
     const stakeAccount = await testStaker.createAndDelegateStake(solAmount.toString())
@@ -398,20 +399,19 @@ describe('Solana staker - partial unstake - sad path 😢', () => {
     const accounts = await testStaker.getStakeAccounts(null)
     const delegated = accounts.accounts.filter((a) => a.state === 'delegated')
     console.log(`Found ${delegated.length} delegated stake accounts before test.`, delegated[0].amount)
-    // Try to unstake an amount that would leave < rent exemption in the source
-    const unsafeUnstakeLamports = barelyViableLamports - rentExemptionLamports + 1 // 1 lamport too much
+    const unsafeUnstakeLamports = barelyViableLamports - rentExemptionLamports + 1
     const unsafeUnstakeSol = unsafeUnstakeLamports / LAMPORTS_PER_SOL
 
     console.log(`🔻 Attempting unsafe unstake of ${unsafeUnstakeLamports} lamports (${unsafeUnstakeSol} SOL)`)
     await expect(testStaker.undelegatePartialStake(unsafeUnstakeSol.toString())).to.be.rejected
   }).timeout(60000)
   it('should throw an error when unstaking more than available', async () => {
-    const stakeAmount = 0.1 // 0.1 SOL
+    const stakeAmount = 1.1 // must satisfy 1 SOL min delegation (SIMD-0033)
     const stakeAccountAddress = await testStaker.createAndDelegateStake(stakeAmount.toString())
     console.log(`🟢 Staked ${stakeAmount} SOL → ${stakeAccountAddress}`)
 
     // Attempt to unstake more than the available amount
-    const unstakeAmount = 0.2 // 0.2 SOL
+    const unstakeAmount = 2.0
     console.log(`🔻 Attempting to unstake ${unstakeAmount} SOL`)
 
     await expect(testStaker.undelegatePartialStake(unstakeAmount.toString())).to.be.rejected
