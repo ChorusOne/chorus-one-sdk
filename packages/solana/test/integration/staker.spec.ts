@@ -79,7 +79,7 @@ describe('SolanaStake - integration', () => {
       accounts: [newStakeAccount]
     } = await testStaker.getStakeAccounts(newStakeAccountAddress)
     expect(newStakeAccount.state).to.equal('delegated')
-    expect(newStakeAccount.amount).to.be.greaterThan(1_000_000_000) // we need to account for the rent exemption
+    expect(newStakeAccount.amount).to.be.greaterThan(1_000_000_000)
   }).timeout(60000)
 })
 
@@ -113,8 +113,9 @@ describe('Solana staker - partial unstake - happy path 🙂', () => {
       `🧹 Cleaning up before test: ${delegated.length} delegated, ${deactivating.length} deactivating, ${undelegated.length} undelegated, total: ${accounts.length}`
     )
     await testStaker.cleanupAllStakeAccounts()
-    // (see precedent in the sad-path describe below — the pre-cleanup count assertion that
-    // used to live here was broken because `delegated` is captured before cleanup runs.)
+    const { accounts: postCleanup } = await testStaker.getStakeAccounts(null)
+    const delegatedAfter = postCleanup.filter((a) => a.state === 'delegated')
+    expect(delegatedAfter.length).to.equal(0)
     console.log(`✅ Cleaned up all stake accounts before the test.`)
   })
   it('should unstake partial amount - one stake account', async () => {
@@ -149,7 +150,7 @@ describe('Solana staker - partial unstake - happy path 🙂', () => {
 
     expect(remainingAccount.amount).to.equal(expectedRemaining)
   }).timeout(60000)
-  it('should split the smallest viable account when unstake amount is tiny', async () => {
+  it('should split the smallest viable account when the unstake fits within one account', async () => {
     const denomMultiplier = getDenomMultiplier()
     // Each stake ≥ 2 SOL so a split leaves ≥ 1 SOL on both sides (SIMD-0033).
     const smallLamports = macroToDenomAmount('2.01', denomMultiplier)
@@ -372,9 +373,10 @@ describe('Solana staker - partial unstake - sad path 😢', () => {
       `🧹 Cleaning up before test: ${delegated.length} delegated, ${deactivating.length} deactivating, ${undelegated.length} undelegated, total: ${accounts.length}`
     )
     await testStaker.cleanupAllStakeAccounts()
-    // make sure there are no delegated stake accounts before the test
-    // expect(delegated.length).to.equal(0)
-    console.log(`✅ Cleaned up all stake accounts before the test, found ${delegated.length} delegated accounts.`)
+    const { accounts: postCleanup } = await testStaker.getStakeAccounts(null)
+    const delegatedAfter = postCleanup.filter((a) => a.state === 'delegated')
+    expect(delegatedAfter.length).to.equal(0)
+    console.log(`✅ Cleaned up all stake accounts before the test.`)
   })
   it('should throw if there are no delegated stake accounts', async () => {
     const unstakeAmount = 0.01
@@ -384,26 +386,18 @@ describe('Solana staker - partial unstake - sad path 😢', () => {
       /No delegated stake account/
     )
   })
-  // Unreachable post-SIMD-0033: min delegation (1 SOL) >> rent exemption (~0.0023 SOL),
-  // and the SDK now prefers full-unstake over an unsafe split.
-  it.skip('should throw if split would leave less than rent exemption', async () => {
-    const rentExemptionLamports = await testStaker.getMinimumStakeRentExemption()
-    console.log(`Minimum rent exemption: ${rentExemptionLamports} lamports `)
+  it('should throw if split would leave less than min delegation on either side', async () => {
+    // Stake 1.5 SOL — valid under SIMD-0033. Request 0.6 SOL unstake: the SDK picks the
+    // split branch (rentExemption check passes), but both halves (0.9 and 0.6 SOL) violate
+    // the 1 SOL min delegation, so Solana rejects the transaction.
+    const stakeAmount = 1.5
+    const stakeAccountAddress = await testStaker.createAndDelegateStake(stakeAmount.toString())
+    console.log(`🟢 Staked ${stakeAmount} SOL → ${stakeAccountAddress}`)
 
-    const barelyViableLamports = rentExemptionLamports + 100_000
+    const unstakeAmount = 0.6
+    console.log(`🔻 Attempting unstake of ${unstakeAmount} SOL — split would leave 0.9/0.6 SOL`)
 
-    const solAmount = barelyViableLamports / LAMPORTS_PER_SOL
-    const stakeAccount = await testStaker.createAndDelegateStake(solAmount.toString())
-    console.log(`🟢 Staked just above rent exemption → ${stakeAccount}`)
-
-    const accounts = await testStaker.getStakeAccounts(null)
-    const delegated = accounts.accounts.filter((a) => a.state === 'delegated')
-    console.log(`Found ${delegated.length} delegated stake accounts before test.`, delegated[0].amount)
-    const unsafeUnstakeLamports = barelyViableLamports - rentExemptionLamports + 1
-    const unsafeUnstakeSol = unsafeUnstakeLamports / LAMPORTS_PER_SOL
-
-    console.log(`🔻 Attempting unsafe unstake of ${unsafeUnstakeLamports} lamports (${unsafeUnstakeSol} SOL)`)
-    await expect(testStaker.undelegatePartialStake(unsafeUnstakeSol.toString())).to.be.rejected
+    await expect(testStaker.undelegatePartialStake(unstakeAmount.toString())).to.be.rejected
   }).timeout(60000)
   it('should throw an error when unstaking more than available', async () => {
     const stakeAmount = 1.1 // must satisfy 1 SOL min delegation (SIMD-0033)
