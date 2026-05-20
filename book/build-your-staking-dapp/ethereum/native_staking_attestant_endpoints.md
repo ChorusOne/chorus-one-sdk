@@ -1,6 +1,6 @@
-This section provides an overview of the key API endpoints available for **Native Staking** on the Ethereum network via the **Chorus One Native Staking API**.
+This section provides an overview of the key API endpoints available for Native Staking on the Ethereum network via the Bitwise Onchain Solutions Native Staking API. Dedicated ETH staking services are provided by Attestant Ltd (d/b/a Bitwise Onchain Solutions), the parent company of Bitwise Onchain Solutions AG (f/k/a Chorus One).
 
-The Chorus One Native Staking API allows you to manage subaccounts, create validators, and monitor validator status through simple REST API calls. Below, we will explore each endpoint with practical examples to help you get started.
+The Bitwise Onchain Solutions Native Staking API allows you to manage subaccounts, create validators, and monitor validator status through simple REST API calls. Below, we will explore each endpoint with practical examples to help you get started.
 
 ## Authentication
 
