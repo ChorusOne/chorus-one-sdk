@@ -20,6 +20,8 @@ Authorization: Bearer <your-api-token>
 Content-Type: application/json
 ```
 
+> Error responses (4xx/5xx) follow the [full OpenAPI specification](https://client.attestant.io/docs/#/). This page documents request shapes and successful responses only.
+
 ---
 
 ## List MEV Relays
@@ -56,14 +58,14 @@ curl -X GET https://client.attestant.io/v1/eth/mevrelays \
 ]
 ```
 
-The response is an array. If no relays are available, the response is an empty array (`[]`).
-
 **Response Fields:**
 
 - **id**: MEV relay ID. Use this value in `ethereum.mev_relays` when creating or updating a subaccount
 - **name**: The relay name
 - **description**: Description provided by the relay owner
 - **description_url**: URL with more information about the relay
+
+**Note**: If no relays are available, the response is an empty array (`[]`).
 
 ---
 
@@ -163,10 +165,6 @@ curl -X GET "https://client.attestant.io/v1/accounts/subaccounts/My%20Subaccount
 - **ethereum.fee_recipient**: The configured fee recipient address
 - **ethereum.mev_relays** (optional): Array of assigned MEV relay objects, each with an `id` field. Only present when MEV relays have been configured for the subaccount; omitted otherwise
 
-**Status: 404 Not Found**
-
-Returned when no subaccount exists with the supplied name. Body: `{"message": "Subaccount not found"}`.
-
 ---
 
 ## List Validators
@@ -183,7 +181,7 @@ Retrieves a list of validators. Each returned validator includes details about i
 
 - **subaccount** (string, optional): Filter validators by subaccount name. If not supplied, all validators are returned
 
-### Example
+### Examples
 
 **List all validators:**
 
@@ -247,7 +245,7 @@ curl -X GET "https://client.attestant.io/v1/eth/validators?subaccount=My%20Subac
     - `Awaiting activation` — Included on the consensus chain, in the activation queue
     - `Active` — Currently validating
     - `Exited` — Exited and no longer active
-  - **withdrawal_credentials**: 32-byte withdrawal credentials (hex-encoded). Present on active validators
+  - **withdrawal_credentials**: 32-byte withdrawal credentials (hex-encoded). Set once the validator's deposit has been included on the consensus chain. Always present on `Active`, `Awaiting activation`, and `Exited` validators; on `Deposited` validators it is present once the consensus chain has processed the deposit; absent on `Unassigned` and `Awaiting deposit`
   - **balance**: Current balance in Wei
   - **effective_balance**: Current effective balance in Wei. Present on active validators
   - **deposits**: Total amount deposited from the execution chain in Wei
@@ -288,6 +286,7 @@ curl -X GET https://client.attestant.io/v1/eth/validators/1234567890123456789 \
   "name": "Validator #1",
   "subaccount": "My Subaccount",
   "state": "Active",
+  "withdrawal_credentials": "0x010000000000000000000000abcdef0123456789abcdef0123456789abcdef01",
   "balance": "32000506147000000000",
   "effective_balance": "32000000000000000000",
   "deposits": "32000000000000000000",
@@ -303,18 +302,12 @@ curl -X GET https://client.attestant.io/v1/eth/validators/1234567890123456789 \
 - **name**: The name assigned to the validator
 - **subaccount**: The subaccount to which the validator belongs
 - **state**: The current state of the validator. See [List Validators](#list-validators) for the possible values
+- **withdrawal_credentials**: 32-byte withdrawal credentials (hex-encoded). Set once the validator's deposit has been included on the consensus chain. Always present on `Active`, `Awaiting activation`, and `Exited` validators; on `Deposited` validators it is present once the consensus chain has processed the deposit; absent on `Unassigned` and `Awaiting deposit`
 - **balance**: Current balance in Wei
 - **effective_balance**: Current effective balance in Wei. Present on active validators
 - **deposits**: Total amount deposited from the execution chain in Wei
 - **activation_timestamp**: Unix timestamp (seconds) when the validator became active. Present on active validators
 - **timestamp**: Unix timestamp when the validator information was last updated
-
-**Status: 500 Internal Server Error**
-
-Returned when the validator identifier cannot be resolved. Possible response bodies:
-
-- `{"message":"failed to obtain customer validator"}` — no validator with that ID exists for the customer
-- `{"message":"invalid validator ID"}` — the supplied identifier is not a valid Attestant ID or BLS public key
 
 ---
 
@@ -409,7 +402,7 @@ curl -X POST https://client.attestant.io/v1/eth/validators \
 
 - **validators**: Array of created validator objects, each containing:
   - **id**: Unique identifier for the validator
-  - **pubkey**: The 48-byte BLS public key (hex-encoded)
+  - **pubkey**: The 48-byte BLS public key (hex-encoded). Returned as `public_key` in [List Validators](#list-validators) and [Get Validator](#get-validator) responses — same value, different field name
   - **name**: The name assigned to the validator
   - **amount**: The deposit amount in Gwei
   - **withdrawal_credentials**: 32-byte withdrawal credentials (hex-encoded)
@@ -617,10 +610,6 @@ curl -X GET https://client.attestant.io/v1/eth/validators/1234567890123456789/ex
 - **transaction.signature**: 96-byte BLS signature over the exit message (hex-encoded)
 - **encrypted_transaction** (alternative): If a verified PGP key is registered for the customer, this hex-encoded encrypted blob is returned instead of `transaction`. Decrypt with the customer's private PGP key before broadcasting.
 
-**Status: 412 Precondition Failed**
-
-Returned when the validator is not in a suitable state to exit (e.g., not active or already exiting). Body: `{"message": "Validator not in suitable state to exit"}`.
-
 ---
 
 ## Get Topup Transaction
@@ -677,13 +666,7 @@ curl -X POST https://client.attestant.io/v1/eth/validators/1234567890123456789/t
   - **data**: ABI-encoded `deposit(bytes,bytes,bytes,bytes32)` call (selector `0x22895118`)
   - **value**: Wei to send (matches the requested amount; `1 ETH` = `"1000000000000000000"`)
 
-Note: unlike the EIP-7002/EIP-7251 builders, this response does not include a `sender` field — any address can broadcast a top-up deposit on behalf of the validator.
-
-**Status: 500 Internal Server Error**
-
-Returned when the validator is not in a suitable state to be topped up (e.g., not `0x02` compounding, or not active). Body: `{"message": "Internal Server Error"}`.
-
-Note: per the OpenAPI specification this condition should return `412 Precondition Failed`, but the API currently returns `500` for this endpoint. Treat any non-2xx response as the validator being in an unsuitable state.
+**Note**: Unlike the EIP-7002 withdrawal builder, this response does not include a `sender` field — any address can broadcast a top-up deposit on behalf of the validator.
 
 ---
 
@@ -740,14 +723,8 @@ curl -X POST https://client.attestant.io/v1/eth/validators/1234567890123456789/w
 - **transactions**: Array of transactions to sign and broadcast. Each entry contains:
   - **sender**: The withdrawal address that must sign and broadcast
   - **contract_address**: The EIP-7002 withdrawal request predeploy
-  - **data**: Hex-encoded calldata — 48-byte validator pubkey followed by 8-byte amount in gwei (big-endian). For example, `000000003b9aca00` = 1,000,000,000 gwei = 1 ETH
+  - **data**: Hex-encoded calldata — 48-byte validator pubkey followed by 8-byte amount in Gwei (big-endian). For example, `000000003b9aca00` = 1,000,000,000 Gwei = 1 ETH
   - **value**: Wei to send (EIP-7002 request fee)
-
-**Status: 500 Internal Server Error**
-
-Returned when the validator is not in a suitable state for a partial withdrawal (e.g., not `0x02` compounding, or not active). Body: `{"message": "Internal Server Error"}`.
-
-Note: per the OpenAPI specification this condition should return `412 Precondition Failed`, but the API currently returns `500` for this endpoint. Treat any non-2xx response as the validator being in an unsuitable state.
 
 ---
 
