@@ -24,6 +24,21 @@ Content-Type: application/json
 
 ---
 
+## Step-by-Step: How to Stake
+
+The end-to-end flow to bring an Ethereum validator online via the Attestant API is six steps. Each step links to the endpoint reference below.
+
+1. **(Optional) Choose MEV relays.** Call [List MEV Relays](#list-mev-relays) to retrieve relay IDs if you want to pin specific relays to your subaccount instead of accepting the defaults.
+2. **Create a subaccount.** Call [Create Subaccount](#create-subaccount) with your fee recipient address and MEV relay preferences. The subaccount groups validators and holds their shared configuration. You can confirm the result with [Get Subaccount](#get-subaccount).
+3. **Create validators.** Call [Create Validators](#create-validators), passing the subaccount name and a list of validator names. Attestant returns the BLS pubkey, withdrawal credentials, signature, and pre-built deposit transaction data for each validator.
+4. **(Recommended) Verify the deposit data.** Decode the returned `transaction_data` and confirm it matches the other fields — see [Verifying Transaction Data](#verifying-transaction-data). For maximum trust, build the deposit call yourself using [Constructing Your Own Deposit Transaction](#constructing-your-own-deposit-transaction).
+5. **Submit the deposit(s).** Send ETH to the deposit contract following [Depositing Validators](#depositing-validators) — either one batch transaction for multiple validators or one transaction per validator.
+6. **Track activation.** Poll [Get Validator](#get-validator) (or [List Validators](#list-validators)) until each validator's `state` reaches `Active`. The state progresses `Awaiting deposit → Deposited → Awaiting activation → Active`.
+
+Once a validator is `Active`, day-to-day balance management — topping up compounding validators, partial withdrawals, full exits — is covered under [Lifecycle Operations](#lifecycle-operations).
+
+---
+
 ## List MEV Relays
 
 `GET /v1/eth/mevrelays`
@@ -164,150 +179,6 @@ curl -X GET "https://client.attestant.io/v1/accounts/subaccounts/My%20Subaccount
 - **name**: The subaccount name
 - **ethereum.fee_recipient**: The configured fee recipient address
 - **ethereum.mev_relays** (optional): Array of assigned MEV relay objects, each with an `id` field. Only present when MEV relays have been configured for the subaccount; omitted otherwise
-
----
-
-## List Validators
-
-`GET /v1/eth/validators`
-
-### Description
-
-Retrieves a list of validators. Each returned validator includes details about its configuration, current state, and balance. You can optionally filter validators by subaccount.
-
-### How to Use
-
-**Query Parameters:**
-
-- **subaccount** (string, optional): Filter validators by subaccount name. If not supplied, all validators are returned
-
-### Examples
-
-**List all validators:**
-
-```bash
-curl -X GET https://client.attestant.io/v1/eth/validators \
-  -H "Authorization: Bearer <your-api-token>"
-```
-
-**List validators for a specific subaccount:**
-
-```bash
-curl -X GET "https://client.attestant.io/v1/eth/validators?subaccount=My%20Subaccount" \
-  -H "Authorization: Bearer <your-api-token>"
-```
-
-### Response
-
-**Status: 200 OK**
-
-```json
-{
-  "validators": [
-    {
-      "id": "1234567890123456789",
-      "public_key": "0xaabbccdd00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899aabb",
-      "name": "Validator #1",
-      "subaccount": "My Subaccount",
-      "state": "Active",
-      "withdrawal_credentials": "0x010000000000000000000000abcdef0123456789abcdef0123456789abcdef01",
-      "balance": "32000506147000000000",
-      "effective_balance": "32000000000000000000",
-      "deposits": "32000000000000000000",
-      "activation_timestamp": "1772558616",
-      "timestamp": "1774021252"
-    },
-    {
-      "id": "9876543210987654321",
-      "public_key": "0x112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff0011",
-      "name": "Validator #2",
-      "subaccount": "My Subaccount",
-      "state": "Awaiting deposit",
-      "balance": "0",
-      "deposits": "0",
-      "timestamp": "1774021252"
-    }
-  ]
-}
-```
-
-**Response Fields:**
-
-- **validators**: Array of validator objects, each containing:
-  - **id**: Unique identifier for the validator
-  - **public_key**: The 48-byte BLS public key of the validator (hex-encoded)
-  - **name**: The name assigned to the validator
-  - **subaccount**: The subaccount to which the validator belongs
-  - **state**: The current state of the validator. Possible values:
-    - `Unassigned` — Not yet assigned to a customer
-    - `Awaiting deposit` — Assigned and awaiting a deposit on the execution chain
-    - `Deposited` — Matched to a deposit, awaiting inclusion on the consensus chain
-    - `Awaiting activation` — Included on the consensus chain, in the activation queue
-    - `Active` — Currently validating
-    - `Exited` — Exited and no longer active
-  - **withdrawal_credentials**: 32-byte withdrawal credentials (hex-encoded). Set once the validator's deposit has been included on the consensus chain. Always present on `Active`, `Awaiting activation`, and `Exited` validators; on `Deposited` validators it is present once the consensus chain has processed the deposit; absent on `Unassigned` and `Awaiting deposit`
-  - **balance**: Current balance in Wei
-  - **effective_balance**: Current effective balance in Wei. Present on active validators
-  - **deposits**: Total amount deposited from the execution chain in Wei
-  - **activation_timestamp**: Unix timestamp (seconds) when the validator became active. Present on active validators
-  - **timestamp**: Unix timestamp when the validator information was last updated
-
----
-
-## Get Validator
-
-`GET /v1/eth/validators/{validator_id}`
-
-### Description
-
-Retrieves details about a single validator, including its configuration, current state, and balance.
-
-### How to Use
-
-**Path Parameters:**
-
-- **validator_id** (string, required): Either the Attestant ID or the BLS public key of the validator (e.g., `"1385610059030986755"` or `"0xaabbccdd..."`).
-
-### Example
-
-```bash
-curl -X GET https://client.attestant.io/v1/eth/validators/1234567890123456789 \
-  -H "Authorization: Bearer <your-api-token>"
-```
-
-### Response
-
-**Status: 200 OK**
-
-```json
-{
-  "id": "1234567890123456789",
-  "public_key": "0xaabbccdd00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899aabb",
-  "name": "Validator #1",
-  "subaccount": "My Subaccount",
-  "state": "Active",
-  "withdrawal_credentials": "0x010000000000000000000000abcdef0123456789abcdef0123456789abcdef01",
-  "balance": "32000506147000000000",
-  "effective_balance": "32000000000000000000",
-  "deposits": "32000000000000000000",
-  "activation_timestamp": "1772558616",
-  "timestamp": "1774021252"
-}
-```
-
-**Response Fields:**
-
-- **id**: Unique identifier for the validator
-- **public_key**: The 48-byte BLS public key of the validator (hex-encoded)
-- **name**: The name assigned to the validator
-- **subaccount**: The subaccount to which the validator belongs
-- **state**: The current state of the validator. See [List Validators](#list-validators) for the possible values
-- **withdrawal_credentials**: 32-byte withdrawal credentials (hex-encoded). Set once the validator's deposit has been included on the consensus chain. Always present on `Active`, `Awaiting activation`, and `Exited` validators; on `Deposited` validators it is present once the consensus chain has processed the deposit; absent on `Unassigned` and `Awaiting deposit`
-- **balance**: Current balance in Wei
-- **effective_balance**: Current effective balance in Wei. Present on active validators
-- **deposits**: Total amount deposited from the execution chain in Wei
-- **activation_timestamp**: Unix timestamp (seconds) when the validator became active. Present on active validators
-- **timestamp**: Unix timestamp when the validator information was last updated
 
 ---
 
@@ -551,6 +422,150 @@ The deposit contract itself also verifies this root on-chain — if the `deposit
 
 ---
 
+## List Validators
+
+`GET /v1/eth/validators`
+
+### Description
+
+Retrieves a list of validators. Each returned validator includes details about its configuration, current state, and balance. You can optionally filter validators by subaccount.
+
+### How to Use
+
+**Query Parameters:**
+
+- **subaccount** (string, optional): Filter validators by subaccount name. If not supplied, all validators are returned
+
+### Examples
+
+**List all validators:**
+
+```bash
+curl -X GET https://client.attestant.io/v1/eth/validators \
+  -H "Authorization: Bearer <your-api-token>"
+```
+
+**List validators for a specific subaccount:**
+
+```bash
+curl -X GET "https://client.attestant.io/v1/eth/validators?subaccount=My%20Subaccount" \
+  -H "Authorization: Bearer <your-api-token>"
+```
+
+### Response
+
+**Status: 200 OK**
+
+```json
+{
+  "validators": [
+    {
+      "id": "1234567890123456789",
+      "public_key": "0xaabbccdd00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899aabb",
+      "name": "Validator #1",
+      "subaccount": "My Subaccount",
+      "state": "Active",
+      "withdrawal_credentials": "0x010000000000000000000000abcdef0123456789abcdef0123456789abcdef01",
+      "balance": "32000506147000000000",
+      "effective_balance": "32000000000000000000",
+      "deposits": "32000000000000000000",
+      "activation_timestamp": "1772558616",
+      "timestamp": "1774021252"
+    },
+    {
+      "id": "9876543210987654321",
+      "public_key": "0x112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff0011",
+      "name": "Validator #2",
+      "subaccount": "My Subaccount",
+      "state": "Awaiting deposit",
+      "balance": "0",
+      "deposits": "0",
+      "timestamp": "1774021252"
+    }
+  ]
+}
+```
+
+**Response Fields:**
+
+- **validators**: Array of validator objects, each containing:
+  - **id**: Unique identifier for the validator
+  - **public_key**: The 48-byte BLS public key of the validator (hex-encoded)
+  - **name**: The name assigned to the validator
+  - **subaccount**: The subaccount to which the validator belongs
+  - **state**: The current state of the validator. Possible values:
+    - `Unassigned` — Not yet assigned to a customer
+    - `Awaiting deposit` — Assigned and awaiting a deposit on the execution chain
+    - `Deposited` — Matched to a deposit, awaiting inclusion on the consensus chain
+    - `Awaiting activation` — Included on the consensus chain, in the activation queue
+    - `Active` — Currently validating
+    - `Exited` — Exited and no longer active
+  - **withdrawal_credentials**: 32-byte withdrawal credentials (hex-encoded). Set once the validator's deposit has been included on the consensus chain. Always present on `Active`, `Awaiting activation`, and `Exited` validators; on `Deposited` validators it is present once the consensus chain has processed the deposit; absent on `Unassigned` and `Awaiting deposit`
+  - **balance**: Current balance in Wei
+  - **effective_balance**: Current effective balance in Wei. Present on active validators
+  - **deposits**: Total amount deposited from the execution chain in Wei
+  - **activation_timestamp**: Unix timestamp (seconds) when the validator became active. Present on active validators
+  - **timestamp**: Unix timestamp when the validator information was last updated
+
+---
+
+## Get Validator
+
+`GET /v1/eth/validators/{validator_id}`
+
+### Description
+
+Retrieves details about a single validator, including its configuration, current state, and balance.
+
+### How to Use
+
+**Path Parameters:**
+
+- **validator_id** (string, required): Either the Attestant ID or the BLS public key of the validator (e.g., `"1385610059030986755"` or `"0xaabbccdd..."`).
+
+### Example
+
+```bash
+curl -X GET https://client.attestant.io/v1/eth/validators/1234567890123456789 \
+  -H "Authorization: Bearer <your-api-token>"
+```
+
+### Response
+
+**Status: 200 OK**
+
+```json
+{
+  "id": "1234567890123456789",
+  "public_key": "0xaabbccdd00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899aabb",
+  "name": "Validator #1",
+  "subaccount": "My Subaccount",
+  "state": "Active",
+  "withdrawal_credentials": "0x010000000000000000000000abcdef0123456789abcdef0123456789abcdef01",
+  "balance": "32000506147000000000",
+  "effective_balance": "32000000000000000000",
+  "deposits": "32000000000000000000",
+  "activation_timestamp": "1772558616",
+  "timestamp": "1774021252"
+}
+```
+
+**Response Fields:**
+
+- **id**: Unique identifier for the validator
+- **public_key**: The 48-byte BLS public key of the validator (hex-encoded)
+- **name**: The name assigned to the validator
+- **subaccount**: The subaccount to which the validator belongs
+- **state**: The current state of the validator. See [List Validators](#list-validators) for the possible values
+- **withdrawal_credentials**: 32-byte withdrawal credentials (hex-encoded). Set once the validator's deposit has been included on the consensus chain. Always present on `Active`, `Awaiting activation`, and `Exited` validators; on `Deposited` validators it is present once the consensus chain has processed the deposit; absent on `Unassigned` and `Awaiting deposit`
+- **balance**: Current balance in Wei
+- **effective_balance**: Current effective balance in Wei. Present on active validators
+- **deposits**: Total amount deposited from the execution chain in Wei
+- **activation_timestamp**: Unix timestamp (seconds) when the validator became active. Present on active validators
+- **timestamp**: Unix timestamp when the validator information was last updated
+
+---
+
 ## Lifecycle Operations
 
 The endpoints below support the validator lifecycle after activation: exiting, topping up the balance, and partial withdrawals. They are all pure transaction builders — calling them has no Attestant-side or on-chain effect. Only signing and broadcasting the returned transaction(s) will affect state.
@@ -561,54 +576,6 @@ Execution-layer operations target one of the following contracts:
 | --- | --- |
 | Withdrawal | EIP-7002 predeploy `0x00000961Ef480Eb55e80D19ad83579A64c007002` |
 | Topup | Official deposit contract `0x00000000219ab540356cBB839Cbe05303d7705Fa` |
-
----
-
-## Get Exit Transaction
-
-`GET /v1/eth/validators/{validator_id}/exittransaction`
-
-### Description
-
-Generates a BLS-signed voluntary exit message for an active validator. Attestant signs the message with the validator's consensus-layer key; the customer only needs to broadcast it to a beacon node to initiate the exit.
-
-If a verified PGP key has been registered for the customer, the returned transaction will instead be encrypted with that key.
-
-### How to Use
-
-**Path Parameters:**
-
-- **validator_id** (string, required): Either the Attestant ID or the BLS public key of the validator
-
-### Example
-
-```bash
-curl -X GET https://client.attestant.io/v1/eth/validators/1234567890123456789/exittransaction \
-  -H "Authorization: Bearer <your-api-token>"
-```
-
-### Response
-
-**Status: 200 OK**
-
-```json
-{
-  "transaction": {
-    "message": {
-      "epoch": "96437",
-      "validator_index": "1281812"
-    },
-    "signature": "0x8eb629978419232d8af4b516adb4bc9df342a0f7b5a70210d69d0947bdebbc6d8a4140addb3a011b27152853273733281063b0d700f3df61a12761b49a8e9de5ff8635f7eda9c782595d3ee1b8548ae6ec6a3ff1d48c3eea7ad9a3d741b040a8"
-  }
-}
-```
-
-**Response Fields:**
-
-- **transaction.message.epoch**: The earliest epoch at which the exit takes effect
-- **transaction.message.validator_index**: The consensus-layer validator index
-- **transaction.signature**: 96-byte BLS signature over the exit message (hex-encoded)
-- **encrypted_transaction** (alternative): If a verified PGP key is registered for the customer, this hex-encoded encrypted blob is returned instead of `transaction`. Decrypt with the customer's private PGP key before broadcasting.
 
 ---
 
@@ -725,6 +692,54 @@ curl -X POST https://client.attestant.io/v1/eth/validators/1234567890123456789/w
   - **contract_address**: The EIP-7002 withdrawal request predeploy
   - **data**: Hex-encoded calldata — 48-byte validator pubkey followed by 8-byte amount in Gwei (big-endian). For example, `000000003b9aca00` = 1,000,000,000 Gwei = 1 ETH
   - **value**: Wei to send (EIP-7002 request fee)
+
+---
+
+## Get Exit Transaction
+
+`GET /v1/eth/validators/{validator_id}/exittransaction`
+
+### Description
+
+Generates a BLS-signed voluntary exit message for an active validator. Attestant signs the message with the validator's consensus-layer key; the customer only needs to broadcast it to a beacon node to initiate the exit.
+
+If a verified PGP key has been registered for the customer, the returned transaction will instead be encrypted with that key.
+
+### How to Use
+
+**Path Parameters:**
+
+- **validator_id** (string, required): Either the Attestant ID or the BLS public key of the validator
+
+### Example
+
+```bash
+curl -X GET https://client.attestant.io/v1/eth/validators/1234567890123456789/exittransaction \
+  -H "Authorization: Bearer <your-api-token>"
+```
+
+### Response
+
+**Status: 200 OK**
+
+```json
+{
+  "transaction": {
+    "message": {
+      "epoch": "96437",
+      "validator_index": "1281812"
+    },
+    "signature": "0x8eb629978419232d8af4b516adb4bc9df342a0f7b5a70210d69d0947bdebbc6d8a4140addb3a011b27152853273733281063b0d700f3df61a12761b49a8e9de5ff8635f7eda9c782595d3ee1b8548ae6ec6a3ff1d48c3eea7ad9a3d741b040a8"
+  }
+}
+```
+
+**Response Fields:**
+
+- **transaction.message.epoch**: The earliest epoch at which the exit takes effect
+- **transaction.message.validator_index**: The consensus-layer validator index
+- **transaction.signature**: 96-byte BLS signature over the exit message (hex-encoded)
+- **encrypted_transaction** (alternative): If a verified PGP key is registered for the customer, this hex-encoded encrypted blob is returned instead of `transaction`. Decrypt with the customer's private PGP key before broadcasting.
 
 ---
 
