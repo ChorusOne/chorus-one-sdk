@@ -73,7 +73,54 @@ curl -X POST https://client.attestant.io/v1/accounts/subaccounts \
 
 - **name**: The subaccount name
 - **ethereum.fee_recipient**: The configured fee recipient address
-- **ethereum.mev_relays**: Array of assigned MEV relay objects, each with an `id` field
+- **ethereum.mev_relays** (optional): Array of assigned MEV relay objects, each with an `id` field. Only present when MEV relays have been configured for the subaccount; omitted otherwise
+
+---
+
+## Get Subaccount
+
+`GET /v1/accounts/subaccounts/{subaccount_id}`
+
+### Description
+
+Retrieves information about a single subaccount, including its fee recipient and assigned MEV relays.
+
+### How to Use
+
+**Path Parameters:**
+
+- **subaccount_id** (string, required): The customer-supplied subaccount name (e.g., `"My Subaccount"`). URL-encode any special characters.
+
+### Example
+
+```bash
+curl -X GET "https://client.attestant.io/v1/accounts/subaccounts/My%20Subaccount" \
+  -H "Authorization: Bearer <your-api-token>"
+```
+
+### Response
+
+**Status: 200 OK**
+
+```json
+{
+  "name": "My Subaccount",
+  "ethereum": {
+    "fee_recipient": "0xAbCdEf0123456789AbCdEf0123456789AbCdEf01",
+    "mev_relays": [{ "id": "1234567890123456789" }]
+  }
+}
+```
+
+**Response Fields:**
+
+- **name**: The subaccount name
+- **ethereum.fee_recipient**: The configured fee recipient address
+- **ethereum.mev_relays** (optional): Array of assigned MEV relay objects, each with an `id` field. Only present when MEV relays have been configured for the subaccount; omitted otherwise
+
+**Status: 404 Not Found**
+
+Returned when no subaccount exists with the supplied name. Body: `{"message": "Subaccount not found"}`.
 
 ---
 
@@ -161,6 +208,65 @@ curl -X GET "https://client.attestant.io/v1/eth/validators?subaccount=My%20Subac
   - **deposits**: Total amount deposited from the execution chain in Wei
   - **activation_timestamp**: Unix timestamp (seconds) when the validator became active. Present on active validators
   - **timestamp**: Unix timestamp when the validator information was last updated
+
+---
+
+## Get Validator
+
+`GET /v1/eth/validators/{validator_id}`
+
+### Description
+
+Retrieves details about a single validator, including its configuration, current state, and balance.
+
+### How to Use
+
+**Path Parameters:**
+
+- **validator_id** (string, required): Either the Attestant ID or the BLS public key of the validator (e.g., `"1385610059030986755"` or `"0xaabbccdd..."`).
+
+### Example
+
+```bash
+curl -X GET https://client.attestant.io/v1/eth/validators/1234567890123456789 \
+  -H "Authorization: Bearer <your-api-token>"
+```
+
+### Response
+
+**Status: 200 OK**
+
+```json
+{
+  "id": "1234567890123456789",
+  "public_key": "0xaabbccdd00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899aabb",
+  "name": "Validator #1",
+  "subaccount": "My Subaccount",
+  "state": "Active",
+  "balance": "32000506147000000000",
+  "effective_balance": "32000000000000000000",
+  "deposits": "32000000000000000000",
+  "activation_timestamp": "1772558616",
+  "timestamp": "1774021252"
+}
+```
+
+**Response Fields:**
+
+- **id**: Unique identifier for the validator
+- **public_key**: The 48-byte BLS public key of the validator (hex-encoded)
+- **name**: The name assigned to the validator
+- **subaccount**: The subaccount to which the validator belongs
+- **state**: The current state of the validator. See [List Validators](#list-validators) for the possible values
+- **balance**: Current balance in Wei
+- **effective_balance**: Current effective balance in Wei. Present on active validators
+- **deposits**: Total amount deposited from the execution chain in Wei
+- **activation_timestamp**: Unix timestamp (seconds) when the validator became active. Present on active validators
+- **timestamp**: Unix timestamp when the validator information was last updated
+
+**Status: 404 Not Found**
+
+Returned when no validator exists with the supplied identifier. Response body is empty.
 
 ---
 
@@ -401,6 +507,312 @@ DepositData {
 ```
 
 The deposit contract itself also verifies this root on-chain — if the `deposit_data_root` does not match the other fields, the transaction will revert.
+
+---
+
+## Lifecycle Operations
+
+The endpoints below support the validator lifecycle after activation: exiting, converting to a compounding validator, consolidating into another, topping up the balance, and partial withdrawals. They are all pure transaction builders — calling them has no Attestant-side or on-chain effect. Only signing and broadcasting the returned transaction(s) will affect state.
+
+Execution-layer operations target one of the following contracts:
+
+| Operation | Target |
+| --- | --- |
+| Compound / Consolidate | EIP-7251 predeploy `0x0000BBdDc7CE488642fb579F8B00f3a590007251` |
+| Withdrawal | EIP-7002 predeploy `0x00000961Ef480Eb55e80D19ad83579A64c007002` |
+| Topup | Official deposit contract `0x00000000219ab540356cBB839Cbe05303d7705Fa` |
+
+---
+
+## Get Exit Transaction
+
+`GET /v1/eth/validators/{validator_id}/exittransaction`
+
+### Description
+
+Generates a BLS-signed voluntary exit message for an active validator. Attestant signs the message with the validator's consensus-layer key; the customer only needs to broadcast it to a beacon node to initiate the exit.
+
+If a verified PGP key has been registered for the customer, the returned transaction will instead be encrypted with that key.
+
+### How to Use
+
+**Path Parameters:**
+
+- **validator_id** (string, required): Either the Attestant ID or the BLS public key of the validator
+
+### Example
+
+```bash
+curl -X GET https://client.attestant.io/v1/eth/validators/1234567890123456789/exittransaction \
+  -H "Authorization: Bearer <your-api-token>"
+```
+
+### Response
+
+**Status: 200 OK**
+
+```json
+{
+  "transaction": {
+    "message": {
+      "epoch": "96437",
+      "validator_index": "1281812"
+    },
+    "signature": "0x8eb629978419232d8af4b516adb4bc9df342a0f7b5a70210d69d0947bdebbc6d8a4140addb3a011b27152853273733281063b0d700f3df61a12761b49a8e9de5ff8635f7eda9c782595d3ee1b8548ae6ec6a3ff1d48c3eea7ad9a3d741b040a8"
+  }
+}
+```
+
+**Response Fields:**
+
+- **transaction.message.epoch**: The earliest epoch at which the exit takes effect
+- **transaction.message.validator_index**: The consensus-layer validator index
+- **transaction.signature**: 96-byte BLS signature over the exit message (hex-encoded)
+- **encrypted_transaction** (alternative): If a verified PGP key is registered for the customer, this hex-encoded encrypted blob is returned instead of `transaction`. Decrypt with the customer's private PGP key before broadcasting.
+
+**Status: 412 Precondition Failed**
+
+Returned when the validator is not in a suitable state to exit (e.g., not active or already exiting).
+
+---
+
+## Get Compound Transaction
+
+`GET /v1/eth/validators/{validator_id}/compoundtransaction`
+
+### Description
+
+Generates an EIP-7251 transaction that converts a validator's withdrawal credentials from standard (`0x01`) to compounding (`0x02`). The returned transaction targets the EIP-7251 consolidation request predeploy with the same validator pubkey as both source and target.
+
+The returned transaction must be signed by the withdrawal address and broadcast to take effect.
+
+### How to Use
+
+**Path Parameters:**
+
+- **validator_id** (string, required): Either the Attestant ID or the BLS public key of the validator
+
+### Example
+
+```bash
+curl -X GET https://client.attestant.io/v1/eth/validators/1234567890123456789/compoundtransaction \
+  -H "Authorization: Bearer <your-api-token>"
+```
+
+### Response
+
+**Status: 200 OK**
+
+```json
+{
+  "transactions": [
+    {
+      "sender": "0xD4BB555d3B0D7fF17c606161B44E372689C14F4B",
+      "contract_address": "0x0000BBdDc7CE488642fb579F8B00f3a590007251",
+      "data": "0xa299a51e00a93cd1aa39acbf50f38b3d3be7d934580fce2ac6fbf1ff5b8b25d435c6cd066278fea9b2002aba3d1982e3a299a51e00a93cd1aa39acbf50f38b3d3be7d934580fce2ac6fbf1ff5b8b25d435c6cd066278fea9b2002aba3d1982e3",
+      "value": "1001"
+    }
+  ]
+}
+```
+
+**Response Fields:**
+
+- **transactions**: Array of execution-layer transactions to sign and broadcast. Each entry contains:
+  - **sender**: The withdrawal address that must sign and broadcast this transaction
+  - **contract_address**: The EIP-7251 predeploy
+  - **data**: Hex-encoded calldata — source pubkey followed by target pubkey (equal for a compound conversion)
+  - **value**: Wei to send with the transaction (EIP-7251 request fee)
+
+**Status: 412 Precondition Failed**
+
+Returned when the validator is not in a suitable state (e.g., already `0x02` compounding, or not active).
+
+---
+
+## Get Consolidate Transaction
+
+`POST /v1/eth/validators/{validator_id}/consolidatetransaction`
+
+### Description
+
+Generates an EIP-7251 transaction that consolidates the source validator's balance into a target compounding (`0x02`) validator. When broadcast, the source validator is queued for exit and its balance is moved to the target.
+
+The returned transaction must be signed by the withdrawal address and broadcast to take effect.
+
+### How to Use
+
+**Path Parameters:**
+
+- **validator_id** (string, required): The **source** validator (Attestant ID or BLS pubkey)
+
+**Request Body:**
+
+- **target_validator** (string, required): The target validator that will receive the consolidated balance. Must be a compounding (`0x02`) validator owned by the same customer.
+
+### Example
+
+```bash
+curl -X POST https://client.attestant.io/v1/eth/validators/1234567890123456789/consolidatetransaction \
+  -H "Authorization: Bearer <your-api-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "target_validator": "9876543210987654321"
+  }'
+```
+
+### Response
+
+**Status: 200 OK**
+
+```json
+{
+  "transactions": [
+    {
+      "sender": "0xD4BB555d3B0D7fF17c606161B44E372689C14F4B",
+      "contract_address": "0x0000BBdDc7CE488642fb579F8B00f3a590007251",
+      "data": "0xa299a51e...1982e3b5844292...c470f",
+      "value": "1001"
+    }
+  ]
+}
+```
+
+**Response Fields:**
+
+- **transactions**: Array of execution-layer transactions to sign and broadcast. Each entry contains:
+  - **sender**: The withdrawal address that must sign and broadcast
+  - **contract_address**: The EIP-7251 predeploy
+  - **data**: Hex-encoded calldata — source validator pubkey followed by target validator pubkey
+  - **value**: Wei to send (EIP-7251 request fee)
+
+**Status: 412 Precondition Failed**
+
+Returned when the source is not active or the target is not eligible (e.g., not compounding).
+
+---
+
+## Get Topup Transaction
+
+`POST /v1/eth/validators/{validator_id}/topuptransaction`
+
+### Description
+
+Generates a deposit transaction that increases the balance of an active compounding (`0x02`) validator. The transaction targets the standard Ethereum deposit contract.
+
+The returned transaction must be signed and broadcast to take effect.
+
+### How to Use
+
+**Path Parameters:**
+
+- **validator_id** (string, required): The validator to top up (Attestant ID or BLS pubkey)
+
+**Request Body:**
+
+- **amount** (string, required): The amount to top up (e.g., `"1 ETH"` or `"32000000000 GWEI"`). Must be a whole number; an amount without units is treated as Wei.
+
+### Example
+
+```bash
+curl -X POST https://client.attestant.io/v1/eth/validators/1234567890123456789/topuptransaction \
+  -H "Authorization: Bearer <your-api-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": "1 ETH"
+  }'
+```
+
+### Response
+
+**Status: 200 OK**
+
+```json
+{
+  "transactions": [
+    {
+      "contract_address": "0x00000000219ab540356cBB839Cbe05303d7705Fa",
+      "data": "0x22895118...",
+      "value": "1000000000000000000"
+    }
+  ]
+}
+```
+
+**Response Fields:**
+
+- **transactions**: Array of transactions to sign and broadcast. Each entry contains:
+  - **contract_address**: The official Ethereum deposit contract
+  - **data**: ABI-encoded `deposit(bytes,bytes,bytes,bytes32)` call (selector `0x22895118`)
+  - **value**: Wei to send (matches the requested amount; `1 ETH` = `"1000000000000000000"`)
+
+Note: unlike the EIP-7002/EIP-7251 builders, this response does not include a `sender` field — any address can broadcast a top-up deposit on behalf of the validator.
+
+**Status: 412 Precondition Failed**
+
+Returned when the validator is not in a suitable state to be topped up (e.g., not `0x02` compounding, or not active).
+
+---
+
+## Get Withdrawal Transaction
+
+`POST /v1/eth/validators/{validator_id}/withdrawaltransaction`
+
+### Description
+
+Generates an EIP-7002 partial withdrawal request. When broadcast, the requested amount is withdrawn from the validator's balance to the withdrawal address. The transaction targets the EIP-7002 withdrawal request predeploy.
+
+The returned transaction must be signed by the withdrawal address and broadcast to take effect.
+
+### How to Use
+
+**Path Parameters:**
+
+- **validator_id** (string, required): The validator (Attestant ID or BLS pubkey)
+
+**Request Body:**
+
+- **amount** (string, required): The amount to withdraw (e.g., `"1 ETH"`). Must be a whole number; an amount without units is treated as Wei.
+
+### Example
+
+```bash
+curl -X POST https://client.attestant.io/v1/eth/validators/1234567890123456789/withdrawaltransaction \
+  -H "Authorization: Bearer <your-api-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": "1 ETH"
+  }'
+```
+
+### Response
+
+**Status: 200 OK**
+
+```json
+{
+  "transactions": [
+    {
+      "sender": "0xD4BB555d3B0D7fF17c606161B44E372689C14F4B",
+      "contract_address": "0x00000961Ef480Eb55e80D19ad83579A64c007002",
+      "data": "0xb5844292ad0e0a0c3c06425e5672c356a37aa2b58d24774817e19500a22703d5ff05a9e0af99054ff625cc51761c470f000000003b9aca00",
+      "value": "1001"
+    }
+  ]
+}
+```
+
+**Response Fields:**
+
+- **transactions**: Array of transactions to sign and broadcast. Each entry contains:
+  - **sender**: The withdrawal address that must sign and broadcast
+  - **contract_address**: The EIP-7002 withdrawal request predeploy
+  - **data**: Hex-encoded calldata — 48-byte validator pubkey followed by 8-byte amount in gwei (big-endian). For example, `000000003b9aca00` = 1,000,000,000 gwei = 1 ETH
+  - **value**: Wei to send (EIP-7002 request fee)
+
+**Status: 412 Precondition Failed**
+
+Returned when the validator is not in a suitable state for a partial withdrawal.
 
 ---
 
