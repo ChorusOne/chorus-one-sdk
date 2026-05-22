@@ -117,7 +117,7 @@ curl -X POST https://client.attestant.io/v1/accounts/subaccounts \
   -d '{
     "name": "My Subaccount",
     "ethereum": {
-      "fee_recipient": "0xAbCdEf0123456789AbCdEf0123456789AbCdEf01",
+      "fee_recipient": "0xabCDeF0123456789AbcdEf0123456789aBCDEF01",
       "default_mev_relays": true
     }
   }'
@@ -131,7 +131,7 @@ curl -X POST https://client.attestant.io/v1/accounts/subaccounts \
 {
   "name": "My Subaccount",
   "ethereum": {
-    "fee_recipient": "0xAbCdEf0123456789AbCdEf0123456789AbCdEf01",
+    "fee_recipient": "0xabCDeF0123456789AbcdEf0123456789aBCDEF01",
     "mev_relays": [{ "id": "1234567890123456789" }]
   }
 }
@@ -174,7 +174,7 @@ curl -X GET "https://client.attestant.io/v1/accounts/subaccounts/My%20Subaccount
 {
   "name": "My Subaccount",
   "ethereum": {
-    "fee_recipient": "0xAbCdEf0123456789AbCdEf0123456789AbCdEf01",
+    "fee_recipient": "0xabCDeF0123456789AbcdEf0123456789aBCDEF01",
     "mev_relays": [{ "id": "1234567890123456789" }]
   }
 }
