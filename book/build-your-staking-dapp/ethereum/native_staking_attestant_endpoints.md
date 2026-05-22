@@ -442,6 +442,8 @@ Retrieves a list of validators. Each returned validator includes details about i
 
 - **subaccount** (string, optional): Filter validators by subaccount name. If not supplied, all validators visible to the calling token are returned.
 
+**Note**: Called with an account-wide token and no `subaccount` filter, this endpoint returns every validator across every subaccount on the account. Use a subaccount-scoped token (see [Tokens](#tokens)) for customer-facing access.
+
 ### Examples
 
 **List all validators:**
