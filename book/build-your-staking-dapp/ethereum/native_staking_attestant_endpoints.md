@@ -757,12 +757,12 @@ The token string itself is **returned only once**, in the `POST /v1/accounts/tok
 
 ### Scopes
 
-| Scope       | Permitted operations                                                                                                                                                                                          |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `read-only` | All `GET` endpoints that read state. The GETs that **generate** a signed transaction or message — `GET /v1/eth/validators/{validator_id}/exittransaction`, `GET /v1/eth/validators/exittransactions` (bulk), and `GET /v1/eth/validators/{validator_id}/compoundtransaction` — require `assign` or higher  |
-| `assign`    | `read-only` + create validators (`POST /v1/eth/validators`, `POST /v1/eth/validators/createassignvalidators`), generate any validator transaction (top-up, withdrawal, exit, bulk exit, consolidate, compound), and initiate exits (`POST /v1/eth/validators/{validator_id}/exit`)                          |
-| `operate`   | `assign` + create subaccounts and update their configuration (fee recipient, MEV relays); issue lower-or-equal-scope tokens (`read-only`, `assign`, `operate`) and delete tokens                              |
-| `all`       | Every API operation. Reserved for portal use and may be rejected by the API when requested through this endpoint                                                                                              |
+| Scope       | Permitted operations                                                                                            |
+| ----------- | --------------------------------------------------------------------------------------------------------------- |
+| `read-only` | Read account state. GETs that generate a signed transaction or message require `assign` or higher               |
+| `assign`    | `read-only` + create validators and perform validator-lifecycle actions (generate transactions, initiate exits) |
+| `operate`   | `assign` + create and update subaccounts (fee recipient, MEV relays); issue lower-or-equal-scope tokens and revoke tokens |
+| `all`       | Every API operation. Reserved for portal use; rejected when requested via this endpoint                         |
 
 ### Subaccount Scoping
 
