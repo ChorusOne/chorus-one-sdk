@@ -4,7 +4,7 @@ The Bitwise Onchain Solutions Native Staking API allows you to manage subaccount
 
 ## Authentication
 
-All API requests require a Bearer token in the `Authorization` header. You can obtain a token by reaching out to the Chorus One team.
+All API requests require a Bearer token in the `Authorization` header. You can obtain a token by reaching out to the Chorus One team. See [Tokens](#tokens) for the full token lifecycle.
 
 **Base URLs:**
 
@@ -84,25 +84,31 @@ curl -X GET https://client.attestant.io/v1/eth/mevrelays \
 
 ---
 
-## Create Subaccount
+## Subaccounts
+
+A **subaccount** is an in-account grouping of validators that share configuration — fee recipient and MEV relay set. Every validator is assigned to exactly one subaccount, and an API token may be restricted to a single subaccount (see [Tokens](#tokens)).
+
+The endpoints below let you create new subaccounts and inspect existing ones.
+
+### Create Subaccount
 
 `POST /v1/accounts/subaccounts`
 
-### Description
+#### Description
 
 Creates a new subaccount. A subaccount contains configuration for validators, such as the fee recipient address and MEV relay settings. You must create a subaccount before creating validators.
 
-### How to Use
+#### How to Use
 
 **Request Body:**
 
 - **name** (string, required): The subaccount name (e.g., `"My Subaccount"`)
 - **ethereum** (object, required):
-  - **fee_recipient** (string, required): An EIP-55 checksummed Ethereum address that will receive MEV rewards and tips
+  - **fee_recipient** (string, required): An EIP-55 checksummed Ethereum address. Receives MEV rewards and tips, **and** is used as the withdrawal address for every validator created in this subaccount (encoded into each validator's `withdrawal_credentials`).
   - **default_mev_relays** (boolean, optional): Use all available MEV relays. Default is `false`
   - **mev_relays** (array, optional): Specific MEV relay IDs to use (see [List MEV Relays](#list-mev-relays))
 
-### Example
+#### Example
 
 ```bash
 curl -X POST https://client.attestant.io/v1/accounts/subaccounts \
@@ -117,7 +123,7 @@ curl -X POST https://client.attestant.io/v1/accounts/subaccounts \
   }'
 ```
 
-### Response
+#### Response
 
 **Status: 201 Created**
 
@@ -139,28 +145,28 @@ curl -X POST https://client.attestant.io/v1/accounts/subaccounts \
 
 ---
 
-## Get Subaccount
+### Get Subaccount
 
 `GET /v1/accounts/subaccounts/{subaccount_id}`
 
-### Description
+#### Description
 
 Retrieves information about a single subaccount, including its fee recipient and assigned MEV relays.
 
-### How to Use
+#### How to Use
 
 **Path Parameters:**
 
 - **subaccount_id** (string, required): The customer-supplied subaccount name (e.g., `"My Subaccount"`). URL-encode any special characters.
 
-### Example
+#### Example
 
 ```bash
 curl -X GET "https://client.attestant.io/v1/accounts/subaccounts/My%20Subaccount" \
   -H "Authorization: Bearer <your-api-token>"
 ```
 
-### Response
+#### Response
 
 **Status: 200 OK**
 
@@ -276,7 +282,7 @@ curl -X POST https://client.attestant.io/v1/eth/validators \
   - **pubkey**: The 48-byte BLS public key (hex-encoded). Returned as `public_key` in [List Validators](#list-validators) and [Get Validator](#get-validator) responses — same value, different field name
   - **name**: The name assigned to the validator
   - **amount**: The deposit amount in Gwei
-  - **withdrawal_credentials**: 32-byte withdrawal credentials (hex-encoded)
+  - **withdrawal_credentials**: 32-byte withdrawal credentials (hex-encoded). The last 20 bytes are the withdrawal address, which is the subaccount's `fee_recipient` (see [Create Subaccount](#create-subaccount)).
   - **deposit_message_root**: Hash of the deposit message (hex-encoded)
   - **deposit_data_root**: Hash of the deposit data (hex-encoded)
   - **fork_version**: Ethereum fork version used to generate the signature
@@ -434,7 +440,7 @@ Retrieves a list of validators. Each returned validator includes details about i
 
 **Query Parameters:**
 
-- **subaccount** (string, optional): Filter validators by subaccount name. If not supplied, all validators are returned
+- **subaccount** (string, optional): Filter validators by subaccount name. If not supplied, all validators visible to the calling token are returned.
 
 ### Examples
 
@@ -579,17 +585,17 @@ Execution-layer operations target one of the following contracts:
 
 ---
 
-## Get Topup Transaction
+### Get Topup Transaction
 
 `POST /v1/eth/validators/{validator_id}/topuptransaction`
 
-### Description
+#### Description
 
 Generates a deposit transaction that increases the balance of an active compounding (`0x02`) validator. The transaction targets the standard Ethereum deposit contract.
 
 The returned transaction must be signed and broadcast to take effect.
 
-### How to Use
+#### How to Use
 
 **Path Parameters:**
 
@@ -599,7 +605,7 @@ The returned transaction must be signed and broadcast to take effect.
 
 - **amount** (string, required): The amount to top up (e.g., `"1 ETH"` or `"32000000000 GWEI"`). Must be a whole number; an amount without units is treated as Wei.
 
-### Example
+#### Example
 
 ```bash
 curl -X POST https://client.attestant.io/v1/eth/validators/1234567890123456789/topuptransaction \
@@ -610,7 +616,7 @@ curl -X POST https://client.attestant.io/v1/eth/validators/1234567890123456789/t
   }'
 ```
 
-### Response
+#### Response
 
 **Status: 200 OK**
 
@@ -637,17 +643,17 @@ curl -X POST https://client.attestant.io/v1/eth/validators/1234567890123456789/t
 
 ---
 
-## Get Withdrawal Transaction
+### Get Withdrawal Transaction
 
 `POST /v1/eth/validators/{validator_id}/withdrawaltransaction`
 
-### Description
+#### Description
 
 Generates an EIP-7002 partial withdrawal request for an active compounding (`0x02`) validator. When broadcast, the requested amount is withdrawn from the validator's balance to the withdrawal address. The transaction targets the EIP-7002 withdrawal request predeploy.
 
 The returned transaction must be signed by the withdrawal address and broadcast to take effect.
 
-### How to Use
+#### How to Use
 
 **Path Parameters:**
 
@@ -657,7 +663,7 @@ The returned transaction must be signed by the withdrawal address and broadcast 
 
 - **amount** (string, required): The amount to withdraw (e.g., `"1 ETH"`). Must be a whole number; an amount without units is treated as Wei.
 
-### Example
+#### Example
 
 ```bash
 curl -X POST https://client.attestant.io/v1/eth/validators/1234567890123456789/withdrawaltransaction \
@@ -668,7 +674,7 @@ curl -X POST https://client.attestant.io/v1/eth/validators/1234567890123456789/w
   }'
 ```
 
-### Response
+#### Response
 
 **Status: 200 OK**
 
@@ -695,30 +701,30 @@ curl -X POST https://client.attestant.io/v1/eth/validators/1234567890123456789/w
 
 ---
 
-## Get Exit Transaction
+### Get Exit Transaction
 
 `GET /v1/eth/validators/{validator_id}/exittransaction`
 
-### Description
+#### Description
 
 Generates a BLS-signed voluntary exit message for an active validator. Attestant signs the message with the validator's consensus-layer key; the customer only needs to broadcast it to a beacon node to initiate the exit.
 
 If a verified PGP key has been registered for the customer, the returned transaction will instead be encrypted with that key.
 
-### How to Use
+#### How to Use
 
 **Path Parameters:**
 
 - **validator_id** (string, required): Either the Attestant ID or the BLS public key of the validator
 
-### Example
+#### Example
 
 ```bash
 curl -X GET https://client.attestant.io/v1/eth/validators/1234567890123456789/exittransaction \
   -H "Authorization: Bearer <your-api-token>"
 ```
 
-### Response
+#### Response
 
 **Status: 200 OK**
 
@@ -740,6 +746,208 @@ curl -X GET https://client.attestant.io/v1/eth/validators/1234567890123456789/ex
 - **transaction.message.validator_index**: The consensus-layer validator index
 - **transaction.signature**: 96-byte BLS signature over the exit message (hex-encoded)
 - **encrypted_transaction** (alternative): If a verified PGP key is registered for the customer, this hex-encoded encrypted blob is returned instead of `transaction`. Decrypt with the customer's private PGP key before broadcasting.
+
+---
+
+## Tokens
+
+The Bitwise Onchain Solutions account uses bearer tokens for API authentication. Each token carries a *scope* (which operations it permits) and may be restricted to a single [subaccount](#subaccounts) (limiting the data the token can read). Tokens are issued, listed, and revoked through the four endpoints below.
+
+The token string itself is **returned only once**, in the `POST /v1/accounts/tokens` response — if it is lost it must be deleted and re-issued.
+
+### Scopes
+
+| Scope       | Permitted operations                                                                                                                                                                                          |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `read-only` | All `GET` endpoints that read state. The GETs that **generate** a signed transaction or message — `GET /v1/eth/validators/{validator_id}/exittransaction`, `GET /v1/eth/validators/exittransactions` (bulk), and `GET /v1/eth/validators/{validator_id}/compoundtransaction` — require `assign` or higher  |
+| `assign`    | `read-only` + create validators (`POST /v1/eth/validators`, `POST /v1/eth/validators/createassignvalidators`), generate any validator transaction (top-up, withdrawal, exit, bulk exit, consolidate, compound), and initiate exits (`POST /v1/eth/validators/{validator_id}/exit`)                          |
+| `operate`   | `assign` + create subaccounts and update their configuration (fee recipient, MEV relays); issue lower-or-equal-scope tokens (`read-only`, `assign`, `operate`) and delete tokens                              |
+| `all`       | Every API operation. Reserved for portal use and may be rejected by the API when requested through this endpoint                                                                                              |
+
+### Subaccount Scoping
+
+A token MAY be restricted to a single subaccount by setting the `subaccount` field on creation. When set, the token can only read and act on data within that subaccount. When unset, the token is account-wide and can read every subaccount on the account.
+
+---
+
+### List Tokens
+
+`GET /v1/accounts/tokens`
+
+#### Description
+
+Returns metadata for every token on the account. The actual token string is never included.
+
+#### Example
+
+```bash
+curl -X GET https://client.attestant.io/v1/accounts/tokens \
+  -H "Authorization: Bearer <your-api-token>"
+```
+
+#### Response
+
+**Status: 200 OK**
+
+```json
+[
+  {
+    "id": "1234567890123456789",
+    "name": "Customer 1 read-only",
+    "subaccount": "Customer 1",
+    "scope": "read-only",
+    "created": "2026-05-22T06:13:34+0000",
+    "expiry": "2027-05-22T06:13:33+0000"
+  }
+]
+```
+
+**Response Fields (per token):**
+
+- **id**: Attestant identifier for the token
+- **name**: The token name
+- **subaccount** (optional): If present, the token is restricted to this subaccount. **If absent, the token is account-wide.**
+- **scope**: One of `read-only`, `assign`, `operate`, `all`
+- **created**: Creation timestamp (ISO 8601)
+- **expiry** (optional): Expiration timestamp. **If absent, the token does not expire.**
+
+---
+
+### Get Token
+
+`GET /v1/accounts/tokens/{token_id}`
+
+#### Description
+
+Returns metadata for a single token. As with [List Tokens](#list-tokens), the actual token string is never returned.
+
+#### How to Use
+
+**Path Parameters:**
+
+- **token_id** (string, required): Numeric Attestant token ID (e.g., `"1904441549064766374"`).
+
+#### Example
+
+```bash
+curl -X GET https://client.attestant.io/v1/accounts/tokens/1904441549064766374 \
+  -H "Authorization: Bearer <your-api-token>"
+```
+
+#### Response
+
+**Status: 200 OK**
+
+```json
+{
+  "id": "1904441549064766374",
+  "name": "Customer 1 read-only",
+  "subaccount": "Customer 1",
+  "scope": "read-only",
+  "created": "2026-05-22T06:22:26+0000",
+  "expiry": "2027-01-01T00:00:00+0000"
+}
+```
+
+Fields are identical to those in [List Tokens](#list-tokens).
+
+---
+
+### Create Token
+
+`POST /v1/accounts/tokens`
+
+#### Description
+
+Creates a new account token. The caller must hold a token with `scope: operate` or higher.
+
+The returned `token` string is the secret to be stored or delivered to the consumer. **It is only returned in this response — it cannot be recovered from `GET /v1/accounts/tokens/{id}` afterwards.** If lost, the token must be deleted and re-issued.
+
+#### How to Use
+
+**Request Body:**
+
+- **name** (string, required): Human-readable token name.
+- **scope** (string, required): One of `read-only`, `assign`, `operate`, `all`. (`all` is reserved and may be rejected by the API even when listed in the enum.)
+- **subaccount** (string, optional): Subaccount to restrict this token to. If omitted, the token is account-wide — see [Subaccount Scoping](#subaccount-scoping).
+- **expiry** (string, optional): ISO 8601-formatted expiration timestamp (`YYYY-MM-DDTHH:MM:SS+ZZZZ`). If omitted, the token never expires.
+
+#### Example
+
+```bash
+curl -X POST https://client.attestant.io/v1/accounts/tokens \
+  -H "Authorization: Bearer <your-api-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Customer 1 read-only",
+    "scope": "read-only",
+    "subaccount": "Customer 1",
+    "expiry": "2027-01-01T00:00:00+0000"
+  }'
+```
+
+#### Response
+
+**Status: 201 Created**
+
+```json
+{
+  "id": "1904444477120971689",
+  "name": "Customer 1 read-only",
+  "subaccount": "Customer 1",
+  "token": "fd89e6a635be910a4f0d534491875994",
+  "created": "2026-05-22T06:22:26+0000",
+  "expiry": "2027-01-01T00:00:00+0000"
+}
+```
+
+**Response Fields:**
+
+- **id**: Attestant token ID — use this for subsequent `GET` and `DELETE` calls
+- **name**: The token name
+- **subaccount** (optional): Echoes the subaccount restriction if set
+- **token**: **The secret bearer token.** Capture this immediately — it is not returned again
+- **created**: Creation timestamp
+- **expiry** (optional): Expiration timestamp if set
+
+---
+
+### Delete Token
+
+`DELETE /v1/accounts/tokens/{token_id}`
+
+#### Description
+
+Revokes an account token. Once revoked, the token is rejected on all subsequent calls. Use this to rotate tokens on a schedule, revoke compromised tokens, or decommission tokens when a customer offboards. The caller must hold a token with `scope: operate` or higher.
+
+#### How to Use
+
+**Path Parameters:**
+
+- **token_id** (string, required): Numeric Attestant token ID.
+
+#### Example
+
+```bash
+curl -X DELETE https://client.attestant.io/v1/accounts/tokens/1904444477120971689 \
+  -H "Authorization: Bearer <your-api-token>"
+```
+
+#### Response
+
+**Status: 200 OK**
+
+The response body is empty. After deletion, `GET /v1/accounts/tokens/{token_id}` for the same ID returns `404`.
+
+---
+
+### Best Practices
+
+1. **Always set `subaccount`** for customer-issued tokens. An unscoped token can read every other customer's data via unfiltered `GET /v1/eth/validators` and `POST /v1/financials/report`.
+2. **Always set `expiry`.** A token with no expiry stays valid until it is explicitly deleted; rotate on a fixed cadence (e.g. 90 days).
+3. **Use the lowest scope that works.** Most customer use cases (dashboards, monitoring) need only `read-only`. Customer-driven staking flows need `assign`. `operate` and `all` are administrator credentials.
+4. **Capture the `token` string at creation.** It is only returned once; store it via the same mechanism you use for other secrets.
+6. **Revoke promptly.** `DELETE /v1/accounts/tokens/{id}` is the only revocation path; do not rely on expiry-driven rotation alone when a customer offboards or a token is compromised.
 
 ---
 
