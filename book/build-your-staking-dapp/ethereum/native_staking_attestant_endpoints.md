@@ -202,7 +202,7 @@ Creates one or more new validators. The created validators will each need a depo
 
 - **subaccount** (string, required): The subaccount to assign the validators to (e.g., `"My Subaccount"`)
 - **names** (string[], required): Names for the validators (e.g., `["Validator #1", "Validator #2"]`)
-- **amount** (string, optional): Deposit amount per validator (e.g., `"32 ETH"` or `"654 GWEI"`). An amount without units is considered to be in Wei. Defaults to 32 ETH. Must be a whole number (no decimals). The same amount is applied to all validators in the request
+- **amount** (string, optional): Deposit amount per validator. Must be a positive whole multiple of 1 ETH (e.g., `"32 ETH"`, `"64 ETH"`). Accepts `ETH`/`GWEI` units or bare-integer Wei. Defaults to 32 ETH; applied to all validators.
 - **compounding** (boolean, optional): Whether to create compounding validators. Default is `false`
 
 **Note**: A single request cannot exceed 100 validators. If you need more, please issue multiple requests.
@@ -289,7 +289,7 @@ curl -X POST https://client.attestant.io/v1/eth/validators \
   - **signature**: 96-byte BLS signature (hex-encoded)
   - **transaction_data**: Raw transaction data that can be sent directly as part of the deposit transaction
   - **version**: Version of the transaction data format (currently `"5"`)
-- **batch_transactions**: Object mapping batch deposit contract names to their full transaction data (hex-encoded). This can be used to deposit all validators in a single transaction
+- **batch_transactions**: Object mapping batch deposit contracts to their hex-encoded transaction data. Use the `Attestant` entry — its addresses are listed in [Depositing Validators](#depositing-validators).
 
 ---
 
@@ -512,7 +512,7 @@ curl -X GET "https://client.attestant.io/v1/eth/validators?subaccount=My%20Subac
   - **balance**: Current balance in Wei
   - **effective_balance**: Current effective balance in Wei. Present on active validators
   - **deposits**: Total amount deposited from the execution chain in Wei
-  - **activation_timestamp**: Unix timestamp (seconds) when the validator became active. Present on active validators
+  - **activation_timestamp**: Unix timestamp (seconds) when the validator became active. Present on `Active` and `Exited` validators
   - **timestamp**: Unix timestamp when the validator information was last updated
 
 ---
@@ -569,7 +569,7 @@ curl -X GET https://client.attestant.io/v1/eth/validators/1234567890123456789 \
 - **balance**: Current balance in Wei
 - **effective_balance**: Current effective balance in Wei. Present on active validators
 - **deposits**: Total amount deposited from the execution chain in Wei
-- **activation_timestamp**: Unix timestamp (seconds) when the validator became active. Present on active validators
+- **activation_timestamp**: Unix timestamp (seconds) when the validator became active. Present on `Active` and `Exited` validators
 - **timestamp**: Unix timestamp when the validator information was last updated
 
 ---
@@ -605,7 +605,7 @@ The returned transaction must be signed and broadcast to take effect.
 
 **Request Body:**
 
-- **amount** (string, required): The amount to top up (e.g., `"1 ETH"` or `"32000000000 GWEI"`). Must be a whole number; an amount without units is treated as Wei.
+- **amount** (string, required): The amount to top up (e.g., `"1 ETH"`, `"32000000000 GWEI"`, or bare-integer Wei). Use whole-Gwei increments — sub-Gwei precision is silently truncated from the signed deposit data.
 
 #### Example
 
@@ -663,7 +663,7 @@ The returned transaction must be signed by the withdrawal address and broadcast 
 
 **Request Body:**
 
-- **amount** (string, required): The amount to withdraw (e.g., `"1 ETH"`). Must be a whole number; an amount without units is treated as Wei.
+- **amount** (string, required): The amount to withdraw (e.g., `"1 ETH"`, `"500000000 GWEI"`, or bare-integer Wei). Use whole-Gwei increments — the on-chain request is encoded as uint64 Gwei, so sub-Gwei precision is silently truncated.
 
 #### Example
 
@@ -699,7 +699,7 @@ curl -X POST https://client.attestant.io/v1/eth/validators/1234567890123456789/w
   - **sender**: The withdrawal address that must sign and broadcast
   - **contract_address**: The EIP-7002 withdrawal request predeploy
   - **data**: Hex-encoded calldata — 48-byte validator pubkey followed by 8-byte amount in Gwei (big-endian). For example, `000000003b9aca00` = 1,000,000,000 Gwei = 1 ETH
-  - **value**: Wei to send (EIP-7002 request fee)
+  - **value**: Wei to send. Equals on-chain fee + safety bump (`fee/2`, clamped `[1000, 10⁹]`) to tolerate fee changes before inclusion
 
 ---
 
