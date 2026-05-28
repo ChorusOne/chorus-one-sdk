@@ -12,7 +12,9 @@ const config: HardhatUserConfig = {
             ? networkConfig.networks.hoodi.url
             : process.env.ETH_MAINNET_RPC_URL || networkConfig.networks.ethereum.url,
         enabled: true,
-        blockNumber: 22217318
+        blockNumber: process.env.ETH_MAINNET_FORK_BLOCK
+          ? Number(process.env.ETH_MAINNET_FORK_BLOCK)
+          : 22217318
       },
       accounts: networkConfig.accounts.map((acc) => ({
         privateKey: acc.privateKey,
