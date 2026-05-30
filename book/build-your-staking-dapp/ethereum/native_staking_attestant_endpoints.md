@@ -35,7 +35,27 @@ The end-to-end flow to bring an Ethereum validator online via the Attestant API 
 5. **Submit the deposit(s).** Send ETH to the deposit contract following [Depositing Validators](#depositing-validators) — either one batch transaction for multiple validators or one transaction per validator.
 6. **Track activation.** Poll [Get Validator](#get-validator) (or [List Validators](#list-validators)) until each validator's `state` reaches `Active`. The state progresses `Awaiting deposit → Deposited → Awaiting activation → Active`.
 
-Once a validator is `Active`, day-to-day balance management — topping up compounding validators, partial withdrawals, full exits — is covered under [Lifecycle Operations](#lifecycle-operations).
+Once a validator is `Active`, ongoing management — converting to compounding, consolidating, topping up, partial withdrawals, and full exits — is covered under [Lifecycle Operations](#lifecycle-operations). For background on `0x01` vs `0x02` (compounding) validators and the Pectra lifecycle, see [Compounding and Credential Types](#compounding-and-credential-types).
+
+---
+
+## Compounding and Credential Types
+
+Every Ethereum validator has a **withdrawal credential** whose leading byte determines how its balance behaves. The remaining 20 bytes are the withdrawal address (the subaccount's `fee_recipient`); only the prefix differs between the two types.
+
+| Prefix | Type | Max effective balance | Rewards |
+| --- | --- | --- | --- |
+| `0x01` | Legacy (execution address) | 32 ETH | Skimmed automatically to the withdrawal address; balance above 32 ETH does not earn |
+| `0x02` | Compounding ([Pectra](https://eips.ethereum.org/EIPS/eip-7251)) | 2048 ETH | **Compound automatically** — they stay staked and keep earning |
+
+A compounding (`0x02`) validator is the building block of the Pectra staking lifecycle:
+
+- **Create** a `0x02` validator directly by passing `compounding: true` to [Create Validators](#create-validators), or start at 32 ETH and grow it with [Get Topup Transaction](#get-topup-transaction) (up to 2048 ETH).
+- **Upgrade** an existing `0x01` validator in place with [Convert to Compounding](#convert-to-compounding) — keys, index, and balance are unchanged; only the credential prefix flips to `0x02`.
+- **Consolidate** the stake of one validator into a `0x02` target with [Consolidate Validators](#consolidate-validators), collapsing several validators into one larger one.
+- **Withdraw** part of the balance, or exit entirely, with [Get Withdrawal Transaction](#get-withdrawal-transaction) and [Get Exit Transaction](#get-exit-transaction). Withdrawals and exits include accrued rewards.
+
+> **Note:** Separately claiming rewards on a legacy `0x01` validator is not supported — its rewards above 32 ETH are skimmed automatically by the protocol. Upgrade it to `0x02` to compound instead.
 
 ---
 
@@ -576,14 +596,138 @@ curl -X GET https://client.attestant.io/v1/eth/validators/1234567890123456789 \
 
 ## Lifecycle Operations
 
-The endpoints below support the validator lifecycle after activation: exiting, topping up the balance, and partial withdrawals. They are all pure transaction builders — calling them has no Attestant-side or on-chain effect. Only signing and broadcasting the returned transaction(s) will affect state.
+The endpoints below support the validator lifecycle after activation: converting to compounding, consolidating, topping up the balance, partial withdrawals, and exiting. They are all pure transaction builders — calling them has no Attestant-side or on-chain effect. Only signing and broadcasting the returned transaction(s) will affect state.
 
 Execution-layer operations target one of the following contracts:
 
 | Operation | Target |
 | --- | --- |
+| Convert to compounding / Consolidate | EIP-7251 predeploy `0x0000BBdDc7CE488642fb579F8B00f3a590007251` |
 | Withdrawal | EIP-7002 predeploy `0x00000961Ef480Eb55e80D19ad83579A64c007002` |
 | Topup | Official deposit contract `0x00000000219ab540356cBB839Cbe05303d7705Fa` |
+
+---
+
+### Convert to Compounding
+
+`GET /v1/eth/validators/{validator_id}/compoundtransaction`
+
+Requires a token with `assign` scope or higher.
+
+#### Description
+
+Upgrades a legacy `0x01` validator to a compounding `0x02` validator **in place**. The validator keeps its keys, consensus index, and balance — only the withdrawal-credential prefix changes from `0x01` to `0x02`, after which its rewards compound and it can grow up to 2048 ETH.
+
+Under the hood this is an [EIP-7251](https://eips.ethereum.org/EIPS/eip-7251) **self-consolidation**: a consolidation request whose source and target are the same validator. The transaction targets the EIP-7251 consolidation request predeploy and must be signed by the validator's withdrawal address and broadcast to take effect.
+
+The validator must be `Active` and currently have `0x01` credentials; otherwise the request fails with `412 Precondition Failed`.
+
+#### How to Use
+
+**Path Parameters:**
+
+- **validator_id** (string, required): The validator to upgrade (Attestant ID or BLS pubkey)
+
+#### Example
+
+```bash
+curl -X GET https://client.attestant.io/v1/eth/validators/1234567890123456789/compoundtransaction \
+  -H "Authorization: Bearer <your-api-token>"
+```
+
+#### Response
+
+**Status: 200 OK**
+
+```json
+{
+  "transactions": [
+    {
+      "sender": "0xD4BB555d3B0D7fF17c606161B44E372689C14F4B",
+      "contract_address": "0x0000BBdDc7CE488642fb579F8B00f3a590007251",
+      "data": "0xaabbccdd…<48-byte pubkey>…aabbccdd…<same 48-byte pubkey>…",
+      "value": "1001"
+    }
+  ]
+}
+```
+
+**Response Fields:**
+
+- **transactions**: Array with a single transaction to sign and broadcast. The entry contains:
+  - **sender**: The withdrawal address that must sign and broadcast (the last 20 bytes of the validator's `withdrawal_credentials`)
+  - **contract_address**: The EIP-7251 consolidation request predeploy
+  - **data**: 96-byte calldata — the validator's 48-byte BLS pubkey repeated twice (source == target)
+  - **value**: Wei to send. Equals the current EIP-7251 request fee + safety bump (`fee/2`, clamped `[1000, 10⁹]` wei) to tolerate fee changes before inclusion. If the resulting fee would exceed `0.001 ETH` (`10¹⁵` wei), the request is rejected.
+
+---
+
+### Consolidate Validators
+
+`POST /v1/eth/validators/{validator_id}/consolidatetransaction`
+
+Requires a token with `assign` scope or higher.
+
+#### Description
+
+Generates an [EIP-7251](https://eips.ethereum.org/EIPS/eip-7251) consolidation request that moves the **source** validator's stake into a **target** validator, merging them into one larger compounding validator. The transaction targets the EIP-7251 consolidation request predeploy and must be signed by the source validator's withdrawal address and broadcast to take effect.
+
+Requirements:
+
+- The **source** validator (path `validator_id`) must be `Active` and have `0x01` or `0x02` credentials. It may be one of your own validators, or — by passing its BLS pubkey — an external validator that shares the same withdrawal address.
+- The **target** validator (`target_validator`) must be one of your `Active` validators and already be compounding (`0x02`).
+
+If either validator is in an unsuitable state or has the wrong credential type, the request fails with `412 Precondition Failed`.
+
+> Consolidating a validator into itself (source == target) is exactly the `0x01` → `0x02` upgrade — for that case prefer the simpler [Convert to Compounding](#convert-to-compounding) endpoint.
+
+#### How to Use
+
+**Path Parameters:**
+
+- **validator_id** (string, required): The **source** validator whose stake is moved (Attestant ID or BLS pubkey)
+
+**Request Body:**
+
+- **target_validator** (string, required): The **target** validator that receives the stake (Attestant ID or BLS pubkey). Must be an active compounding (`0x02`) validator on your account.
+
+#### Example
+
+```bash
+curl -X POST https://client.attestant.io/v1/eth/validators/1234567890123456789/consolidatetransaction \
+  -H "Authorization: Bearer <your-api-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "target_validator": "9876543210987654321"
+  }'
+```
+
+#### Response
+
+**Status: 200 OK**
+
+```json
+{
+  "transactions": [
+    {
+      "sender": "0xD4BB555d3B0D7fF17c606161B44E372689C14F4B",
+      "contract_address": "0x0000BBdDc7CE488642fb579F8B00f3a590007251",
+      "data": "0xaabbccdd…<48-byte source pubkey>…112233…<48-byte target pubkey>…",
+      "value": "1001"
+    }
+  ]
+}
+```
+
+**Response Fields:**
+
+- **transactions**: Array with a single transaction to sign and broadcast. The entry contains:
+  - **sender**: The source validator's withdrawal address, which must sign and broadcast
+  - **contract_address**: The EIP-7251 consolidation request predeploy
+  - **data**: 96-byte calldata — the 48-byte source pubkey followed by the 48-byte target pubkey
+  - **value**: Wei to send. Equals the current EIP-7251 request fee + safety bump (`fee/2`, clamped `[1000, 10⁹]` wei). If the resulting fee would exceed `0.001 ETH` (`10¹⁵` wei), the request is rejected.
+
+**Note**: Once the request is processed on the consensus chain, the source validator's balance is moved into the target and the source is exited. Both validators must be active when the request is made.
 
 ---
 
