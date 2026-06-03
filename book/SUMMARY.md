@@ -1,6 +1,7 @@
 # Table of contents
 
 - [Getting Started](README.md)
+- [Rewards Dashboard API Keys](rewards-dashboard-api-keys.md)
 
 ## Build your Staking dApp
 
