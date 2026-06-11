@@ -14,6 +14,7 @@ export interface TonSigningData {
     sendMode: number
     walletId: number
     messages: MessageRelaxed[]
+    stateInit?: StateInit
     timeout?: number
   }
 }
