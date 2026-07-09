@@ -14,17 +14,17 @@ metaLinks:
 
 In order to integrate Chorus One Staking with Fireblocks, we will be using the built in WalletConnect functionality to gather the information we need to connect your Fireblocks account to [Chorus One Ethereum Staking](./).
 
-As a brief overview, [WalletConnect](https://walletconnect.com/) is an open-source protocol that enables secure and decentralized connections between various blockchain wallets and dApps (decentralized applications). Users can interact with dApps like OPUS Pool from their mobile wallets to manage and execute transactions without exposing private keys.
+As a brief overview, [WalletConnect](https://walletconnect.com/) is an open-source protocol that enables secure and decentralized connections between various blockchain wallets and dApps (decentralized applications). Users can interact with dApps like Ethereum Staking Pool from their mobile wallets to manage and execute transactions without exposing private keys.
 
 [Fireblocks](https://www.fireblocks.com/) is a secure and enterprise-grade platform designed to manage digital assets and crypto transactions, providing solutions for securely transferring, storing, and issuing digital assets, with features like multi-party computation (MPC) and a network of trusted partners.
 
-So how do we get these two interfaces to work together to integrate with OPUS Pool? Read on!&#x20;
+So how do we get these two interfaces to work together to integrate with Ethereum Staking Pool? Read on!&#x20;
 
 ***
 
-### Step 1: Connect to OPUS Pool via WalletConnect
+### Step 1: Connect to Ethereum Staking Pool via WalletConnect
 
-When first landing on the OPUS Pool [page](https://opus.chorus.one/pool/stake/), click on the '**Connect wallet**' button in the upper-right hand side of your screen.&#x20;
+When first landing on the Ethereum Staking Pool [page](https://opus.chorus.one/pool/stake/), click on the '**Connect wallet**' button in the upper-right hand side of your screen.&#x20;
 
 <figure><img src="../../.gitbook/assets/Screenshot 2024-08-16 at 3.15.06 PM.png" alt=""><figcaption></figcaption></figure>
 
@@ -44,7 +44,7 @@ From here, you'll have two options on how to proceed.&#x20;
 
 * This can be done via your web browser, however, signing transactions will still be done via Fireblocks on your mobile device.&#x20;
 
-**2.)** Connect to OPUS Pool via the Wallet Connect QR code from your Fireblocks account.
+**2.)** Connect to Ethereum Staking Pool via the Wallet Connect QR code from your Fireblocks account.
 
 * This will require the use of a mobile device to access your Fireblocks account. Signing will also take place via your Fireblocks app on your mobile device.&#x20;
 
@@ -64,27 +64,27 @@ From the WalletConnect popup window we saw before, select the Fireblocks button 
 
 <figure><img src="../../.gitbook/assets/fireblocks info.png" alt="" width="351"><figcaption></figcaption></figure>
 
-This will open a new browser tab where you will be prompted to first login to your Fireblocks account then connect your Fireblocks vault to OPUS Pool.&#x20;
+This will open a new browser tab where you will be prompted to first login to your Fireblocks account then connect your Fireblocks vault to Ethereum Staking Pool.&#x20;
 
 * You'll see a screen similar to the screenshot below:&#x20;
 
-<figure><img src="../../.gitbook/assets/Screenshot 2024-08-16 at 18.07.50.png" alt="" width="516"><figcaption><p>Illustration of connecting your Fireblocks vault to OPUS Pool.</p></figcaption></figure>
+<figure><img src="../../.gitbook/assets/Screenshot 2024-08-16 at 18.07.50.png" alt="" width="516"><figcaption><p>Illustration of connecting your Fireblocks vault to Ethereum Staking Pool.</p></figcaption></figure>
 
 Click '**Connect vault**' and after some loading time has passed, this window will disappear and you will see something similar to the following in your Fireblocks dashboard.&#x20;
 
-<figure><img src="../../.gitbook/assets/Screenshot 2024-08-16 at 18.13.26 updated.png" alt="" width="563"><figcaption><p>You've successfully linked your Fireblocks account to OPUS Pool.</p></figcaption></figure>
+<figure><img src="../../.gitbook/assets/Screenshot 2024-08-16 at 18.13.26 updated.png" alt="" width="563"><figcaption><p>You've successfully linked your Fireblocks account to Ethereum Staking Pool.</p></figcaption></figure>
 
-Next, leave this window open and navigate back to the tab where you have OPUS Pool open in your browser.&#x20;
+Next, leave this window open and navigate back to the tab where you have Ethereum Staking Pool open in your browser.&#x20;
 
-Now you should see your wallet connected and you will be ready to stake using the OPUS Pool interface.
+Now you should see your wallet connected and you will be ready to stake using the Ethereum Staking Pool interface.
 
 {% hint style="info" %}
 When you finalize your transactions, you will need to sign via your Fireblocks app on your mobile device.&#x20;
 {% endhint %}
 
-If you'd like a refresher on the staking steps for OPUS Pool, please see:&#x20;
+If you'd like a refresher on the staking steps for Ethereum Staking Pool, please see:&#x20;
 
-* How to stake with OPUS Pool
+* How to stake with Ethereum Staking Pool
 
 As you go through the staking process, you'll be able to check on the progress of the staking transactions via your Fireblocks account.&#x20;
 
@@ -101,7 +101,7 @@ Here's some examples of how this may look in your Fireblocks account.&#x20;
 {% hint style="success" %}
 And you're all set!&#x20;
 
-You've successfully staked in OPUS Pool via your Fireblocks account.&#x20;
+You've successfully staked in Ethereum Staking Pool via your Fireblocks account.&#x20;
 {% endhint %}
 
 ***
@@ -132,23 +132,23 @@ You'll be prompted to confirm the connection. You can do so by pressing on '**Go
 
 <figure><img src="../../.gitbook/assets/IMG_35831E65D8AC-1 updated 3.jpeg" alt="" width="375"><figcaption><p>Final confirmation screen before processing the transaction.</p></figcaption></figure>
 
-Now if you navigate back to OPUS Pool in your browser, you will be able to see your connected Fireblocks wallet.&#x20;
+Now if you navigate back to Ethereum Staking Pool in your browser, you will be able to see your connected Fireblocks wallet.&#x20;
 
 You can proceed with staking as normal.&#x20;
 
-If you'd like a refresher on the staking steps for OPUS Pool, please see:&#x20;
+If you'd like a refresher on the staking steps for Ethereum Staking Pool, please see:&#x20;
 
-* How to stake with OPUS Pool
+* How to stake with Ethereum Staking Pool
 
 {% hint style="info" %}
 As you go through the staking process, you'll be prompted to sign any transactions in your Fireblocks mobile app.&#x20;
 
-* Simply put, you'll initiate the staking transactions via OPUS Pool and sign them from your Fireblocks app.&#x20;
+* Simply put, you'll initiate the staking transactions via Ethereum Staking Pool and sign them from your Fireblocks app.&#x20;
 {% endhint %}
 
 Here's a screenshot example shown below.&#x20;
 
-<figure><img src="../../.gitbook/assets/IMG_6336A5C2EA3A-1.jpeg" alt="" width="375"><figcaption><p>Example of a transaction prompt from OPUS Pool in Fireblocks.</p></figcaption></figure>
+<figure><img src="../../.gitbook/assets/IMG_6336A5C2EA3A-1.jpeg" alt="" width="375"><figcaption><p>Example of a transaction prompt from Ethereum Staking Pool in Fireblocks.</p></figcaption></figure>
 
 Click on '**View**' to see the transaction details before you sign it.&#x20;
 
@@ -167,7 +167,7 @@ After submitting it, you can view your Fireblocks dashboard from either your mob
 {% hint style="success" %}
 And that's it!&#x20;
 
-You've successfully completed a transaction in OPUS Pool using Fireblocks in your mobile app.&#x20;
+You've successfully completed a transaction in Ethereum Staking Pool using Fireblocks in your mobile app.&#x20;
 {% endhint %}
 
 ***

@@ -19,13 +19,13 @@ While it might sound complex, MEV is actually fairly simple from a big picture p
 **MEV (Maximal Extractable Value)** refers to the extra profit validators can make by controlling the order of transactions in a block.&#x20;
 {% endhint %}
 
-For institutional staking providers, how MEV is captured and distributed has a direct effect on validator performance and client yield. Bitwise Onchain Solutions operates validator infrastructure designed to capture MEV efficiently — through MEV-boost integration and internal research into proposer timing — while maintaining network integrity.
+For institutional staking providers, how MEV is captured and distributed has a direct effect on validator performance and client yield. Chorus One operates validator infrastructure designed to capture MEV efficiently — through MEV-boost integration and internal research into proposer timing — while maintaining network integrity.
 
 ***
 
 ### That's MEV at a Glance
 
-For a deeper technical perspective, Bitwise Onchain Solutions' research team has contributed to the public body of knowledge on MEV. This includes **Adagio**, an in-house optimized Ethereum MEV-boost client designed to capture additional rewards by improving timing behavior in the transaction supply chain ([research writeup](https://chorus.one/articles/timing-games-and-implications-on-mev-extraction)).
+For a deeper technical perspective, Chorus One' research team has contributed to the public body of knowledge on MEV. This includes **Adagio**, an in-house optimized Ethereum MEV-boost client designed to capture additional rewards by improving timing behavior in the transaction supply chain ([research writeup](https://chorus.one/articles/timing-games-and-implications-on-mev-extraction)).
 
 * In a pilot study, Adagio generated approximately 4.75% additional MEV rewards on Ethereum compared to baseline configurations.
 

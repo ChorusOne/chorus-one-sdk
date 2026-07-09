@@ -73,7 +73,7 @@ When you stake, it involves locking away the assets in a non-custodial manner to
 
 #### The Role of the Validator
 
-The validator is responsible for processing and verifying transactions, producing blocks and securing the blockchain, thus reaching consensus. Bitwise Onchain Solutions specializes in running validators on many different Proof of Stake networks. Ensuring you stake to a reputable validator not only helps ensure the safety of your funds but also contributes to the health and security of the network.&#x20;
+The validator is responsible for processing and verifying transactions, producing blocks and securing the blockchain, thus reaching consensus. Chorus One specializes in running validators on many different Proof of Stake networks. Ensuring you stake to a reputable validator not only helps ensure the safety of your funds but also contributes to the health and security of the network.&#x20;
 
 In return validating the network, the validator earns rewards for contributing to the overall network security and moving the blockchain forward. Thus, they earn staking rewards which are distributed to the stakers (delegators) to that validator.&#x20;
 

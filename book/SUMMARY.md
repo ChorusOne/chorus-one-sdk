@@ -13,17 +13,17 @@
 
 ## Our Products
 
-- [Bitwise Onchain Solutions Ethereum Staking](our-products/chorus-one-ethereum-staking/README.md)
+- [Chorus One Ethereum Staking](our-products/chorus-one-ethereum-staking/README.md)
   - [Vouch & Dirk: The Infrastructure Behind ETH Staking](our-products/chorus-one-ethereum-staking/vouch-and-dirk.md)
   - [Staking to ETH Vaults](our-products/chorus-one-ethereum-staking/staking-to-eth-vaults.md)
   - [Unstaking Ethereum](our-products/chorus-one-ethereum-staking/unstaking-ethereum.md)
   - [How Do I See My Rewards?](our-products/chorus-one-ethereum-staking/how-do-i-see-my-rewards.md)
-  - [Using Fireblocks with Bitwise Onchain Solutions Staking](our-products/chorus-one-ethereum-staking/using-fireblocks-with-chorus-one-staking.md)
-- [Bitwise Onchain Solutions Ethereum Native Staking](our-products/chorus-one-ethereum-native-staking/README.md)
+  - [Using Fireblocks with Chorus One Staking](our-products/chorus-one-ethereum-staking/using-fireblocks-with-chorus-one-staking.md)
+- [Chorus One Ethereum Native Staking](our-products/chorus-one-ethereum-native-staking/README.md)
   - [API integration guide](our-products/chorus-one-ethereum-native-staking/api-integration-guide.md)
   - [Native Staking API Reference](https://native-staking.chorus.one/docs)
-- [Bitwise Onchain Solutions Rewards](our-products/chorus-one-rewards.md)
-- [Bitwise Onchain Solutions Widget](our-products/chorus-one-widget/README.md)
+- [Chorus One Rewards](our-products/chorus-one-rewards.md)
+- [Chorus One Widget](our-products/chorus-one-widget/README.md)
   - [Customize and Deploy](our-products/chorus-one-widget/customize-and-deploy.md)
 
 ## Build your Staking dApp

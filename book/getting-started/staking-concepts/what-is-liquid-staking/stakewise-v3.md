@@ -56,12 +56,12 @@ As a solo staker, one can seamlessly launch their own nodes, mint staked ETH (os
 At the heart of StakeWise V3 are ‘Vaults’ - a network of permissionless, non-custodial staking mini pools that anyone can launch on the [StakeWise platform](https://docs.stakewise.io/) and receive ETH delegations on their nodes.&#x20;
 
 {% hint style="info" %}
-<!-- TODO: WIP — BOS staking dapp URL (opus.chorus.one) pending product release. See KB_OUTSTANDING_ITEMS.md. -->
-The BOS MEV Max Vault can be accessed on [StakeWise directly](https://app.stakewise.io/vault/mainnet/0xe6d8d8ac54461b1c5ed15740eee322043f696c08) or via the BOS staking portal at [opus.chorus.one/pool/stake](https://opus.chorus.one/pool/stake/).
+<!-- TODO: WIP — Chorus One staking dapp URL (opus.chorus.one) pending product release. See KB_OUTSTANDING_ITEMS.md. -->
+The Chorus One MEV Max Vault can be accessed on [StakeWise directly](https://app.stakewise.io/vault/mainnet/0xe6d8d8ac54461b1c5ed15740eee322043f696c08) or via the Chorus One staking portal at [opus.chorus.one/pool/stake](https://opus.chorus.one/pool/stake/).
 
-For more on BOS Ethereum staking, see the [ETH Staking Overview](../../../our-products/chorus-one-ethereum-staking/).
+For more on Chorus One Ethereum staking, see the [ETH Staking Overview](../../../our-products/chorus-one-ethereum-staking/).
 
-Operators interested in running their own vault can contact the BOS staking team at `StakingBOS@bitwiseinvestments.com`.
+Operators interested in running their own vault can contact the Chorus One staking team at `StakingBOS@bitwiseinvestments.com`.
 {% endhint %}
 
 StakeWise vaults offer the user freedom to stake with whichever vault they want, choosing between vaults run by solo stakers, node operator companies, and groups of solo/commercial operators.
@@ -130,7 +130,7 @@ Vault tokens from staking represent staked ETH, offering institutions the flexib
 
 Additionally, for broader access to DeFi markets, institutions can mint or permit customers to mint osETH tokens.
 
-Institutions interested in launching a Private Vault with Bitwise Onchain Solutions can contact the staking team at `StakingBOS@bitwiseinvestments.com`.
+Institutions interested in launching a Private Vault with Chorus One can contact the staking team at `StakingBOS@bitwiseinvestments.com`.
 
 </details>
 
@@ -142,12 +142,12 @@ In StakeWise V3, operators, whether independent or collaborating with other enti
 
 Operators can choose to keep vaults private or public, showcase strong performance, and enhance their vault Score by taking risk-reducing measures.
 
-<!-- TODO: WIP — BOS staking dapp URL (opus.chorus.one) pending product release. -->
-Bitwise Onchain Solutions operates an Ethereum staking offering built on StakeWise V3 — accessible as a public vault via the BOS staking portal at [opus.chorus.one/pool/stake](https://opus.chorus.one/pool/stake/) — providing individuals access to liquid staking on BOS's validator infrastructure.
+<!-- TODO: WIP — Chorus One staking dapp URL (opus.chorus.one) pending product release. -->
+Chorus One operates an Ethereum staking offering built on StakeWise V3 — accessible as a public vault via the Chorus One staking portal at [opus.chorus.one/pool/stake](https://opus.chorus.one/pool/stake/) — providing individuals access to liquid staking on Chorus One's validator infrastructure.
 
-Institutional clients also have the option of launching a Dedicated Vault operated by Bitwise Onchain Solutions, which can be private and ring-fenced or open and custom-branded.
+Institutional clients also have the option of launching a Dedicated Vault operated by Chorus One, which can be private and ring-fenced or open and custom-branded.
 
-Institutions interested in launching a Dedicated Vault can contact the BOS staking team at `StakingBOS@bitwiseinvestments.com`.
+Institutions interested in launching a Dedicated Vault can contact the Chorus One staking team at `StakingBOS@bitwiseinvestments.com`.
 
 </details>
 

@@ -23,7 +23,7 @@ metaLinks:
 First, access our staking experience:&#x20;
 
 1. Stake any amount of ETH via the [Earn Platform](https://staking.chorus.one/eth/stake)
-2. Mint osETH from your staked ETH to be used in other DeFi using our [OPUS app](https://opus.chorus.one/pool/stake/)
+2. Mint osETH from your staked ETH to be used in other DeFi using our [Ethereum Staking Pool app](https://opus.chorus.one/pool/stake/)
 
 These methods are made as simple as possible to enhance your staking experience, and can be used as described below:
 
@@ -71,9 +71,9 @@ Once deposited successfully, you can now mint your osETH in 1-click by clicking 
 
 ### **How to Restake your osETH or other supported Liquid Restaking Tokens (LRTs)**
 
-You can bring your [supported liquid staking tokens](./#supported-liquid-staking-tokens-lsts-can-be-seen-below) minted on any external platform and deposit them into EigenLayer through [OPUS app](https://opus.chorus.one/pool/stake/)
+You can bring your [supported liquid staking tokens](./#supported-liquid-staking-tokens-lsts-can-be-seen-below) minted on any external platform and deposit them into EigenLayer through [Ethereum Staking Pool app](https://opus.chorus.one/pool/stake/)
 
-**Step 1:** Go to the OPUS page, select Restake and connect your wallet
+**Step 1:** Go to the Ethereum Staking Pool page, select Restake and connect your wallet
 
 <figure><img src="../../.gitbook/assets/Screenshot 2024-07-23 at 8.04.07 AM (1).png" alt=""><figcaption></figcaption></figure>
 

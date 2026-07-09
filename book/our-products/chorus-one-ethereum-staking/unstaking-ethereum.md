@@ -44,7 +44,7 @@ You can come back to the Unstake tab at a later point and check the status of yo
 
 ### How Long Does it Take to Unstake My ETH?
 
-Unstaking your Ethereum from OPUS Pool will vary on a few factors, however, it can range from as short as 24 hours to 14+ days, most contingent on stake size.
+Unstaking your Ethereum from Ethereum Staking Pool will vary on a few factors, however, it can range from as short as 24 hours to 14+ days, most contingent on stake size.
 
 * Larger delegations being unstaked are more likely to take longer.&#x20;
 
@@ -85,7 +85,7 @@ You have successfully unstaked!
 
 Unstaking from EigenLayer takes 7 days for the funds to finalize while unstaking from Symbiotic takes 14 days.&#x20;
 
-* You can check the progress of your unstaking transactions by going to OPUS Pool dashboard.
+* You can check the progress of your unstaking transactions by going to Ethereum Staking Pool dashboard.
 
 <figure><img src="../../.gitbook/assets/Screenshot 2024-07-23 at 8.32.20 AM.png" alt=""><figcaption></figcaption></figure>
 

@@ -1,25 +1,25 @@
 ---
-description: ETH staking and restaking with Bitwise Onchain Solutions.
+description: ETH staking and restaking with Chorus One.
 metaLinks:
   alternates:
     - >-
       https://app.gitbook.com/s/KGu77aAU8HQJ5FTwSgOi/our-products/chorus-one-ethereum-staking
 ---
 
-# Bitwise Onchain Solutions Ethereum Staking
+# Chorus One Ethereum Staking
 
 <!-- NOTE: Interim rewrite. Bitwise UK / Attestant team is preparing deeper ETH staking collateral — this page expected to be enriched/superseded once that lands. See KB_OUTSTANDING_ITEMS.md. -->
 
 <figure><img src="../../.gitbook/assets/Screenshot 2025-08-13 at 5.20.31 PM.png" alt=""><figcaption></figcaption></figure>
 
-## About ETH Staking with Bitwise Onchain Solutions
+## About ETH Staking with Chorus One
 
-Bitwise Onchain Solutions operates Ethereum staking infrastructure for institutional clients and individual investors. ETH can be staked in any amount — including amounts not divisible by 32 ETH — via pooled staking powered by Stakewise V3, with the option to mint osETH and use it across the broader DeFi ecosystem.
+Chorus One operates Ethereum staking infrastructure for institutional clients and individual investors. ETH can be staked in any amount — including amounts not divisible by 32 ETH — via pooled staking powered by Stakewise V3, with the option to mint osETH and use it across the broader DeFi ecosystem.
 
-<!-- TODO: WIP — BOS ETH staking dapp URL pending product release. Current references point to legacy C1 portal. See KB_OUTSTANDING_ITEMS.md. -->
+<!-- TODO: WIP — Chorus One ETH staking dapp URL pending product release. Current references point to legacy C1 portal. See KB_OUTSTANDING_ITEMS.md. -->
 The ETH staking interface is available via the public staking portal at [opus.chorus.one/pool/stake](https://opus.chorus.one/pool/stake/).
 
-The underlying validator infrastructure — the [Vouch and Dirk](./vouch-and-dirk.md) open-source stack built by Attestant (now part of BOS) — is the same stack used by the Ethereum Foundation to operate its own staking program.
+The underlying validator infrastructure — the [Vouch and Dirk](./vouch-and-dirk.md) open-source stack built by Attestant (now part of Chorus One) — is the same stack used by the Ethereum Foundation to operate its own staking program.
 
 ---
 
@@ -69,21 +69,21 @@ Restaking, as defined by Vitalik Buterin, extends the utility of staked ETH beyo
 
 **EigenLayer** implements restaking through Ethereum smart contracts. Stakers can opt in to restake their ETH (or liquid staking derivatives) to secure **Actively Validated Services (AVSs)** — additional applications built on top of Ethereum. AVSs gain security without bootstrapping their own validator network; restakers earn additional rewards for taking on the additional slashing conditions.
 
-Supported LSTs can be restaked to EigenLayer directly through the Bitwise Onchain Solutions staking interface.
+Supported LSTs can be restaked to EigenLayer directly through the Chorus One staking interface.
 
 ---
 
 ## Public versus Private Vaults
 
-Bitwise Onchain Solutions operates both public pooled vaults (for general participation) and private tailored vaults (for institutional clients).
+Chorus One operates both public pooled vaults (for general participation) and private tailored vaults (for institutional clients).
 
 <details>
 
 <summary><strong>Public Vaults</strong></summary>
 
-Public vaults pool ETH from multiple participants into a shared vault operated by Bitwise Onchain Solutions. Any amount of ETH can be staked, and osETH can be minted against the stake.
+Public vaults pool ETH from multiple participants into a shared vault operated by Chorus One. Any amount of ETH can be staked, and osETH can be minted against the stake.
 
-<!-- TODO: WIP — BOS ETH staking dapp URL pending product release. -->
+<!-- TODO: WIP — Chorus One ETH staking dapp URL pending product release. -->
 Public vaults are accessible via [opus.chorus.one/pool/stake](https://opus.chorus.one/pool/stake/).
 
 </details>
@@ -94,7 +94,7 @@ Public vaults are accessible via [opus.chorus.one/pool/stake](https://opus.choru
 
 Private vaults are dedicated, isolated vaults for institutional clients who require separation of their staked capital from the public pool. Private vault assets are not commingled with other vaults.
 
-Institutional clients seeking a private vault can contact the Bitwise Onchain Solutions staking team at `StakingBOS@bitwiseinvestments.com`.
+Institutional clients seeking a private vault can contact the Chorus One staking team at `StakingBOS@bitwiseinvestments.com`.
 
 </details>
 
@@ -102,7 +102,7 @@ Institutional clients seeking a private vault can contact the Bitwise Onchain So
 
 ## Infrastructure: Vouch and Dirk
 
-Bitwise Onchain Solutions' Ethereum validator infrastructure is built on **Vouch** and **Dirk** — open-source tools developed by Attestant (now part of BOS) and used in production by the Ethereum Foundation.
+Chorus One' Ethereum validator infrastructure is built on **Vouch** and **Dirk** — open-source tools developed by Attestant (now part of Chorus One) and used in production by the Ethereum Foundation.
 
 - **Vouch** is the validator orchestration layer. It connects to multiple beacon nodes simultaneously, uses pluggable strategies to select the best block proposals and attestations, and integrates MEV-boost natively.
 - **Dirk** is the distributed key manager. It uses certificate-based access control, durable slashing protection, and threshold signing (Shamir Secret Sharing) to keep validator keys secure across multiple machines.
@@ -113,17 +113,17 @@ Together they enable multi-beacon-node resilience, zero-downtime operational upg
 
 ---
 
-## Institutional Integration — [The BOS SDK](https://chorus-one.gitbook.io/sdk)
+## Institutional Integration — [The Chorus One SDK](https://chorus-one.gitbook.io/sdk)
 
-Institutional clients integrating ETH staking into their own platforms can use the [BOS SDK](https://chorus-one.gitbook.io/sdk) — an all-in-one toolkit for building non-custodial staking flows. The SDK handles transaction construction, signing, and broadcast directly in the client's environment, supporting custom custody models including Fireblocks, Ledger, and browser wallets.
+Institutional clients integrating ETH staking into their own platforms can use the [Chorus One SDK](https://chorus-one.gitbook.io/sdk) — an all-in-one toolkit for building non-custodial staking flows. The SDK handles transaction construction, signing, and broadcast directly in the client's environment, supporting custom custody models including Fireblocks, Ledger, and browser wallets.
 
 For institutional inquiries: `StakingBOS@bitwiseinvestments.com`
 
 ---
 
 {% hint style="info" %}
-<!-- TODO: WIP — BOS ETH staking dapp URL pending product release. Current link points to legacy C1 portal. -->
-**To use Bitwise Onchain Solutions ETH Staking, visit the staking portal at** [**opus.chorus.one/pool/stake**](https://opus.chorus.one/pool/stake/)
+<!-- TODO: WIP — Chorus One ETH staking dapp URL pending product release. Current link points to legacy C1 portal. -->
+**To use Chorus One ETH Staking, visit the staking portal at** [**opus.chorus.one/pool/stake**](https://opus.chorus.one/pool/stake/)
 
 **For a step-by-step walkthrough, see Staking & Restaking ETH**
 {% endhint %}

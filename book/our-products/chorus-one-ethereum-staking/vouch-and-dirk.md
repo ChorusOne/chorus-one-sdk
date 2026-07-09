@@ -1,7 +1,7 @@
 ---
 description: >-
   An introduction to Vouch and Dirk — the open-source Ethereum validator
-  infrastructure that powers Bitwise Onchain Solutions' institutional staking.
+  infrastructure that powers Chorus One' institutional staking.
 ---
 
 # Vouch & Dirk: The Infrastructure Behind ETH Staking
@@ -10,7 +10,7 @@ description: >-
 
 ## Overview
 
-Bitwise Onchain Solutions' Ethereum staking operations — including the infrastructure behind the Ethereum Foundation's ~70,000 ETH staking program — run on two open-source tools built by Attestant (now part of BOS): **Vouch** and **Dirk**.
+Chorus One' Ethereum staking operations — including the infrastructure behind the Ethereum Foundation's ~70,000 ETH staking program — run on two open-source tools built by Attestant (now part of Chorus One): **Vouch** and **Dirk**.
 
 Both are Apache-2.0 licensed and used in production by the Ethereum Foundation itself, making them one of the most battle-tested institutional Ethereum staking stacks available.
 
@@ -118,7 +118,7 @@ The Vouch + Dirk stack provides three institutional-grade properties:
 | **Cryptographic security** | Keys held in separate signing process with certificate-based access; threshold signing means no machine holds a complete key |
 | **Zero-downtime operations** | One component at a time can be upgraded or replaced without interrupting validator duties |
 
-These properties are table stakes for operating institutional-scale staking infrastructure — and they are prerequisites for the track record underlying Bitwise Onchain Solutions' Ethereum staking offering.
+These properties are table stakes for operating institutional-scale staking infrastructure — and they are prerequisites for the track record underlying Chorus One' Ethereum staking offering.
 
 ---
 

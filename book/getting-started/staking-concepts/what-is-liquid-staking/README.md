@@ -53,7 +53,7 @@ Restaking refers to using already staked assets (or their derivatives) to secure
 
 **Example:**&#x20;
 
-* EigenLayer or Symbiotic enable restaking of staked osETH through the [Bitwise Onchain Solutions ETH staking portal](../../../our-products/chorus-one-ethereum-staking/) to secure new protocols known as AVS's (Actively Validated Services). <!-- TODO: product name pending — OPUS Pool is being rebranded. See KB_OUTSTANDING_ITEMS.md. -->
+* EigenLayer or Symbiotic enable restaking of staked osETH through the [Chorus One ETH staking portal](../../../our-products/chorus-one-ethereum-staking/) to secure new protocols known as AVS's (Actively Validated Services). <!-- TODO: product name pending — Ethereum Staking Pool is being rebranded. See KB_OUTSTANDING_ITEMS.md. -->
 
 **Benefits:**
 
@@ -70,7 +70,7 @@ LSTs are tokens that represent staked assets in a liquid form. They allow users 
 
 **Use Case:**&#x20;
 
-* If you stake ETH on a liquid staking platform like the [Bitwise Onchain Solutions ETH staking portal](../../../our-products/chorus-one-ethereum-staking/), you receive osETH, which can be used across certain DeFi protocols while your original ETH remains staked. <!-- TODO: product name pending — OPUS Pool is being rebranded. See KB_OUTSTANDING_ITEMS.md. -->
+* If you stake ETH on a liquid staking platform like the [Chorus One ETH staking portal](../../../our-products/chorus-one-ethereum-staking/), you receive osETH, which can be used across certain DeFi protocols while your original ETH remains staked. <!-- TODO: product name pending — Ethereum Staking Pool is being rebranded. See KB_OUTSTANDING_ITEMS.md. -->
   * Alternatively, it can be restaked to a protocol like EigenLayer or Symbiotic.
 
 **Benefits:**&#x20;
