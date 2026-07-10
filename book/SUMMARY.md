@@ -3,6 +3,29 @@
 - [Getting Started](README.md)
 - [Rewards Dashboard API Keys](rewards-dashboard-api-keys.md)
 
+## Staking Fundamentals
+
+- [Staking Overview](getting-started/staking-overview.md)
+- [Staking Concepts](getting-started/staking-concepts/README.md)
+  - [What is MEV?](getting-started/staking-concepts/what-is-mev.md)
+  - [What is Liquid Staking?](getting-started/staking-concepts/what-is-liquid-staking/README.md)
+    - [StakeWise V3](getting-started/staking-concepts/what-is-liquid-staking/stakewise-v3.md)
+
+## Our Products
+
+- [Chorus One Ethereum Staking](our-products/chorus-one-ethereum-staking/README.md)
+  - [Vouch & Dirk: The Infrastructure Behind ETH Staking](our-products/chorus-one-ethereum-staking/vouch-and-dirk.md)
+  - [Staking to ETH Vaults](our-products/chorus-one-ethereum-staking/staking-to-eth-vaults.md)
+  - [Unstaking Ethereum](our-products/chorus-one-ethereum-staking/unstaking-ethereum.md)
+  - [How Do I See My Rewards?](our-products/chorus-one-ethereum-staking/how-do-i-see-my-rewards.md)
+  - [Using Fireblocks with Chorus One Staking](our-products/chorus-one-ethereum-staking/using-fireblocks-with-chorus-one-staking.md)
+- [Chorus One Ethereum Native Staking](our-products/chorus-one-ethereum-native-staking/README.md)
+  - [API integration guide](our-products/chorus-one-ethereum-native-staking/api-integration-guide.md)
+  - [Native Staking API Reference](https://native-staking.chorus.one/docs)
+- [Chorus One Rewards](our-products/chorus-one-rewards.md)
+- [Chorus One Widget](our-products/chorus-one-widget/README.md)
+  - [Customize and Deploy](our-products/chorus-one-widget/customize-and-deploy.md)
+
 ## Build your Staking dApp
 
 - [Avalanche](build-your-staking-dapp/avalanche/README.md)
