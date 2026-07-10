@@ -19,21 +19,9 @@ Whether you're an individual investor seeking to make your assets work for you, 
 
 Below, let's dive into why staking is the most important and reliable source of yield in crypto.
 
-Or, if you prefer, you can review some information packets in the tabs below.&#x20;
+Or, if you prefer, you can review some of our latest research in the tab below.&#x20;
 
 {% tabs %}
-{% tab title="Staking for Institutions" %}
-[Staking for Institutions](https://docsend.com/view/tujzr8ewbc3czik5)
-{% endtab %}
-
-{% tab title="Staking as a Service" %}
-[Why Stake | Short explanation and public node vs Whitelabel vs SDK](https://docsend.com/view/id67g4tqkxckmcwp)
-{% endtab %}
-
-{% tab title="EigenLayer" %}
-[Best-practice Infrastructure for EigenLayer: Optimal rewards and minimal risks](https://docsend.com/view/urzs68sqawer9e57)
-{% endtab %}
-
 {% tab title="Research" %}
 * [MEV on the dYdX v4 chain](https://chorus.one/reports-research/mev-on-the-dydx-v4-chain)
 * [Breaking Bots: An alternative way to capture MEV on Solana](https://chorus.one/reports-research/breaking-bots-an-alternative-way-to-capture-mev-on-solana)&#x20;
