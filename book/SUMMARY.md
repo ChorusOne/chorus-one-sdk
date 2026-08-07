@@ -13,17 +13,21 @@
 
 ## Our Products
 
-- [Chorus One Ethereum Staking](our-products/chorus-one-ethereum-staking/README.md)
+- [Ethereum Staking](our-products/chorus-one-ethereum-staking/README.md)
   - [Vouch & Dirk: The Infrastructure Behind ETH Staking](our-products/chorus-one-ethereum-staking/vouch-and-dirk.md)
   - [Staking to ETH Vaults](our-products/chorus-one-ethereum-staking/staking-to-eth-vaults.md)
   - [Unstaking Ethereum](our-products/chorus-one-ethereum-staking/unstaking-ethereum.md)
   - [How Do I See My Rewards?](our-products/chorus-one-ethereum-staking/how-do-i-see-my-rewards.md)
   - [Using Fireblocks with Chorus One Staking](our-products/chorus-one-ethereum-staking/using-fireblocks-with-chorus-one-staking.md)
-- [Chorus One Ethereum Native Staking](our-products/chorus-one-ethereum-native-staking/README.md)
+- [Ethereum Native Staking](our-products/chorus-one-ethereum-native-staking/README.md)
   - [API integration guide](our-products/chorus-one-ethereum-native-staking/api-integration-guide.md)
   - [Native Staking API Reference](https://native-staking.chorus.one/docs)
-- [Chorus One Rewards](our-products/chorus-one-rewards.md)
-- [Chorus One Widget](our-products/chorus-one-widget/README.md)
+- [Staking dApp](our-products/staking-dapp/README.md)
+  - [How to Stake](our-products/staking-dapp/how-to-stake.md)
+  - [Unstaking & Withdrawing](our-products/staking-dapp/unstaking-and-withdrawing.md)
+  - [Embedding the dApp](our-products/staking-dapp/embedding-in-a-wallet.md)
+- [Rewards](our-products/chorus-one-rewards.md)
+- [Widget](our-products/chorus-one-widget/README.md)
   - [Customize and Deploy](our-products/chorus-one-widget/customize-and-deploy.md)
 
 ## Build your Staking dApp

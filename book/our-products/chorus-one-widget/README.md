@@ -5,7 +5,7 @@ metaLinks:
       https://app.gitbook.com/s/KGu77aAU8HQJ5FTwSgOi/our-products/chorus-one-widget
 ---
 
-# Chorus One Widget
+# Widget
 
 The Chorus One Widget is a ready to integrate product built on iFrame that can be easily embed into existing website or app, allowing the end users to connect wallet and start earning rewards with Chorus One.
 

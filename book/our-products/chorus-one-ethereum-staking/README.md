@@ -6,7 +6,7 @@ metaLinks:
       https://app.gitbook.com/s/KGu77aAU8HQJ5FTwSgOi/our-products/chorus-one-ethereum-staking
 ---
 
-# Chorus One Ethereum Staking
+# Ethereum Staking
 
 <!-- NOTE: Interim rewrite. Bitwise UK / Attestant team is preparing deeper ETH staking collateral — this page expected to be enriched/superseded once that lands. See KB_OUTSTANDING_ITEMS.md. -->
 
