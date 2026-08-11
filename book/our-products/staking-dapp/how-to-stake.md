@@ -17,7 +17,7 @@ On the stake page, the staker selects **Connect Wallet** and chooses a wallet:
 * For **SOL**, a Solana wallet.
 * For **GRAM**, a TON-compatible wallet.
 
-When the dApp runs inside a configured host (for example an embedded wallet or custody platform), it connects to the staker's active account automatically, skipping this step. See [Embedding the dApp](./embedding-in-a-wallet.md) for details.
+When the dApp runs inside a supported host with an approved WalletProfile (for example an embedded wallet or custody platform), it connects to the staker's active account automatically, skipping this step. See the [Integration guide](./integration-guide.md) for details.
 
 <!-- TODO(screenshot): Connect Wallet dialog, not yet captured (the staging session auto-connects a wallet, so the connect dialog isn't reachable without disconnecting). Capture from a fresh/disconnected session, save to book/.gitbook/assets/staking-dapp-connect-wallet.jpg, then uncomment.
 <figure><img src="../../.gitbook/assets/staking-dapp-connect-wallet.jpg" alt=""><figcaption><p>Connecting a wallet</p></figcaption></figure>

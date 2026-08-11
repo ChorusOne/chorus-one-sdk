@@ -39,4 +39,4 @@ Once the withdrawal transaction confirms on-chain, the assets are back in the st
 
 * A staker can unstake any portion of a position; the full amount does not have to be exited at once.
 * Rewards accrued up to the point of unstaking are included in the balance.
-* When the dApp runs inside a configured host, the unstake and withdraw prompts are handled by the host's own signing UI. See [Embedding the dApp](./embedding-in-a-wallet.md).
+* When the dApp runs inside a supported host with an approved WalletProfile, the unstake and withdraw prompts are handled by the host's own signing UI. See the [Integration guide](./integration-guide.md).

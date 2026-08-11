@@ -38,7 +38,7 @@ Reward rates (ARR) are indicative and vary with network conditions. Figures show
 ### For your platform
 
 * **Launch staking without building it.** Offer staking to your clients without operating validators or writing staking logic. The dApp handles transaction construction, signing, and broadcast, backed by institutional-grade infrastructure.
-* **Two low-lift integration paths.** Embed the dApp directly inside your app, or connect it over WalletConnect, whichever suits your platform, with engineering support through integration and launch. See [Embedding the dApp](./embedding-in-a-wallet.md).
+* **Two low-lift integration paths.** Embed the dApp directly inside your app, or connect it over WalletConnect, whichever suits your platform, with engineering support through integration and launch. See the [Integration guide](./integration-guide.md).
 * **Non-custodial by design.** Client transactions are signed in their own wallets and clear-signed for review, so signers see a human-readable view of exactly what they approve. The dApp never takes custody of client keys or assets.
 * **Institutional-grade and secure.** Built on a validator stack securing billions in assets, with a non-custodial setup, ISO 27001 certification, and SOC 2 compliance.
 * **One integration, multiple assets.** A single, consistent interface covers leading networks.
@@ -56,13 +56,13 @@ Reward rates (ARR) are indicative and vary with network conditions. Figures show
 There are two ways to use the dApp:
 
 1. **Connect a wallet.** From the public web app, connect an injected wallet (MetaMask, Phantom, and others), WalletConnect, or a hardware wallet, then stake.
-2. **Auto-connected wallet.** When the dApp is opened inside a supported wallet host (for example Ledger Live), it detects the environment and connects to the active account automatically, no wallet picker required. This is covered in [Embedding the dApp](./embedding-in-a-wallet.md).
+2. **Auto-connected wallet.** When the dApp is opened inside a supported host with an approved WalletProfile (for example an embedded wallet or custody platform), it connects to the active account automatically, with no wallet picker required. This is covered in the [Integration guide](./integration-guide.md).
 
 ## Get started
 
 * [**How to Stake**](./how-to-stake.md): connect a wallet, choose an amount, and confirm the transaction.
 * [**Unstaking &#x26; Withdrawing**](./unstaking-and-withdrawing.md): unstake your position and withdraw your assets back to your wallet.
-* [**Embedding the dApp**](./embedding-in-a-wallet.md): for partners who host the dApp inside their own wallet or custody platform.
+* [**Integration guide**](./integration-guide.md): for partners who host the dApp inside their own wallet or custody platform.
 
 {% hint style="info" %}
 For institutional staking inquiries, contact the staking team at `StakingBOS@bitwiseinvestments.com`.
