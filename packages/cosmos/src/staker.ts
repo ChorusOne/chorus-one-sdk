@@ -372,14 +372,22 @@ export class CosmosStaker {
     const acc = await getAccount(cosmosClient, this.networkConfig.lcdUrl, signerAddress)
     const signDoc = await genSignableTx(this.networkConfig, chainID, tx, acc.accountNumber, acc.sequence, gas, memo)
 
-    const isEVM = this.networkConfig.isEVM ?? false
+    let isEVM = this.networkConfig.isEVM ?? false
+
+    // accounts created before a chain migrated to EVM (e.g. MANTRA v7) keep a
+    // legacy secp256k1 pubkey on-chain and the chain verifies their signatures
+    // the classic cosmos way, regardless of the chain-wide key algo
+    if (isEVM && acc.pubkey != null && !acc.pubkey.type.toLowerCase().includes('ethsecp256k1')) {
+      isEVM = false
+    }
+
     const { sig, pk } = await genSignDocSignature(signer, acc, signDoc, isEVM)
 
     const pkType = isEVM ? (acc.pubkey?.type ?? undefined) : undefined
     const signedTx = genSignedTx(signDoc, sig, pk, pkType)
 
     // IMPORTANT: verify that signer address matches derived address from signature
-    const addressFromPK = (await CosmosStaker.getAddressDerivationFn(this.networkConfig)(pk, ''))[0]
+    const addressFromPK = (await CosmosStaker.getAddressDerivationFn({ ...this.networkConfig, isEVM })(pk, ''))[0]
 
     if (addressFromPK !== signerAddress) {
       throw new Error(
