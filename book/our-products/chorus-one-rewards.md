@@ -6,7 +6,7 @@ metaLinks:
       https://app.gitbook.com/s/KGu77aAU8HQJ5FTwSgOi/our-products/chorus-one-rewards
 ---
 
-# Chorus One Rewards
+# Rewards
 
 **Overview**
 

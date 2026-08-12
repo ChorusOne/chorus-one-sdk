@@ -5,7 +5,7 @@ metaLinks:
       https://app.gitbook.com/s/KGu77aAU8HQJ5FTwSgOi/our-products/chorus-one-ethereum-native-staking
 ---
 
-# Chorus One Ethereum Native Staking
+# Ethereum Native Staking
 
 Ethereum Proof-of-Stake processing of consensus and building a blockchain is enabled by validators who secure the network by proposing new blocks containing user transactions and attesting to blocks of other validators. For this work, validators are rewarded with ETH.
 
