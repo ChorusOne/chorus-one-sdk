@@ -49,7 +49,6 @@ A WalletProfile controls how the dApp behaves for your integration:
 | Connection | Manual connection, normal wallet-session restoration, or one approved eager connection attempt on page load. |
 | Wallet controls | Independently enable or disable: wallet picker, wallet change, disconnect, address copy, and EVM network switching. |
 | Staking target | Allow normal target selection or use an approved fixed target. |
-| Transaction UI | Use the normal dApp presentation or the external-wallet status view; show or hide fee estimates. |
 | Attribution | Apply an approved partner attribution value where supported by the staking flow. |
 
 The dApp validates a profile before use: it must use known applications and wallet implementations; exclusive selection must name exactly one wallet; a preferred wallet must be included in the allowed list; and eager connection requires an approved wallet implementation.
@@ -66,4 +65,4 @@ The dApp rediscovers injected wallet connections on each page load; it does not 
 
 For EVM integrations, the wallet should return EVM accounts for EVM account requests. Where an approved integration supports mixed account responses, the dApp may ignore non-EVM accounts and require the user to select an EVM account; the same filter applies to account-change events.
 
-The profile also determines whether the user sees the normal in-page transaction experience or a lightweight external-wallet status view (used when signing happens in the wallet's own UI). It does not change transaction construction, signing semantics, submission logic, or sponsorship.
+The profile does not change transaction construction, signing semantics, submission logic, or sponsorship.
