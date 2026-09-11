@@ -1,17 +1,17 @@
 ---
-description: Per-account staking rewards and validator commissions, including Chorus One finance data.
+description: Per-account staking rewards and validator commissions.
 icon: building-columns
 ---
 
 # Account Rewards API
 
-The Account Rewards API returns per-account staking rewards and validator commissions for institutional customers. It supplements onchain reward data with commission and account-specific parameters from Chorus One finance, giving the commercial view of your rewards. It currently supports dYdX, Hyperliquid, and Aleo.
+The Account Rewards API returns per-account staking rewards and validator commissions for institutional customers. It supplements onchain reward data with commission and account-specific commercial parameters, giving the commercial view of your rewards. It currently supports dYdX, Hyperliquid, and Aleo.
 
 Production base URL: `https://rewards-api.chorus.one`.
 
 ## Authentication
 
-Pass your API key in the `X-API-KEY` header on every request. The key implicitly scopes responses to the wallets mapped to your account; you can never see rewards for another customer's wallets, even with a valid key. To generate and manage keys, see [Rewards Dashboard API Keys](../../rewards-dashboard-api-keys.md).
+Pass your API key in the `X-API-KEY` header on every request. The key implicitly scopes responses to the wallets mapped to your account. To generate and manage keys, see [Rewards Dashboard API Keys](../../rewards-dashboard-api-keys.md).
 
 ## Workflow
 

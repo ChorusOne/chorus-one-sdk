@@ -5,7 +5,7 @@ icon: coins
 
 # Ethereum Rewards API
 
-The Ethereum Rewards API returns onchain staking reward data for the Ethereum network, covering StakeWise V3 vault delegator rewards. Rewards are calculated daily.
+The Ethereum Rewards API returns onchain staking reward data for the Ethereum network, covering vault rewards (powered by StakeWise V3). Rewards are calculated daily.
 
 Authenticate with the `X-API-KEY` header; see [Rewards Dashboard API Keys](../../rewards-dashboard-api-keys.md) to obtain a key. Historical backfill is available from the date of first stake.
 

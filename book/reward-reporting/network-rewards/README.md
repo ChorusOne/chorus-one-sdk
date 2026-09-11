@@ -14,7 +14,7 @@ Production base URL: `https://rewards-api.chorus.one`. Authenticate with the `X-
 | Network | Reward data |
 | --- | --- |
 | [Solana](solana.md) | Vote-account (validator) and staking-authority (delegator) rewards, aligned to Solana epochs. |
-| [Ethereum](ethereum.md) | StakeWise V3 delegator rewards, calculated daily. |
+| [Ethereum](ethereum.md) | Vault rewards (powered by StakeWise V3), calculated daily. |
 | [TON](ton.md) | Chorus One TON Pool rewards, at pool level and for individual nominators. |
 
 Historical backfill is available from the date of first stake.

@@ -1,5 +1,5 @@
 ---
-description: Programmatic access to Chorus One staking rewards data across supported networks.
+description: Programmatic access to staking rewards data across supported networks.
 icon: chart-line
 ---
 
@@ -15,15 +15,15 @@ Reward Reporting is available at two levels:
 
 | Type | What it returns |
 | --- | --- |
-| **Network rewards** | Onchain reward data only: the rewards generated on the network, such as daily or epoch reward earnings. |
-| **Account rewards** | Onchain reward data supplemented with commission and account-specific parameters from Chorus One finance, giving the commercial view of your rewards. |
+| **Network rewards** | Onchain staking reward data: the rewards generated on the network, such as daily or epoch reward earnings. |
+| **Account rewards** | Onchain reward data supplemented with commission and account-specific commercial parameters. |
 
 ## Supported networks
 
 | Network | Reward type | Coverage |
 | --- | --- | --- |
 | **Solana** | Network rewards | Vote-account and staking-authority rewards |
-| **Ethereum** | Network rewards | StakeWise V3 delegator rewards |
+| **Ethereum** | Network rewards | Vault rewards (powered by StakeWise V3) |
 | **TON** | Network rewards | Pool and nominator rewards |
 | **dYdX** | Account rewards | Delegator rewards and validator commissions |
 | **Hyperliquid** | Account rewards | Delegator rewards and validator commissions |
@@ -31,7 +31,7 @@ Reward Reporting is available at two levels:
 
 ## Authentication
 
-All requests require an API key passed in the `X-API-KEY` header. Your key is automatically scoped to the wallets mapped to your account; you can never see rewards for another customer's wallets, even with a valid key.
+All requests require an API key passed in the `X-API-KEY` header. Your key is automatically scoped to the wallets mapped to your account.
 
 To generate and manage keys, see [Rewards Dashboard API Keys](../rewards-dashboard-api-keys.md).
 
