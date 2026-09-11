@@ -5,7 +5,7 @@ icon: building-columns
 
 # Account Rewards API
 
-The Account Rewards API returns per-account staking rewards and validator commissions for institutional customers. It supplements onchain reward data with commission and account-specific commercial parameters, giving the commercial view of your rewards. It currently supports dYdX, Hyperliquid, and Aleo.
+The Account Rewards API returns per-account staking rewards and validator commissions for institutional customers. It supplements onchain reward data with commission and account-specific commercial parameters. It currently supports dYdX, Hyperliquid, and Aleo.
 
 Production base URL: `https://rewards-api.chorus.one`.
 

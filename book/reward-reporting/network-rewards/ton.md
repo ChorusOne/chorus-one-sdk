@@ -5,7 +5,7 @@ icon: coins
 
 # TON Pool Rewards API
 
-The TON Pool Rewards API returns onchain staking reward data for Chorus One TON pools. It reports rewards at the pool level and for individual nominators.
+The TON Pool Rewards API returns onchain staking reward data for TON pools. It reports rewards at the pool level and for individual nominators.
 
 Authenticate with the `X-API-KEY` header; see [Rewards Dashboard API Keys](../../rewards-dashboard-api-keys.md) to obtain a key. Historical backfill is available from the date of first stake.
 
