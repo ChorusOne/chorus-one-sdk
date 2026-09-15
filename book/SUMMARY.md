@@ -38,6 +38,7 @@
     - [Solana](reward-reporting/network-rewards/solana.md)
     - [Ethereum](reward-reporting/network-rewards/ethereum.md)
     - [TON](reward-reporting/network-rewards/ton.md)
+    - [NEAR](reward-reporting/network-rewards/near.md)
   - [Account Rewards](reward-reporting/account-rewards/README.md)
 
 ## Build your Staking dApp

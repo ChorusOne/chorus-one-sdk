@@ -25,6 +25,7 @@ Reward Reporting is available at two levels:
 | **Solana** | Network rewards | Vote-account and staking-authority rewards |
 | **Ethereum** | Network rewards | Vault rewards (powered by StakeWise V3) |
 | **TON** | Network rewards | Pool and nominator rewards |
+| **NEAR** | Network rewards | Delegator epoch rewards, net of pool commission |
 | **dYdX** | Account rewards | Delegator rewards and validator commissions |
 | **Hyperliquid** | Account rewards | Delegator rewards and validator commissions |
 | **Aleo** | Account rewards | Delegator rewards and validator commissions |
@@ -37,5 +38,5 @@ To generate and manage keys, see [Rewards Dashboard API Keys](../rewards-dashboa
 
 ## Next steps
 
-* [Network Rewards](network-rewards/README.md): onchain reward data for Solana, Ethereum, and TON.
+* [Network Rewards](network-rewards/README.md): onchain reward data for Solana, Ethereum, TON, and NEAR.
 * [Account Rewards](account-rewards/README.md): rewards plus commission and account data for dYdX, Hyperliquid, and Aleo.

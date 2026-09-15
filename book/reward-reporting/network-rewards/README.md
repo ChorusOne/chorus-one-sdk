@@ -1,5 +1,5 @@
 ---
-description: Onchain staking reward data for Solana, Ethereum, and TON.
+description: Onchain staking reward data for Solana, Ethereum, TON, and NEAR.
 icon: chart-simple
 ---
 
@@ -16,5 +16,6 @@ Production base URL: `https://rewards-api.chorus.one`. Authenticate with the `X-
 | [Solana](solana.md) | Vote-account (validator) and staking-authority (delegator) rewards, aligned to Solana epochs. |
 | [Ethereum](ethereum.md) | Vault rewards (powered by StakeWise V3), calculated daily. |
 | [TON](ton.md) | TON Pool rewards, at pool level and for individual nominators. |
+| [NEAR](near.md) | Delegator epoch rewards, net of pool commission. |
 
 Historical backfill is available from the date of first stake.
