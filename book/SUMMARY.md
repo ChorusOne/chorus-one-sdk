@@ -31,6 +31,16 @@
 - [Widget](our-products/chorus-one-widget/README.md)
   - [Customize and Deploy](our-products/chorus-one-widget/customize-and-deploy.md)
 
+## Reward Reporting
+
+- [Overview](reward-reporting/README.md)
+  - [Network Rewards](reward-reporting/network-rewards/README.md)
+    - [Solana](reward-reporting/network-rewards/solana.md)
+    - [Ethereum](reward-reporting/network-rewards/ethereum.md)
+    - [TON](reward-reporting/network-rewards/ton.md)
+    - [NEAR](reward-reporting/network-rewards/near.md)
+  - [Account Rewards](reward-reporting/account-rewards/README.md)
+
 ## Build your Staking dApp
 
 - [Avalanche](build-your-staking-dapp/avalanche/README.md)
