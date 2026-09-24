@@ -17,6 +17,6 @@ https://rewards-api.chorus.one/solana-rewards/spec.json
 
 ## Staking authority rewards
 
-{% openapi src="https://rewards-api.chorus.one/solana-rewards/spec.json" path="/solana-rewards/v1/staking_authority_rewards" method="get" %}
+{% openapi src="https://rewards-api.chorus.one/solana-rewards/spec.json" path="/solana-rewards/v2/staking_authority_rewards" method="get" %}
 https://rewards-api.chorus.one/solana-rewards/spec.json
 {% endopenapi %}
