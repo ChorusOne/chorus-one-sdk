@@ -33,13 +33,14 @@
     "typescript-eslint": "^7.13.0"
   },
   "overrides": {
-    "chalk": "4.1.2",
-    "strip-ansi": "6.0.1",
-    "wrap-ansi": "7.0.0",
-    "ansi-styles": "4.3.0",
-    "supports-color": "8.1.1",
-    "log-symbols": "4.1.0",
-    "diff": "8.0.3"
+    "diff": "8.0.3",
+    "ws": "8.20.1",
+    "viem": "<2.38.0"
+  },
+  "overridesNotes": {
+    "diff": "Pinned to 8.0.3 to resolve a low-severity vulnerability present in mocha's transitive diff@^7 dependency.",
+    "ws": "Pinned to 8.20.1 (out of the <=8.20.0 vulnerable range) to resolve GHSA-58qx-3vcg-4xpx without forcing a viem upgrade.",
+    "viem": "Capped below 2.38.0 for two distinct reasons: (1) From ox 0.13+ (pulled in by viem 2.46+), `_types/core/WebAuthnP256.d.ts` imports from `../webauthn/*` and TypeScript's classic `moduleResolution: \"node\"` (used by this SDK) ends up loading the raw `.ts` source files at `node_modules/ox/webauthn/*`, which reference browser globals (`window`, `document`) and break the build of `@chorus-one/ethereum` and `@chorus-one/polygon`. (2) viem 2.38+ tightened pre-send chainId validation, which breaks polygon integration tests that point a `mainnet`-configured staker at the local hardhat node (chainId 31337). Lift this cap once (a) ox stops shipping `.ts` source files at the package root or viem decouples its type chain from `WebAuthnP256`, AND (b) the polygon integration tests are updated to align the staker's `chain` with the actual RPC chainId."
   },
   "workspaces": [
     "packages/*"
