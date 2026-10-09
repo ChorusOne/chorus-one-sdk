@@ -210,7 +210,7 @@ export async function getGas (
   const pk = Secp256k1.compressPubkey(signerPubkey)
   const pubkey = encodeSecp256k1Pubkey(pk)
 
-  const { sequence } = await client.getSequence(signerAddress)
+  const { sequence } = await getAccount(client, networkConfig.lcdUrl, signerAddress)
   const { gasInfo } = await client.getCosmosQueryClient().tx.simulate(anyMsgs, memo ?? '', pubkey, sequence)
 
   if (gasInfo?.gasUsed === undefined) {
